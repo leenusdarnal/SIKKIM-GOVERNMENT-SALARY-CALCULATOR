@@ -2,11 +2,773 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="refresh" content="0; url=./sikkim_govt_salary_calculator_v23.html">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#bfe0e8">
+<meta name="description" content="Sikkim Government employee pay matrix and monthly salary reference calculator">
 <title>Sikkim Govt Employee Salary Calculator</title>
+<style>
+:root{
+  --background: oklch(0.985 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.47 0.155 160);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.965 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.965 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.95 0.03 160);
+  --accent-foreground: oklch(0.35 0.11 160);
+  --destructive: oklch(0.577 0.245 27);
+  --border: oklch(0.90 0 0);
+  --input: oklch(0.90 0 0);
+  --ring: oklch(0.47 0.155 160);
+  --radius: .7rem;
+  --blue: oklch(0.56 0.19 250);
+  --blue-soft: oklch(0.965 0.025 245);
+  --green: oklch(0.55 0.16 150);
+  --green-soft: oklch(0.965 0.035 150);
+  --orange: oklch(0.64 0.16 75);
+  --orange-soft: oklch(0.975 0.035 80);
+  --red-soft: oklch(0.97 0.025 20);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.05);
+  --shadow-md: 0 6px 20px rgba(15,23,42,.06);
+  --shadow-lg: 0 18px 45px rgba(15,23,42,.08);
+  --radius-sm: calc(var(--radius) * .6);
+  --radius-md: calc(var(--radius) * .8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.35);
+}
+.dark{
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.19 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.19 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.70 0.14 160);
+  --primary-foreground: oklch(0.18 0.02 160);
+  --secondary: oklch(0.25 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.25 0 0);
+  --muted-foreground: oklch(0.68 0 0);
+  --accent: oklch(0.25 0.035 160);
+  --accent-foreground: oklch(0.82 0.11 160);
+  --destructive: oklch(0.704 0.191 22);
+  --border: oklch(0.29 0 0);
+  --input: oklch(0.29 0 0);
+  --ring: oklch(0.70 0.14 160);
+  --blue-soft: oklch(0.22 0.025 245);
+  --green-soft: oklch(0.22 0.035 150);
+  --orange-soft: oklch(0.23 0.035 80);
+  --red-soft: oklch(0.23 0.025 20);
+  --shadow-md: 0 8px 25px rgba(0,0,0,.18);
+  --shadow-lg: 0 20px 50px rgba(0,0,0,.25);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  background:
+    radial-gradient(circle at top right, rgba(16,185,129,.07), transparent 28rem),
+    var(--background);
+  color:var(--foreground);
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  font-size:15px;
+  line-height:1.5;
+  transition:background .2s,color .2s;
+}
+button,input,select{font:inherit}
+button:focus-visible,input:focus-visible,select:focus-visible{
+  outline:2px solid var(--ring);
+  outline-offset:2px;
+}
+.app-header{
+  position:sticky;top:0;z-index:30;
+  background:color-mix(in oklch,var(--background) 92%,transparent);
+  backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--border);
+}
+.header-inner{
+  max-width:1100px;margin:auto;min-height:70px;padding:10px 18px;
+  display:flex;align-items:center;gap:13px
+}
+.app-icon{
+  width:44px;height:44px;flex:0 0 44px;border-radius:12px;
+  display:grid;place-items:center;background:var(--primary);color:var(--primary-foreground);
+  box-shadow:var(--shadow-sm)
+}
+.app-icon svg{width:25px;height:25px}
+.header-title{min-width:0;flex:1}
+.header-title h1{margin:0;font-size:18px;line-height:1.2;font-weight:800;letter-spacing:-.35px}
+.header-title p{margin:3px 0 0;color:var(--muted-foreground);font-size:12px}
+.header-actions{display:flex;gap:7px;align-items:center}
+.icon-btn{
+  width:36px;height:36px;border:1px solid var(--border);background:var(--card);
+  color:var(--muted-foreground);border-radius:10px;display:grid;place-items:center;cursor:pointer
+}
+.icon-btn:hover{background:var(--accent);color:var(--accent-foreground)}
+.page{max-width:1050px;margin:auto;padding:26px 18px 46px}
+.page-intro{display:flex;justify-content:space-between;gap:20px;align-items:end;margin-bottom:18px}
+.kicker{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--primary)}
+.page-intro h2{margin:3px 0 5px;font-size:30px;line-height:1.15;letter-spacing:-.8px}
+.page-intro p{margin:0;color:var(--muted-foreground);max-width:660px}
+.status-badge{
+  flex:0 0 auto;display:inline-flex;align-items:center;gap:7px;padding:7px 10px;border:1px solid var(--border);
+  border-radius:999px;background:var(--card);font-size:12px;font-weight:700;color:var(--muted-foreground);
+}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--primary)}
+.grid-main{display:grid;grid-template-columns:370px minmax(0,1fr);gap:18px;align-items:start}
+.card{
+  background:var(--card);color:var(--card-foreground);
+  border:1px solid var(--border);border-radius:var(--radius-xl);
+  box-shadow:var(--shadow-md);margin-bottom:18px;
+}
+.form-card{padding:20px;position:sticky;top:88px}
+.card-heading{
+  display:flex;align-items:center;gap:10px;margin:0 0 17px;font-size:17px;font-weight:800;letter-spacing:-.2px
+}
+.heading-icon,.section-icon{
+  width:36px;height:36px;border-radius:10px;background:var(--accent);color:var(--accent-foreground);
+  display:grid;place-items:center;flex:0 0 36px
+}
+.heading-icon svg{width:19px;height:19px}
+.section-icon{background:var(--primary);color:var(--primary-foreground);width:38px;height:38px;flex-basis:38px}
+.section-icon svg{width:21px;height:21px}
+.lead{font-size:14px;color:var(--muted-foreground);margin:-2px 0 20px}
+.field{margin-bottom:16px}
+.field label{display:flex;align-items:center;justify-content:space-between;color:var(--card-foreground);font-size:13px;font-weight:700;margin:0 0 7px}
+.hint{font-size:11px;color:var(--muted-foreground);font-weight:500}
+.select-wrap{position:relative}
+.select-wrap:after{
+  content:"";position:absolute;right:12px;top:50%;width:7px;height:7px;
+  border-right:1.7px solid var(--muted-foreground);border-bottom:1.7px solid var(--muted-foreground);
+  transform:translateY(-70%) rotate(45deg);pointer-events:none
+}
+select{
+  appearance:none;-webkit-appearance:none;width:100%;height:44px;border:1px solid var(--input);
+  border-radius:var(--radius-md);background:var(--card);color:var(--card-foreground);
+  padding:0 38px 0 12px;outline:none
+}
+select:hover{border-color:color-mix(in oklch,var(--input) 70%,var(--foreground))}
+.da-box{
+  background:var(--blue-soft);border:1px solid color-mix(in oklch,var(--blue) 40%,var(--border));
+  border-radius:var(--radius-lg);padding:13px 14px
+}
+.da-custom{margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.custom-label{display:block;font-size:11px!important;color:var(--muted-foreground)!important;margin:0 0 5px!important}
+.custom-input-wrap{display:flex;align-items:center;gap:5px}
+.custom-input-wrap input{width:110px;height:38px;border:1px solid var(--input);border-radius:10px;background:var(--card);color:var(--foreground);padding:0 10px;font-weight:800;font-size:16px;text-align:right}
+.custom-input-wrap span{font-weight:800;color:var(--muted-foreground)}
+.da-box .select-wrap:after{right:13px}
+.da-help{margin:9px 0 0;text-align:left;font-size:10px;color:var(--muted-foreground)}
+.actions{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:20px}
+.btn{
+  height:44px;border:1px solid var(--border);border-radius:var(--radius-md);font-weight:750;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .15s,background .15s,box-shadow .15s
+}
+.btn svg{width:18px;height:18px}
+.btn-primary{background:var(--primary);color:var(--primary-foreground);border-color:var(--primary);box-shadow:var(--shadow-sm)}
+.btn-primary:hover{filter:brightness(.96);transform:translateY(-1px);box-shadow:0 5px 16px rgba(16,185,129,.18)}
+.btn-secondary{background:var(--secondary);color:var(--secondary-foreground);padding:0 15px}
+.btn-secondary:hover{background:var(--accent)}
+.form-note{
+  display:flex;gap:7px;align-items:flex-start;margin:13px 0 0;color:var(--muted-foreground);font-size:11px;line-height:1.45
+}
+.form-note svg{width:14px;height:14px;flex:none;margin-top:1px}
+.info-card{padding:18px;background:var(--blue-soft);box-shadow:none;border-color:color-mix(in oklch,var(--blue) 25%,var(--border))}
+.info-card .card-heading{color:var(--blue)}
+.formula-intro{font-size:13px;font-weight:700;margin:0 0 10px}
+.formula-list{margin:0;padding-left:18px;color:var(--muted-foreground);font-size:13px}
+.formula-list li{margin:6px 0}
+.quick-card{padding:18px}
+.quick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.quick-item{border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px;background:var(--card)}
+.quick-item .q-label{font-size:11px;color:var(--muted-foreground)}
+.quick-item .q-value{font-size:16px;font-weight:850;margin-top:3px}
+.results-stack{display:grid;gap:0}
+.placeholder{
+  padding:44px 22px;text-align:center;box-shadow:none;border-style:dashed;background:color-mix(in oklch,var(--card) 84%,var(--background))
+}
+.placeholder-icon{
+  width:54px;height:54px;margin:0 auto 13px;color:var(--muted-foreground);
+  background:var(--muted);border-radius:14px;display:grid;place-items:center
+}
+.placeholder-icon svg{width:27px;height:27px}
+.placeholder h2{margin:0;font-size:21px;letter-spacing:-.3px}
+.placeholder p{margin:7px auto 0;color:var(--muted-foreground);font-size:13px;max-width:490px}
+.summary-card{padding:18px}
+.summary-head,.breakdown-head{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.summary-head .section-icon{background:var(--green);color:white}
+.summary-title{margin:0;font-size:17px;font-weight:800}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.summary-box{border-radius:var(--radius-lg);padding:15px;background:var(--blue-soft);border:1px solid color-mix(in oklch,var(--blue) 25%,var(--border))}
+.summary-box.ded{background:var(--orange-soft);border-color:color-mix(in oklch,var(--orange) 30%,var(--border))}
+.summary-label{font-size:12px;font-weight:750;color:var(--muted-foreground)}
+.summary-box .summary-value{font-size:25px;font-weight:900;letter-spacing:-.5px;margin-top:5px;color:var(--blue)}
+.summary-box.ded .summary-value{color:var(--orange)}
+.net-box{
+  margin-top:10px;padding:17px 18px;border-radius:var(--radius-lg);
+  background:var(--green);color:white;display:flex;align-items:center;justify-content:space-between;gap:16px
+}
+.net-label{font-size:13px;font-weight:700;display:flex;align-items:center;gap:7px}
+.net-label svg{width:17px;height:17px}
+.net-value{font-size:28px;font-weight:900;letter-spacing:-.6px}
+.breakdown-card{padding:18px}
+.section-title{margin:0;font-size:17px;font-weight:800}
+.category{
+  display:flex;align-items:center;gap:8px;font-size:12px;text-transform:uppercase;letter-spacing:.07em;font-weight:850;margin:18px 0 9px
+}
+.category.green{color:var(--green)} .category.red{color:var(--destructive)}
+.category-bullet{
+  width:22px;height:22px;border-radius:50%;display:grid;place-items:center;color:white;background:var(--green);font-size:14px
+}
+.category.red .category-bullet{background:var(--destructive)}
+.detail-panel{
+  border:1px solid var(--border);border-radius:var(--radius-lg);padding:4px 13px;background:var(--card)
+}
+.detail-row{
+  display:flex;justify-content:space-between;align-items:center;gap:15px;padding:11px 0;font-size:13px
+}
+.detail-row+.detail-row{border-top:1px solid var(--border)}
+.detail-row .name{color:var(--muted-foreground)}
+.detail-row strong{font-weight:800;font-variant-numeric:tabular-nums}
+.total-box{
+  border-radius:var(--radius-lg);padding:13px 14px;font-size:14px;font-weight:850;display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:8px
+}
+.total-box.gross{background:var(--green-soft);border:1px solid color-mix(in oklch,var(--green) 32%,var(--border));color:var(--green)}
+.total-box.deductions{background:var(--red-soft);border:1px solid color-mix(in oklch,var(--destructive) 28%,var(--border));color:var(--destructive)}
+.breakdown-card .net-box{margin-top:16px;justify-content:center;flex-direction:column;text-align:center}
+.breakdown-card .net-value{font-size:32px}
+.matrix-card{overflow:hidden}
+.matrix-toggle{
+  width:100%;border:0;background:transparent;color:var(--card-foreground);padding:17px 18px;
+  display:flex;justify-content:space-between;align-items:center;gap:15px;text-align:left;cursor:pointer
+}
+.matrix-toggle:hover{background:var(--accent)}
+.matrix-toggle h2{margin:0;font-size:15px}
+.matrix-toggle small{display:block;color:var(--muted-foreground);font-size:11px;margin-top:2px}
+.matrix-toggle .arrow{
+  width:28px;height:28px;border:1px solid var(--border);border-radius:9px;display:grid;place-items:center;color:var(--muted-foreground)
+}
+.matrix-body{display:none;border-top:1px solid var(--border);padding:12px 13px 15px;overflow:auto}
+.matrix-body.open{display:block}
+.matrix-grid{display:grid;grid-template-columns:50px repeat(4,minmax(100px,1fr));gap:6px;min-width:500px}
+.mcell{border:1px solid var(--border);border-radius:9px;padding:8px 7px;text-align:center;background:var(--card);font-variant-numeric:tabular-nums;font-size:12px}
+.mhead{background:var(--muted);font-weight:800;color:var(--muted-foreground)}
+.mselected{background:var(--green-soft);border-color:color-mix(in oklch,var(--green) 60%,var(--border));color:var(--green);font-weight:900;box-shadow:inset 0 0 0 1px color-mix(in oklch,var(--green) 60%,var(--border));}
+.matrix-note{margin:10px 5px 0;color:var(--muted-foreground);font-size:11px}
+.disclaimer{
+  margin:14px 0 0;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-lg);
+  color:var(--muted-foreground);background:var(--muted);font-size:10.5px;line-height:1.45
+}
+.source-note{color:var(--muted-foreground);text-align:center;font-size:10px;margin-top:9px;line-height:1.45}
+.hidden{display:none!important}
+@media(max-width:860px){
+  .grid-main{grid-template-columns:1fr}
+  .form-card{position:static}
+}
+@media(max-width:560px){
+  .header-inner{padding:9px 13px;min-height:64px}
+  .app-icon{width:42px;height:42px;flex-basis:42px}
+  .app-icon svg{width:23px;height:23px}
+  .header-title h1{font-size:17px}
+  .page{padding:18px 12px 30px}
+  .page-intro{display:block;margin-bottom:14px}
+  .page-intro h2{font-size:25px}
+  .status-badge{margin-top:10px}
+  .card{border-radius:16px;margin-bottom:14px}
+  .form-card,.info-card,.summary-card,.breakdown-card{padding:16px}
+  .quick-grid{grid-template-columns:1fr 1fr 1fr}
+  .quick-item{padding:10px}
+  .quick-item .q-value{font-size:14px}
+  .summary-box{padding:14px}
+  .summary-box .summary-value{font-size:23px}
+  .net-box{padding:15px}
+  .net-label{font-size:12px}
+  .net-value{font-size:25px}
+  .detail-row{font-size:13px}
+}
+@media(max-width:380px){
+  .quick-grid{gap:6px}
+  .quick-item .q-label{font-size:10px}
+  .quick-item .q-value{font-size:13px}
+  .summary-box .summary-value{font-size:21px}
+}
+@media(print){
+  .app-header{position:static;background:white}
+  .header-actions,.actions,.form-card,.matrix-card,.disclaimer{display:none!important}
+  body{background:white}
+  .page{max-width:900px;padding:15px 0}
+  .grid-main{display:block}
+  .info-card{background:white}
+  .card{box-shadow:none}
+}
+</style>
 </head>
 <body>
-<p>Redirecting to the Sikkim Government Salary Calculator...</p>
-<p><a href="./sikkim_govt_salary_calculator_v23.html">Click here if you are not redirected automatically.</a></p>
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="app-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v20M2 12h20"/></svg>
+      </div>
+      <div class="header-title">
+        <h1>Sikkim Government Salary Calculator</h1>
+        <p>Pay matrix reference and monthly net salary estimate</p>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" id="themeToggle" type="button" aria-label="Toggle color theme">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79Z"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+    <section class="page-intro">
+      <div>
+        <span class="kicker">Official reference tool</span>
+        <h2>Salary calculator</h2>
+        <p>Estimate the monthly take-home pay for Sikkim Government employees using the current pay matrix and deduction assumptions.</p>
+        <div class="hero-chips">
+          <span>Pay Matrix</span>
+          <span>DA & HRA</span>
+          <span>Gross / Net</span>
+        </div>
+      </div>
+      <div class="status-badge"><span class="status-dot"></span>Calculator Ready</div>
+    </section>
+
+    <div class="grid-main">
+      <div>
+        <aside class="card form-card">
+          <h3 class="card-heading">
+            <span class="heading-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v15H6.5A2.5 2.5 0 0 0 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/><path d="M8 6h9M8 10h9M8 14h7"/></svg>
+            </span>
+            Salary Inputs
+          </h3>
+
+          <p class="lead">Choose the employee grade and input the salary components to calculate estimated deductions and take-home pay.</p>
+
+          <div class="field">
+            <label for="payLevel">
+              <span>Pay Level</span>
+              <span class="hint">Matrix level</span>
+            </label>
+            <div class="select-wrap">
+              <select id="payLevel">
+                <option value="1">Level 1</option>
+                <option value="2">Level 2</option>
+                <option value="3">Level 3</option>
+                <option value="4">Level 4</option>
+                <option value="5">Level 5</option>
+                <option value="6">Level 6</option>
+                <option value="7">Level 7</option>
+                <option value="8">Level 8</option>
+                <option value="9">Level 9</option>
+                <option value="10">Level 10</option>
+                <option value="11">Level 11</option>
+                <option value="12">Level 12</option>
+                <option value="13">Level 13</option>
+                <option value="14">Level 14</option>
+                <option value="15">Level 15</option>
+                <option value="16">Level 16</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="payBand">
+              <span>Pay Band</span>
+              <span class="hint">Basic scale</span>
+            </label>
+            <div class="select-wrap">
+              <select id="payBand">
+                <option value="18000">₹18,000</option>
+                <option value="19900">₹19,900</option>
+                <option value="21700">₹21,700</option>
+                <option value="23600">₹23,600</option>
+                <option value="25500">₹25,500</option>
+                <option value="27500">₹27,500</option>
+                <option value="29800">₹29,800</option>
+                <option value="32100">₹32,100</option>
+                <option value="35400">₹35,400</option>
+                <option value="39100">₹39,100</option>
+                <option value="43200">₹43,200</option>
+                <option value="47600">₹47,600</option>
+                <option value="52300">₹52,300</option>
+                <option value="57300">₹57,300</option>
+                <option value="62800">₹62,800</option>
+                <option value="68900">₹68,900</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="daRate">
+              <span>Dearness Allowance</span>
+              <span class="hint">DA %</span>
+            </label>
+            <div class="da-box">
+              <div class="select-wrap">
+                <select id="daRate">
+                  <option value="0">0%</option>
+                  <option value="10">10%</option>
+                  <option value="15">15%</option>
+                  <option value="20">20%</option>
+                  <option value="25">25%</option>
+                  <option value="30" selected>30%</option>
+                  <option value="35">35%</option>
+                  <option value="40">40%</option>
+                  <option value="45">45%</option>
+                  <option value="50">50%</option>
+                </select>
+              </div>
+              <div class="da-custom">
+                <label class="custom-label" for="customDaPercentage">Custom DA %</label>
+                <div class="custom-input-wrap">
+                  <input id="customDaPercentage" type="number" min="0" max="100" step="1" value="30">
+                  <span>%</span>
+                </div>
+              </div>
+              <p class="da-help">Use the custom value for a custom DA percentage.</p>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="hraRate">
+              <span>HRA</span>
+              <span class="hint">% of basic</span>
+            </label>
+            <div class="select-wrap">
+              <select id="hraRate">
+                <option value="8">8%</option>
+                <option value="10">10%</option>
+                <option value="12">12%</option>
+                <option value="15" selected>15%</option>
+                <option value="18">18%</option>
+                <option value="20">20%</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button id="calculateBtn" class="btn btn-primary" type="button">Calculate Salary</button>
+            <button id="resetBtn" class="btn btn-secondary" type="button">Reset</button>
+          </div>
+
+          <div class="form-note">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v6"/><path d="M12 16v6"/><path d="M2 12h6"/><path d="M16 12h6"/><circle cx="12" cy="12" r="8"/></svg>
+            Estimated values are for reference and do not replace official government payroll rules.
+          </div>
+        </aside>
+
+        <aside class="card info-card">
+          <h3 class="card-heading">
+            <span class="heading-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7H14.5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </span>
+            Formula reference
+          </h3>
+          <p class="formula-intro">Quick estimate formula:</p>
+          <ul class="formula-list">
+            <li>Gross Salary = Basic + DA + HRA + Other Allowances</li>
+            <li>Estimated Deductions = PF + Professional Tax + Other statutory deduction</li>
+            <li>Net Salary = Gross Salary - Estimated Deductions</li>
+          </ul>
+        </aside>
+      </div>
+
+      <div class="results-stack">
+        <section id="emptyState" class="card placeholder">
+          <div>
+            <div class="empty-eyebrow">Ready to compute</div>
+            <div class="placeholder-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18v12H3z"/><path d="M3 10h18"/><path d="M7 15h4"/><path d="M15 15h2"/></svg>
+            </div>
+            <h2>Choose a salary profile</h2>
+            <p>Set your pay band and allowance assumptions to generate a monthly gross and net salary overview.</p>
+            <div class="empty-steps">
+              <span><b>1</b> Select level</span>
+              <span><b>2</b> Set DA & HRA</span>
+              <span><b>3</b> Review report</span>
+            </div>
+          </div>
+        </section>
+
+        <section id="summaryCard" class="card summary-card hidden">
+          <div class="summary-head">
+            <span class="section-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18"/><path d="M12 3v18"/></svg></span>
+            <h3 class="summary-title">Salary summary</h3>
+          </div>
+
+          <div class="summary-grid">
+            <div class="summary-box">
+              <div class="summary-label">Gross Salary</div>
+              <div id="grossValue" class="summary-value">₹0</div>
+            </div>
+            <div class="summary-box ded">
+              <div class="summary-label">Total Deductions</div>
+              <div id="deductionValue" class="summary-value">₹0</div>
+            </div>
+          </div>
+
+          <div class="net-box">
+            <div class="net-label">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7H14.5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              Estimated Net Pay
+            </div>
+            <div id="netValue" class="net-value">₹0</div>
+          </div>
+        </section>
+
+        <section id="breakdownCard" class="card breakdown-card hidden">
+          <div class="breakdown-head">
+            <span class="section-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18h16"/><path d="M7 14l3-3 3 2 5-7"/></svg></span>
+            <h3 class="section-title">Breakdown</h3>
+          </div>
+
+          <div class="category green"><span class="category-bullet">+</span> Earnings</div>
+          <div class="detail-panel">
+            <div class="detail-row"><span class="name">Basic Pay</span><strong id="basicPay">₹0</strong></div>
+            <div class="detail-row"><span class="name">Dearness Allowance</span><strong id="daValue">₹0</strong></div>
+            <div class="detail-row"><span class="name">HRA</span><strong id="hraValue">₹0</strong></div>
+            <div class="detail-row"><span class="name">Other Allowances</span><strong id="otherAllowance">₹0</strong></div>
+          </div>
+
+          <div class="total-box gross"><span>Gross Total</span><strong id="grossTotal">₹0</strong></div>
+
+          <div class="category red"><span class="category-bullet">−</span> Deductions</div>
+          <div class="detail-panel">
+            <div class="detail-row"><span class="name">Provident Fund</span><strong id="pfValue">₹0</strong></div>
+            <div class="detail-row"><span class="name">Professional Tax</span><strong id="ptValue">₹0</strong></div>
+            <div class="detail-row"><span class="name">Other Deductions</span><strong id="otherDeduction">₹0</strong></div>
+          </div>
+
+          <div class="total-box deductions"><span>Total Deductions</span><strong id="deductionTotal">₹0</strong></div>
+
+          <div class="net-box">
+            <div class="net-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7H14.5a3.5 3.5 0 0 1 0 7H6"/></svg> Net Salary</div>
+            <div id="netDetailValue" class="net-value">₹0</div>
+          </div>
+        </section>
+
+        <section class="card matrix-card">
+          <button class="matrix-toggle" type="button" aria-expanded="false">
+            <div>
+              <h2>Pay matrix reference</h2>
+              <small>Current band and level mapping</small>
+            </div>
+            <span class="arrow" aria-hidden="true">▾</span>
+          </button>
+          <div class="matrix-body">
+            <div class="matrix-grid">
+              <div class="mcell mhead">Level</div>
+              <div class="mcell mhead">Basic</div>
+              <div class="mcell mhead">DA</div>
+              <div class="mcell mhead">HRA</div>
+              <div class="mcell mhead">Gross</div>
+              <div class="mcell">1</div>
+              <div class="mcell">₹18,000</div>
+              <div class="mcell">₹5,400</div>
+              <div class="mcell">₹1,800</div>
+              <div class="mcell">₹25,200</div>
+              <div class="mcell">2</div>
+              <div class="mcell">₹19,900</div>
+              <div class="mcell">₹5,970</div>
+              <div class="mcell">₹1,990</div>
+              <div class="mcell">₹27,860</div>
+              <div class="mcell">3</div>
+              <div class="mcell">₹21,700</div>
+              <div class="mcell">₹6,510</div>
+              <div class="mcell">₹2,170</div>
+              <div class="mcell">₹30,380</div>
+              <div class="mcell">4</div>
+              <div class="mcell">₹23,600</div>
+              <div class="mcell">₹7,080</div>
+              <div class="mcell">₹2,360</div>
+              <div class="mcell">₹33,040</div>
+              <div class="mcell">5</div>
+              <div class="mcell">₹25,500</div>
+              <div class="mcell">₹7,650</div>
+              <div class="mcell">₹2,550</div>
+              <div class="mcell">₹35,700</div>
+              <div class="mcell">6</div>
+              <div class="mcell">₹27,500</div>
+              <div class="mcell">₹8,250</div>
+              <div class="mcell">₹2,750</div>
+              <div class="mcell">₹38,500</div>
+              <div class="mcell">7</div>
+              <div class="mcell">₹29,800</div>
+              <div class="mcell">₹8,940</div>
+              <div class="mcell">₹2,980</div>
+              <div class="mcell">₹41,720</div>
+              <div class="mcell">8</div>
+              <div class="mcell">₹32,100</div>
+              <div class="mcell">₹9,630</div>
+              <div class="mcell">₹3,210</div>
+              <div class="mcell">₹44,940</div>
+              <div class="mcell">9</div>
+              <div class="mcell">₹35,400</div>
+              <div class="mcell">₹10,620</div>
+              <div class="mcell">₹3,540</div>
+              <div class="mcell">₹49,560</div>
+              <div class="mcell">10</div>
+              <div class="mcell">₹39,100</div>
+              <div class="mcell">₹11,730</div>
+              <div class="mcell">₹3,910</div>
+              <div class="mcell">₹54,740</div>
+              <div class="mcell">11</div>
+              <div class="mcell">₹43,200</div>
+              <div class="mcell">₹12,960</div>
+              <div class="mcell">₹4,320</div>
+              <div class="mcell">₹60,480</div>
+              <div class="mcell">12</div>
+              <div class="mcell">₹47,600</div>
+              <div class="mcell">₹14,280</div>
+              <div class="mcell">₹4,760</div>
+              <div class="mcell">₹66,640</div>
+              <div class="mcell">13</div>
+              <div class="mcell">₹52,300</div>
+              <div class="mcell">₹15,690</div>
+              <div class="mcell">₹5,230</div>
+              <div class="mcell">₹73,220</div>
+              <div class="mcell">14</div>
+              <div class="mcell">₹57,300</div>
+              <div class="mcell">₹17,190</div>
+              <div class="mcell">₹5,730</div>
+              <div class="mcell">₹80,220</div>
+              <div class="mcell">15</div>
+              <div class="mcell">₹62,800</div>
+              <div class="mcell">₹18,840</div>
+              <div class="mcell">₹6,280</div>
+              <div class="mcell">₹87,920</div>
+              <div class="mcell">16</div>
+              <div class="mcell">₹68,900</div>
+              <div class="mcell">₹20,670</div>
+              <div class="mcell">₹6,890</div>
+              <div class="mcell">₹96,460</div>
+            </div>
+            <p class="matrix-note">This reference matrix is a simplified estimate for budget planning and does not replace official government payroll structures.</p>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const payLevel = document.getElementById('payLevel');
+    const payBand = document.getElementById('payBand');
+    const daRate = document.getElementById('daRate');
+    const customDaPercentage = document.getElementById('customDaPercentage');
+    const hraRate = document.getElementById('hraRate');
+    const calculateBtn = document.getElementById('calculateBtn');
+    const resetBtn = document.getElementById('resetBtn');
+
+    const emptyState = document.getElementById('emptyState');
+    const summaryCard = document.getElementById('summaryCard');
+    const breakdownCard = document.getElementById('breakdownCard');
+
+    const grossValue = document.getElementById('grossValue');
+    const deductionValue = document.getElementById('deductionValue');
+    const netValue = document.getElementById('netValue');
+
+    const basicPay = document.getElementById('basicPay');
+    const daValue = document.getElementById('daValue');
+    const hraValue = document.getElementById('hraValue');
+    const otherAllowance = document.getElementById('otherAllowance');
+    const grossTotal = document.getElementById('grossTotal');
+    const pfValue = document.getElementById('pfValue');
+    const ptValue = document.getElementById('ptValue');
+    const otherDeduction = document.getElementById('otherDeduction');
+    const deductionTotal = document.getElementById('deductionTotal');
+    const netDetailValue = document.getElementById('netDetailValue');
+
+    const currency = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
+
+    function formatMoney(value) {
+      return currency.format(value || 0);
+    }
+
+    function getSelectedDaRate() {
+      const customValue = Number(customDaPercentage.value || 0);
+      if (customValue > 0 && customValue <= 100) return customValue;
+      return Number(daRate.value || 0);
+    }
+
+    function calculateSalary() {
+      const basic = Number(payBand.value || 0);
+      const da = basic * (getSelectedDaRate() / 100);
+      const hra = basic * (Number(hraRate.value || 0) / 100);
+      const otherAllowanceVal = basic * 0.12;
+
+      const gross = basic + da + hra + otherAllowanceVal;
+      const pf = basic * 0.12;
+      const pt = 200;
+      const otherDeductions = basic * 0.08;
+      const deductions = pf + pt + otherDeductions;
+      const net = gross - deductions;
+
+      grossValue.textContent = formatMoney(gross);
+      deductionValue.textContent = formatMoney(deductions);
+      netValue.textContent = formatMoney(net);
+
+      basicPay.textContent = formatMoney(basic);
+      daValue.textContent = formatMoney(da);
+      hraValue.textContent = formatMoney(hra);
+      otherAllowance.textContent = formatMoney(otherAllowanceVal);
+      grossTotal.textContent = formatMoney(gross);
+      pfValue.textContent = formatMoney(pf);
+      ptValue.textContent = formatMoney(pt);
+      otherDeduction.textContent = formatMoney(otherDeductions);
+      deductionTotal.textContent = formatMoney(deductions);
+      netDetailValue.textContent = formatMoney(net);
+
+      emptyState.classList.add('hidden');
+      summaryCard.classList.remove('hidden');
+      breakdownCard.classList.remove('hidden');
+    }
+
+    function resetForm() {
+      payLevel.selectedIndex = 0;
+      payBand.selectedIndex = 0;
+      daRate.selectedIndex = 5;
+      customDaPercentage.value = 30;
+      hraRate.selectedIndex = 3;
+      emptyState.classList.remove('hidden');
+      summaryCard.classList.add('hidden');
+      breakdownCard.classList.add('hidden');
+    }
+
+    calculateBtn.addEventListener('click', calculateSalary);
+    resetBtn.addEventListener('click', resetForm);
+
+    customDaPercentage.addEventListener('input', () => {
+      const v = Number(customDaPercentage.value || 0);
+      if (v < 0) customDaPercentage.value = 0;
+      if (v > 100) customDaPercentage.value = 100;
+      if (v > 0) daRate.value = '0';
+    });
+
+    daRate.addEventListener('change', () => {
+      if (daRate.value !== '0') customDaPercentage.value = daRate.value;
+    });
+
+    document.querySelector('.matrix-toggle').addEventListener('click', function () {
+      const body = document.querySelector('.matrix-body');
+      const arrow = document.querySelector('.matrix-toggle .arrow');
+      const isOpen = body.classList.toggle('open');
+      this.setAttribute('aria-expanded', isOpen);
+      arrow.textContent = isOpen ? '▴' : '▾';
+    });
+
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      document.body.classList.toggle('dark');
+    });
+  </script>
 </body>
 </html>
