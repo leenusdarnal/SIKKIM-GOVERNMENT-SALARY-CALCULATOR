@@ -259,7 +259,7 @@ select:hover{border-color:color-mix(in oklch,var(--input) 70%,var(--foreground))
 .matrix-grid{display:grid;grid-template-columns:50px repeat(4,minmax(100px,1fr));gap:6px;min-width:500px}
 .mcell{border:1px solid var(--border);border-radius:9px;padding:8px 7px;text-align:center;background:var(--card);font-variant-numeric:tabular-nums;font-size:12px}
 .mhead{background:var(--muted);font-weight:800;color:var(--muted-foreground)}
-.mselected{background:var(--green-soft);border-color:color-mix(in oklch,var(--green) 60%,var(--border));color:var(--green);font-weight:900;box-shadow:inset 0 0 0 1px color-mix(in oklch,var(--green) 60%,var(--border));}
+.mselected{background:var(--green-soft);border-color:color-mix(in oklch,var(--green) 60%,var(--border));color:var(--green);font-weight:900;box-shadow:inset 0 0 0 1px color-mix(in oklch,var(--green) 25%,transparent)}
 .matrix-note{margin:10px 5px 0;color:var(--muted-foreground);font-size:11px}
 .disclaimer{
   margin:14px 0 0;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-lg);
@@ -307,468 +307,1796 @@ select:hover{border-color:color-mix(in oklch,var(--input) 70%,var(--foreground))
   .info-card{background:white}
   .card{box-shadow:none}
 }
+
+/* ===== Visual refresh v11 ===== */
+:root{
+  --shadow-md: 0 10px 30px rgba(15,23,42,.07);
+  --shadow-lg: 0 22px 60px rgba(15,23,42,.10);
+  --radius-xl: 20px;
+}
+body{
+  min-height:100vh;
+  background:
+    radial-gradient(900px 420px at 10% -10%, rgba(16,185,129,.12), transparent 60%),
+    radial-gradient(760px 360px at 100% 8%, rgba(56,189,248,.10), transparent 58%),
+    linear-gradient(180deg, color-mix(in oklch,var(--background) 96%, var(--accent)), var(--background));
+}
+.app-header{
+  background:color-mix(in oklch,var(--background) 84%, transparent);
+  box-shadow:0 1px 0 color-mix(in oklch,var(--border) 75%, transparent);
+}
+.header-inner{
+  min-height:76px;
+  padding:11px 18px;
+}
+.app-icon{
+  width:48px;height:48px;flex-basis:48px;border-radius:15px;
+  background:linear-gradient(145deg, #119c63, #087f53);
+  box-shadow:0 8px 20px rgba(8,127,83,.20);
+}
+.header-title h1{font-size:18px}
+.header-title p{font-size:12px}
+.icon-btn{
+  width:40px;height:40px;border-radius:12px;
+  background:color-mix(in oklch,var(--card) 92%, transparent);
+  box-shadow:var(--shadow-sm);
+  transition:transform .18s ease, background .18s ease, border-color .18s ease;
+}
+.icon-btn:hover{transform:translateY(-1px)}
+.page{
+  max-width:1120px;
+  padding:30px 18px 55px;
+}
+.page-intro{
+  position:relative;
+  overflow:hidden;
+  margin-bottom:20px;
+  padding:22px 24px;
+  border:1px solid color-mix(in oklch,var(--primary) 13%, var(--border));
+  border-radius:24px;
+  background:
+    radial-gradient(500px 230px at 100% 0%, rgba(16,185,129,.10), transparent 70%),
+    color-mix(in oklch,var(--card) 90%, var(--accent));
+  box-shadow:var(--shadow-lg);
+}
+.page-intro:after{
+  content:"";
+  position:absolute;
+  width:180px;height:180px;border-radius:50%;
+  right:-85px;bottom:-100px;
+  border:1px solid color-mix(in oklch,var(--primary) 18%, transparent);
+  box-shadow:0 0 0 18px color-mix(in oklch,var(--primary) 4%, transparent),
+             0 0 0 36px color-mix(in oklch,var(--primary) 2%, transparent);
+  pointer-events:none;
+}
+.page-intro h2{font-size:32px;margin-top:5px}
+.page-intro p{max-width:760px}
+.kicker{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:5px 9px;border-radius:999px;
+  background:var(--accent);border:1px solid color-mix(in oklch,var(--primary) 14%, var(--border));
+}
+.hero-chips{
+  display:flex;flex-wrap:wrap;gap:7px;margin-top:14px;
+}
+.hero-chips span{
+  display:inline-flex;align-items:center;
+  padding:6px 10px;border-radius:999px;
+  background:var(--card);border:1px solid var(--border);
+  color:var(--muted-foreground);font-size:11px;font-weight:750;
+}
+.status-badge{
+  position:relative;z-index:1;
+  box-shadow:var(--shadow-sm);
+}
+.status-dot{box-shadow:0 0 0 4px color-mix(in oklch,var(--primary) 12%, transparent)}
+.grid-main{grid-template-columns:380px minmax(0,1fr);gap:20px}
+.card{
+  border-color:color-mix(in oklch,var(--border) 92%, var(--primary));
+  box-shadow:var(--shadow-md);
+  transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.card:hover{
+  box-shadow:var(--shadow-lg);
+}
+.form-card{
+  padding:22px;
+  top:92px;
+  box-shadow:0 18px 50px rgba(15,23,42,.09);
+}
+.form-card:before{
+  content:"";
+  display:block;
+  height:4px;width:56px;
+  border-radius:999px;
+  background:linear-gradient(90deg,#0a8f59,#29b97f);
+  margin-bottom:15px;
+}
+.lead{
+  font-size:13px;
+  line-height:1.55;
+  padding:11px 12px;
+  border-radius:12px;
+  background:var(--muted);
+  border:1px solid var(--border);
+}
+.field{margin-bottom:17px}
+.field label{font-size:12px;letter-spacing:.01em}
+select,input{
+  transition:border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+select:hover,input:hover{
+  border-color:color-mix(in oklch,var(--primary) 34%, var(--input));
+}
+select:focus,input:focus{
+  border-color:var(--ring);
+  box-shadow:0 0 0 4px color-mix(in oklch,var(--ring) 12%, transparent);
+}
+select{height:46px}
+.da-box{
+  padding:12px;
+  border-radius:15px;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.28);
+}
+.actions{grid-template-columns:minmax(0,1fr) 92px}
+.btn{height:46px}
+.btn-primary{
+  background:linear-gradient(135deg,#0a8f59,#079a62);
+  box-shadow:0 10px 22px rgba(7,154,98,.18);
+}
+.btn-primary:hover{
+  filter:none;
+  transform:translateY(-2px);
+  box-shadow:0 13px 28px rgba(7,154,98,.24);
+}
+.btn-secondary{
+  background:var(--card);
+}
+.form-note{
+  padding-top:2px;
+}
+.info-card{
+  padding:19px;
+  background:
+    radial-gradient(380px 180px at 100% 0%, rgba(56,189,248,.10), transparent 70%),
+    var(--blue-soft);
+}
+.formula-list{
+  list-style:none;padding:0;
+  display:grid;gap:8px;
+}
+.formula-list li{
+  position:relative;
+  margin:0;padding:10px 11px 10px 33px;
+  border:1px solid color-mix(in oklch,var(--blue) 14%, var(--border));
+  border-radius:12px;
+  background:color-mix(in oklch,var(--card) 55%, transparent);
+}
+.formula-list li:before{
+  content:"✓";
+  position:absolute;left:10px;top:9px;
+  width:17px;height:17px;border-radius:50%;
+  display:grid;place-items:center;
+  background:color-mix(in oklch,var(--blue) 14%, var(--card));
+  color:var(--blue);font-size:11px;font-weight:900;
+}
+.placeholder{
+  position:relative;
+  overflow:hidden;
+  min-height:250px;
+  display:grid;
+  place-items:center;
+  align-content:center;
+  background:
+    radial-gradient(280px 160px at 50% 10%, rgba(16,185,129,.07), transparent 70%),
+    repeating-linear-gradient(135deg,
+      color-mix(in oklch,var(--background) 80%, var(--card)),
+      color-mix(in oklch,var(--background) 80%, var(--card)) 10px,
+      color-mix(in oklch,var(--background) 86%, var(--card)) 10px,
+      color-mix(in oklch,var(--background) 86%, var(--card)) 20px);
+}
+.placeholder-icon{
+  width:66px;height:66px;margin-bottom:15px;
+  border-radius:18px;
+  background:var(--card);
+  border:1px solid var(--border);
+  box-shadow:var(--shadow-md);
+}
+.placeholder h2{font-size:22px}
+.summary-card{
+  padding:20px;
+  background:
+    radial-gradient(400px 160px at 100% 0%, rgba(16,185,129,.08), transparent 72%),
+    var(--card);
+}
+.summary-grid{gap:12px}
+.summary-box{
+  position:relative;
+  overflow:hidden;
+  min-height:110px;
+  padding:17px;
+}
+.summary-box:after{
+  content:"";
+  position:absolute;
+  width:90px;height:90px;border-radius:50%;
+  right:-35px;top:-35px;
+  background:color-mix(in oklch,var(--blue) 7%, transparent);
+}
+.summary-box.ded:after{background:color-mix(in oklch,var(--orange) 8%, transparent)}
+.summary-label{
+  position:relative;z-index:1;
+  display:flex;align-items:center;gap:7px;
+}
+.summary-label svg{width:16px;height:16px}
+.summary-box .summary-value{
+  position:relative;z-index:1;
+  font-size:28px;margin-top:8px;
+}
+.net-box{
+  position:relative;
+  overflow:hidden;
+}
+.net-box:after{
+  content:"";
+  position:absolute;right:-30px;bottom:-55px;
+  width:150px;height:150px;border-radius:50%;
+  border:1px solid rgba(255,255,255,.18);
+  box-shadow:0 0 0 16px rgba(255,255,255,.04),0 0 0 32px rgba(255,255,255,.025);
+  pointer-events:none;
+}
+.breakdown-card{
+  padding:20px;
+}
+.breakdown-head{margin-bottom:17px}
+.category{
+  padding:4px 8px;
+  border-radius:999px;
+  width:max-content;
+  background:var(--green-soft);
+  border:1px solid color-mix(in oklch,var(--green) 16%, var(--border));
+}
+.category.red{
+  background:var(--red-soft);
+  border-color:color-mix(in oklch,var(--destructive) 16%, var(--border));
+}
+.detail-panel{
+  overflow:hidden;
+  box-shadow:var(--shadow-sm);
+}
+.detail-row{
+  min-height:45px;
+  transition:background .15s ease;
+}
+.detail-row:hover{
+  background:color-mix(in oklch,var(--accent) 45%, transparent);
+}
+.detail-row strong{font-size:13.5px}
+.total-box{
+  min-height:52px;
+  padding:13px 15px;
+  margin-top:9px;
+}
+.matrix-card{
+  background:
+    linear-gradient(180deg,color-mix(in oklch,var(--card) 98%, var(--accent)),var(--card));
+}
+.matrix-toggle{
+  padding:18px 19px;
+}
+.matrix-level-chip{
+  display:inline-flex;align-items:center;
+  margin-left:6px;
+  padding:4px 8px;
+  border-radius:999px;
+  background:var(--muted);
+  color:var(--muted-foreground);
+  font-size:11px;
+  font-weight:800;
+  vertical-align:2px;
+}
+.matrix-body{padding:14px 14px 16px}
+.mcell{
+  transition:transform .12s ease, background .12s ease;
+}
+.mcell:not(.mhead):hover{transform:translateY(-1px)}
+.mselected{
+  box-shadow:inset 0 0 0 1px color-mix(in oklch,var(--green) 35%,transparent),0 4px 10px color-mix(in oklch,var(--green) 10%,transparent);
+}
+.disclaimer{
+  background:color-mix(in oklch,var(--muted) 92%, var(--card));
+}
+.source-note{font-size:10.5px}
+@media(max-width:860px){
+  .grid-main{grid-template-columns:1fr}
+  .form-card{position:static}
+  .page-intro{align-items:flex-start}
+}
+@media(max-width:560px){
+  .header-inner{min-height:68px;padding:9px 13px}
+  .app-icon{width:44px;height:44px;flex-basis:44px}
+  .header-title h1{font-size:16px}
+  .page{padding:17px 11px 34px}
+  .page-intro{padding:18px 16px;border-radius:18px}
+  .page-intro h2{font-size:25px}
+  .hero-chips span{font-size:10px;padding:5px 8px}
+  .status-badge{font-size:11px}
+  .form-card,.info-card,.summary-card,.breakdown-card{padding:16px}
+  .actions{grid-template-columns:1fr}
+  .btn-secondary{height:42px}
+  .summary-box{min-height:100px;padding:14px}
+  .summary-box .summary-value{font-size:24px}
+  .net-value{font-size:26px}
+  .breakdown-card .net-value{font-size:30px}
+  .matrix-toggle{padding:16px}
+}
+@media(max-width:380px){
+  .header-title p{font-size:11px}
+  .page-intro h2{font-size:23px}
+  .summary-grid{grid-template-columns:1fr}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{scroll-behavior:auto!important;transition:none!important}
+}
+@media(print){
+  .page-intro{box-shadow:none;background:white}
+  .hero-chips{display:none!important}
+}
+
+
+.print-report-header,.print-report-footer{display:none}
+@media print{
+ @page{size:A4;margin:14mm 12mm}
+ html,body{background:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+ .app-header,.header-actions,.page-intro,.form-card,.matrix-card,.no-print,button{display:none!important}
+ .page{max-width:none!important;padding:0!important;margin:0!important}
+ .grid-main{display:block!important}
+ .print-report-header{display:flex!important;justify-content:space-between;gap:20px;padding:0 0 10px;margin-bottom:12px;border-bottom:2px solid #087f53;font-size:17px}
+ .print-report-header small{font-size:10px;color:#6b7280}
+ .print-meta{font-size:9px;color:#6b7280;text-align:right}
+ .summary-card,.breakdown-card,.info-card,.disclaimer{display:block!important;box-shadow:none!important;break-inside:avoid;page-break-inside:avoid;border:1px solid #d1d5db!important;background:#fff!important;margin-bottom:10px}
+ .summary-grid{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important}
+ .summary-box{min-height:70px!important}
+ .detail-row{min-height:30px!important;padding:6px 9px!important}
+ .print-report-footer{display:flex!important;justify-content:space-between;gap:15px;margin-top:12px;padding-top:7px;border-top:1px solid #d1d5db;color:#6b7280;font-size:8px}
+}
+
+
+/* ===== Modern interaction & motion refresh v16 ===== */
+:root{
+  --ease-out:cubic-bezier(.16,1,.3,1);
+  --ease-spring:cubic-bezier(.34,1.56,.64,1);
+}
+body{
+  overflow-x:hidden;
+}
+body:before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:-1;
+  opacity:.55;
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(8,143,89,.035) 0 1px, transparent 1px),
+    radial-gradient(circle at 80% 70%, rgba(56,189,248,.028) 0 1px, transparent 1px);
+  background-size:24px 24px,32px 32px;
+}
+.app-header{
+  transition:box-shadow .25s ease,background .25s ease,border-color .25s ease;
+}
+.app-icon{
+  position:relative;
+  overflow:hidden;
+  transition:transform .25s var(--ease-spring),box-shadow .25s ease;
+}
+.app-icon:after{
+  content:"";
+  position:absolute;
+  width:80px;height:80px;
+  top:-55px;left:-45px;
+  border-radius:50%;
+  background:rgba(255,255,255,.16);
+}
+.app-icon:hover{
+  transform:translateY(-2px) rotate(-2deg);
+  box-shadow:0 12px 26px rgba(8,127,83,.24);
+}
+.icon-btn{
+  position:relative;
+  overflow:visible;
+}
+.page-intro{
+  animation:fadeUp .65s var(--ease-out) both;
+}
+.grid-main > div:first-child .form-card{animation:fadeUp .68s .05s var(--ease-out) both}
+.grid-main > div:first-child .info-card{animation:fadeUp .68s .12s var(--ease-out) both}
+#emptyState{animation:fadeUp .68s .09s var(--ease-out) both}
+.card{
+  transition:transform .22s var(--ease-out),box-shadow .22s ease,border-color .22s ease;
+}
+.card:hover{
+  transform:translateY(-2px);
+}
+.form-card:after{
+  content:"";
+  position:absolute;
+  left:0;right:0;top:0;
+  height:1px;
+  background:linear-gradient(90deg,transparent,var(--primary),transparent);
+  opacity:.22;
+}
+.form-card{
+  overflow:hidden;
+}
+.heading-icon,.section-icon{
+  transition:transform .2s var(--ease-spring),box-shadow .2s ease;
+}
+.card-heading:hover .heading-icon,
+.summary-head:hover .section-icon,
+.breakdown-head:hover .section-icon{
+  transform:scale(1.05) rotate(-2deg);
+  box-shadow:0 7px 16px color-mix(in oklch,var(--primary) 13%,transparent);
+}
+.lead{
+  position:relative;
+  overflow:hidden;
+}
+.lead:after{
+  content:"";
+  position:absolute;
+  left:-70px;top:0;
+  width:55px;height:100%;
+  transform:skewX(-18deg);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.22),transparent);
+  animation:shine 4.8s 1.5s infinite;
+}
+.field{
+  transition:transform .18s ease;
+}
+.field:focus-within{
+  transform:translateX(2px);
+}
+select,input{
+  transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease,background .18s ease;
+}
+select:active,input:active{transform:scale(.995)}
+.actions{
+  position:relative;
+}
+.btn{
+  position:relative;
+  overflow:hidden;
+  isolation:isolate;
+  transition:transform .18s var(--ease-spring),box-shadow .18s ease,filter .18s ease,border-color .18s ease;
+}
+.btn:hover:not(:disabled){transform:translateY(-2px)}
+.btn:active:not(:disabled){transform:translateY(0) scale(.985)}
+.btn:disabled{
+  cursor:not-allowed;
+  opacity:.52;
+  box-shadow:none;
+}
+.btn-primary{
+  background:
+    linear-gradient(135deg,#0a8f59 0%,#079a62 55%,#18aa70 100%);
+  background-size:160% 160%;
+  animation:buttonGlow 6s ease infinite;
+}
+.ripple{
+  position:absolute;
+  width:12px;height:12px;
+  border-radius:50%;
+  background:rgba(255,255,255,.38);
+  transform:scale(0);
+  animation:ripple .55s ease-out forwards;
+  pointer-events:none;
+  z-index:-1;
+}
+.selection-status{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-top:12px;
+  padding:9px 11px;
+  border:1px solid var(--border);
+  border-radius:11px;
+  background:color-mix(in oklch,var(--muted) 55%,var(--card));
+  color:var(--muted-foreground);
+  font-size:10.5px;
+  font-weight:700;
+  transition:background .22s ease,border-color .22s ease,color .22s ease,transform .22s ease;
+}
+.selection-status.ready{
+  background:var(--green-soft);
+  border-color:color-mix(in oklch,var(--green) 30%,var(--border));
+  color:var(--green);
+}
+.selection-status-dot{
+  width:8px;height:8px;flex:0 0 8px;
+  border-radius:50%;
+  background:var(--orange);
+  box-shadow:0 0 0 4px color-mix(in oklch,var(--orange) 12%,transparent);
+}
+.selection-status.ready .selection-status-dot{
+  background:var(--green);
+  box-shadow:0 0 0 4px color-mix(in oklch,var(--green) 12%,transparent);
+  animation:pulseDot 1.8s ease-in-out infinite;
+}
+.form-note{
+  transition:color .2s ease;
+}
+.form-note.error{
+  color:var(--destructive);
+  animation:shake .35s ease;
+}
+.page-intro .status-badge{
+  animation:badgeIn .55s .18s var(--ease-out) both;
+}
+.hero-chips span{
+  transition:transform .18s var(--ease-spring),background .18s ease,border-color .18s ease;
+}
+.hero-chips span:hover{
+  transform:translateY(-2px);
+  border-color:color-mix(in oklch,var(--primary) 24%,var(--border));
+}
+.empty-eyebrow{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  margin-bottom:7px;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.13em;
+  color:var(--primary);
+}
+.empty-eyebrow:before{
+  content:"";
+  width:6px;height:6px;border-radius:50%;
+  background:var(--primary);
+  box-shadow:0 0 0 4px color-mix(in oklch,var(--primary) 10%,transparent);
+}
+.empty-steps{
+  display:flex;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:7px;
+  margin-top:17px;
+}
+.empty-steps span{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:6px 9px;
+  border:1px solid var(--border);
+  border-radius:999px;
+  background:var(--card);
+  color:var(--muted-foreground);
+  font-size:10px;
+  font-weight:750;
+}
+.empty-steps b{
+  display:grid;place-items:center;
+  width:18px;height:18px;border-radius:50%;
+  background:var(--accent);color:var(--accent-foreground);
+  font-size:9px;
+}
+.summary-card{
+  position:relative;
+  overflow:hidden;
+}
+.summary-card:before{
+  content:"";
+  position:absolute;
+  left:0;right:0;top:0;
+  height:3px;
+  background:linear-gradient(90deg,var(--green),color-mix(in oklch,var(--green) 45%,var(--blue)),transparent);
+  opacity:.8;
+}
+.summary-subline{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-top:2px;
+  color:var(--muted-foreground);
+  font-size:10px;
+}
+.summary-subline > span:first-child{
+  font-weight:650;
+}
+.calc-time{
+  padding-left:8px;
+  border-left:1px solid var(--border);
+}
+.summary-grid .summary-box{
+  transition:transform .2s var(--ease-out),box-shadow .2s ease;
+}
+.summary-grid .summary-box:hover{
+  transform:translateY(-3px);
+  box-shadow:0 12px 24px rgba(15,23,42,.08);
+}
+.net-box{
+  box-shadow:0 12px 25px color-mix(in oklch,var(--green) 15%,transparent);
+  transition:transform .25s var(--ease-spring),box-shadow .25s ease;
+}
+.net-box.is-updated{
+  animation:netPop .65s var(--ease-spring);
+}
+.detail-row{
+  transition:background .16s ease,padding-left .16s ease;
+}
+.detail-row:hover{
+  padding-left:7px;
+}
+.total-box{
+  transition:transform .18s var(--ease-spring),box-shadow .18s ease;
+}
+.total-box:hover{
+  transform:translateY(-1px);
+  box-shadow:0 6px 15px rgba(15,23,42,.06);
+}
+.result-reveal{
+  animation:resultReveal .55s var(--ease-out) both;
+}
+.result-reveal.delay{
+  animation-delay:.09s;
+}
+.print-hint{
+  position:absolute;
+  right:0;
+  top:calc(100% + 8px);
+  z-index:50;
+  padding:6px 9px;
+  border-radius:8px;
+  background:#111827;
+  color:#fff;
+  font-size:10px;
+  font-weight:650;
+  white-space:nowrap;
+  opacity:0;
+  pointer-events:none;
+  transform:translateY(-3px);
+  transition:opacity .15s ease,transform .15s ease;
+}
+#printBtn:hover .print-hint,
+#printBtn:focus-visible .print-hint{
+  opacity:1;
+  transform:translateY(0);
+}
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(14px)}
+  to{opacity:1;transform:translateY(0)}
+}
+@keyframes badgeIn{
+  from{opacity:0;transform:translateY(5px) scale(.96)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+@keyframes shine{
+  0%,78%{transform:translateX(0);opacity:0}
+  83%{opacity:1}
+  90%,100%{transform:translateX(760px);opacity:0}
+}
+@keyframes buttonGlow{
+  0%,100%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+}
+@keyframes ripple{to{transform:scale(18);opacity:0}}
+@keyframes pulseDot{
+  0%,100%{transform:scale(1)}
+  50%{transform:scale(1.2)}
+}
+@keyframes shake{
+  20%{transform:translateX(-5px)}
+  40%{transform:translateX(5px)}
+  60%{transform:translateX(-3px)}
+  80%{transform:translateX(3px)}
+}
+@keyframes resultReveal{
+  from{opacity:0;transform:translateY(18px) scale(.985)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+@keyframes netPop{
+  0%{transform:scale(1)}
+  35%{transform:scale(1.018)}
+  100%{transform:scale(1)}
+}
+@media(max-width:560px){
+  .page-intro{box-shadow:0 14px 38px rgba(15,23,42,.08)}
+  .summary-subline{flex-wrap:wrap}
+  .calc-time{border-left:0;padding-left:0}
+  .empty-steps{gap:5px}
+  .empty-steps span{font-size:9px;padding:5px 7px}
+  .selection-status{font-size:10px}
+}
+@media(prefers-reduced-motion:reduce){
+  body:before,.page-intro,.grid-main > div:first-child .form-card,
+  .grid-main > div:first-child .info-card,#emptyState,
+  .page-intro .status-badge,.btn-primary,.app-icon,.net-box.is-updated,
+  .selection-status.ready .selection-status-dot,.result-reveal,
+  .lead:after{animation:none!important}
+  .card,.btn,.summary-grid .summary-box,.net-box{transition:none!important}
+}
+
+
+/* ===== Print / PDF export dialog v17 ===== */
+.export-modal-backdrop{
+  position:fixed;inset:0;z-index:9999;
+  display:none;align-items:center;justify-content:center;
+  padding:20px;
+  background:rgba(15,23,42,.48);
+  backdrop-filter:blur(7px);
+}
+.export-modal-backdrop.open{
+  display:flex;
+  animation:exportFadeIn .18s ease both;
+}
+.export-modal{
+  position:relative;
+  width:min(430px,100%);
+  padding:25px;
+  border:1px solid var(--border);
+  border-radius:22px;
+  background:var(--card);
+  box-shadow:0 30px 80px rgba(15,23,42,.25);
+  animation:exportModalIn .3s var(--ease-spring) both;
+}
+.export-close{
+  position:absolute;right:13px;top:12px;
+  width:34px;height:34px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--background);
+  color:var(--muted-foreground);
+  font-size:22px;line-height:1;
+  cursor:pointer;
+}
+.export-icon{
+  width:48px;height:48px;
+  display:grid;place-items:center;
+  margin-bottom:14px;
+  border-radius:14px;
+  background:var(--green-soft);
+  color:var(--green);
+  font-weight:900;
+}
+.export-modal h2{margin:0 0 6px;font-size:20px}
+.export-modal>p{margin:0 0 18px;color:var(--muted-foreground);font-size:12px;line-height:1.55}
+.export-options{display:grid;gap:9px}
+.export-option{
+  display:flex;align-items:center;gap:12px;
+  width:100%;padding:12px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background:var(--background);
+  color:var(--foreground);
+  text-align:left;
+  cursor:pointer;
+  transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;
+}
+.export-option:hover{
+  transform:translateY(-2px);
+  border-color:color-mix(in oklch,var(--primary) 35%,var(--border));
+  box-shadow:0 8px 20px rgba(15,23,42,.07);
+}
+.export-option.primary{
+  border-color:color-mix(in oklch,var(--primary) 25%,var(--border));
+  background:color-mix(in oklch,var(--green-soft) 55%,var(--card));
+}
+.export-option-icon{
+  flex:0 0 42px;width:42px;height:42px;
+  display:grid;place-items:center;
+  border-radius:11px;
+  background:var(--accent);
+  color:var(--accent-foreground);
+  font-size:11px;font-weight:900;
+}
+.export-option strong{display:block;font-size:12px;margin-bottom:2px}
+.export-option small{display:block;color:var(--muted-foreground);font-size:10px;line-height:1.35}
+.export-tip{
+  margin-top:14px;padding:9px 10px;
+  border-radius:10px;
+  background:var(--muted);
+  color:var(--muted-foreground);
+  font-size:9.5px;line-height:1.45;
+}
+@keyframes exportFadeIn{from{opacity:0}to{opacity:1}}
+@keyframes exportModalIn{from{opacity:0;transform:translateY(12px) scale(.97)}to{opacity:1;transform:none}}
+@media(max-width:480px){
+  .export-modal{padding:21px;border-radius:18px}
+}
+@media print{
+  .export-modal-backdrop{display:none!important}
+}
+
+
+/* Mobile-native PDF export status */
+.export-progress{
+  position:fixed;left:50%;bottom:24px;z-index:10001;
+  transform:translate(-50%,12px);
+  display:flex;align-items:center;gap:9px;
+  max-width:calc(100vw - 30px);
+  padding:10px 13px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  background:var(--card);
+  color:var(--foreground);
+  box-shadow:0 14px 35px rgba(15,23,42,.18);
+  font-size:11px;font-weight:750;
+  opacity:0;pointer-events:none;
+  transition:opacity .2s ease,transform .2s ease;
+}
+.export-progress.show{
+  opacity:1;transform:translate(-50%,0);
+}
+.export-progress-dot{
+  width:9px;height:9px;border-radius:50%;
+  background:var(--green);
+  box-shadow:0 0 0 4px color-mix(in oklch,var(--green) 11%,transparent);
+  animation:pulseDot 1.2s ease-in-out infinite;
+}
+
 </style>
+
+<style>
+/* Pay Matrix table display: hidden, while its data and calculator logic remain intact. */
+#matrixCard { display: none !important; }
+</style>
+
+
+<style>
+/* Enhanced print control */
+#printBtn{
+  position:relative;
+  transition:transform .18s ease, box-shadow .18s ease, background .18s ease;
+}
+#printBtn:hover{
+  transform:translateY(-1px);
+  box-shadow:0 7px 18px rgba(15,23,42,.10);
+}
+#printBtn:active{transform:translateY(0)}
+#printBtn:focus-visible{
+  outline:none;
+  box-shadow:0 0 0 4px color-mix(in oklch,var(--ring) 16%, transparent);
+}
+.print-hint{
+  position:absolute;
+  right:0;
+  top:calc(100% + 8px);
+  z-index:20;
+  padding:6px 9px;
+  border-radius:8px;
+  background:#111827;
+  color:#fff;
+  font-size:10px;
+  font-weight:650;
+  white-space:nowrap;
+  opacity:0;
+  pointer-events:none;
+  transform:translateY(-3px);
+  transition:opacity .15s ease, transform .15s ease;
+}
+#printBtn:hover .print-hint,
+#printBtn:focus-visible .print-hint{
+  opacity:1;
+  transform:translateY(0);
+}
+@media print{
+  #printBtn{display:none!important}
+}
+</style>
+
 </head>
 <body>
-  <header class="app-header">
-    <div class="header-inner">
-      <div class="app-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v20M2 12h20"/></svg>
-      </div>
-      <div class="header-title">
-        <h1>Sikkim Government Salary Calculator</h1>
-        <p>Pay matrix reference and monthly net salary estimate</p>
-      </div>
-      <div class="header-actions">
-        <button class="icon-btn" id="themeToggle" type="button" aria-label="Toggle color theme">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79Z"/></svg>
-        </button>
+
+<div class="export-modal-backdrop" id="exportModal" aria-hidden="true">
+  <div class="export-modal" role="dialog" aria-modal="true" aria-labelledby="exportTitle">
+    <button class="export-close" id="exportClose" type="button" aria-label="Close">×</button>
+    <div class="export-icon">↗</div>
+    <h2 id="exportTitle">Export Salary Statement</h2>
+    <p>Choose how you want to save or share the current salary calculation.</p>
+    <div class="export-options">
+      <button class="export-option primary" id="exportPdfBtn" type="button">
+        <span class="export-option-icon">PDF</span>
+        <span><strong>Save as PDF</strong><small>Open the print dialog and choose “Save as PDF”.</small></span>
+      </button>
+      <button class="export-option" id="exportPrintBtn" type="button">
+        <span class="export-option-icon">🖨</span>
+        <span><strong>Print</strong><small>Send the salary statement to a printer.</small></span>
+      </button>
+      <button class="export-option" id="sharePdfBtn" type="button">
+        <span class="export-option-icon">↗</span>
+        <span><strong>Share PDF</strong><small>Share the PDF using your phone's share menu.</small></span>
+      </button>
+    </div>
+    <div class="export-tip">On mobile, <b>Save as PDF</b> creates a PDF directly on your device. <b>Share PDF</b> opens the phone's sharing options when supported.</div>
+  </div>
+</div>
+
+<div class="print-report-header">
+  <div><strong>Sikkim Govt Employee Salary Calculator</strong><br><small>Salary Calculation Statement</small></div>
+  <div class="print-meta"><strong>Generated:</strong> <span id="printDate">—</span></div>
+</div>
+<div class="export-progress" id="exportProgress" role="status" aria-live="polite">
+  <span class="export-progress-dot"></span>
+  <span id="exportProgressText">Preparing PDF…</span>
+</div>
+
+<header class="app-header">
+  <div class="header-inner">
+    <div class="app-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="4" y="3" width="14" height="17" rx="2"></rect><path d="M8 7h6M8 11h6M8 15h3"></path><path d="M17 8h2a1 1 0 0 1 1 1v8a2 2 0 0 1-2 2h-5"></path>
+      </svg>
+    </div>
+    <div class="header-title">
+      <h1>Sikkim Govt Employee Salary Calculator</h1>
+      <p>Made for Sikkim Government employees • Office reference</p>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" id="themeToggle" type="button" aria-label="Toggle dark mode" title="Toggle theme">
+        <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3v2M12 19v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M3 12h2M19 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path>
+          <circle cx="12" cy="12" r="4"></circle>
+        </svg>
+      </button>
+      <button class="icon-btn" id="printBtn" type="button" aria-label="Print calculation" title="Print">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+          <path d="M6 14h12v7H6z"></path>
+        </svg>
+        <span class="print-hint">Print salary statement</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+  <div class="page-intro">
+    <div>
+      <div class="kicker">Sikkim Government • Pay &amp; Allowances</div>
+      <h2>Calculate your monthly salary</h2>
+      <p>Choose the Pay Matrix level, basic-pay cell and current DA rate. The calculator will show gross salary, deductions and estimated in-hand pay.</p>
+      <div class="hero-chips" aria-label="Calculator highlights">
+        <span>23 Pay Levels</span>
+        <span>40 Cells per level</span>
+        <span>Mobile friendly</span>
       </div>
     </div>
-  </header>
+    <div class="status-badge"><span class="status-dot"></span> Reference calculator</div>
+  </div>
 
-  <main class="page">
-    <section class="page-intro">
+  <div class="grid-main">
+    <div>
+  <section class="card form-card">
+    <p class="lead">Calculate your monthly salary based on<br>Government of Sikkim Pay Matrix</p>
+
+    <div class="field">
+      <label for="level">Pay Level</label>
+      <div class="select-wrap">
+        <select id="level" aria-label="Pay Level"><option value="" selected disabled>Select Pay Level</option></select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="basic">Basic Pay</label>
+      <div class="select-wrap">
+        <select id="basic" aria-label="Basic Pay"><option value="" selected disabled>Select Basic Pay</option></select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="daSelect">Dearness Allowance (DA) % <span class="hint">Select a rate</span></label>
+      <div class="da-box">
+        <div class="select-wrap">
+          <select id="daSelect" aria-label="Dearness Allowance percentage">
+            <option value="42">42.0%</option>
+            <option value="45">45.0%</option>
+            <option value="50">50.0%</option>
+            <option value="53">53.0%</option>
+            <option value="55">55.0%</option>
+            <option value="58" selected>58.0%</option>
+            <option value="60">60.0%</option>
+            <option value="65">65.0%</option>
+            <option value="70">70.0%</option>
+            <option value="custom">Custom rate…</option>
+          </select>
+        </div>
+        <div class="da-custom hidden" id="daCustomWrap">
+          <label for="da" class="custom-label">Custom DA rate</label>
+          <div class="custom-input-wrap">
+            <input id="da" type="number" min="0" max="100" step="0.5" value="58" inputmode="decimal" aria-label="Custom Dearness Allowance percentage">
+            <span>%</span>
+          </div>
+        </div>
+        <p class="da-help">Choose a rate from the list. Select <strong>Custom rate</strong> when another rate applies.</p>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="calculate" type="button" disabled aria-disabled="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"></rect><path d="M8 9h8M8 13h5M8 17h4"></path></svg>
+        Calculate Salary
+      </button>
+      <button class="btn btn-secondary" id="reset" type="button">Reset</button>
+    </div>
+    <div class="selection-status" id="selectionStatus" aria-live="polite">
+      <span class="selection-status-dot"></span>
+      <span id="selectionStatusText">Step 1 of 2 · Select a Pay Level</span>
+    </div>
+    <p class="form-note" id="formNote">Your selections stay on this device only while this page is open.</p>
+  </section>
+
+  <section class="card info-card">
+    <h2 class="card-heading">
+      <span class="heading-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 10v6M12 7.3v.2"></path></svg></span>
+      Calculation Formula
+    </h2>
+    <p class="formula-intro">Components calculated as per Govt. of Sikkim Pay Matrix Table:</p>
+    <ul class="formula-list">
+      <li>DA: Selected % of Basic Pay</li>
+      <li>HRA: Max(₹3,500, 12% of Basic Pay)</li>
+      <li>SBCA: 8% of Basic Pay</li>
+      <li>TA: ₹500 (L1-14) / ₹1,000 (L15-18)</li>
+      <li>CPF: 10% of (Basic Pay + DA)</li>
+      <li>Stamp Fee: ₹5.00</li>
+      <li>Professional Tax: ₹150 (Levels 1–14) / ₹200 (Level 15 and above)</li>
+    </ul>
+  </section>
+  </div>
+
+  <div class="results-stack">
+
+  <section class="card placeholder" id="emptyState">
+    <div class="placeholder-icon">
+      <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3">
+        <rect x="16" y="12" width="32" height="40" rx="4"></rect><path d="M24 37V29M32 37V23M40 37v-9"></path><path d="M21 44h22"></path>
+      </svg>
+    </div>
+    <div class="empty-eyebrow">READY WHEN YOU ARE</div>
+    <h2>No Calculation Yet</h2>
+    <p>Choose your Pay Level, select the Basic Pay cell, then calculate to see the full salary statement.</p>
+    <div class="empty-steps" aria-label="Calculation steps">
+      <span><b>1</b> Pay Level</span>
+      <span><b>2</b> Basic Pay</span>
+      <span><b>3</b> Calculate</span>
+    </div>
+  </section>
+
+  <section class="card summary-card hidden" id="summary" aria-live="polite" aria-atomic="true">
+    <div class="summary-head">
+      <div class="section-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="4" width="14" height="15" rx="2"></rect><path d="M9 8h6M9 12h6M9 16h3"></path></svg>
+      </div>
       <div>
-        <span class="kicker">Official reference tool</span>
-        <h2>Salary calculator</h2>
-        <p>Estimate the monthly take-home pay for Sikkim Government employees using the current pay matrix and deduction assumptions.</p>
-        <div class="hero-chips">
-          <span>Pay Matrix</span>
-          <span>DA & HRA</span>
-          <span>Gross / Net</span>
+        <h2 class="section-title">Salary Summary</h2>
+        <div class="summary-subline">
+          <span id="calculatedMeta">Select your salary details to begin</span>
+          <span class="calc-time" id="calcTime">—</span>
         </div>
       </div>
-      <div class="status-badge"><span class="status-dot"></span>Calculator Ready</div>
-    </section>
+    </div>
 
-    <div class="grid-main">
-      <div>
-        <aside class="card form-card">
-          <h3 class="card-heading">
-            <span class="heading-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v15H6.5A2.5 2.5 0 0 0 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/><path d="M8 6h9M8 10h9M8 14h7"/></svg>
-            </span>
-            Salary Inputs
-          </h3>
-
-          <p class="lead">Choose the employee grade and input the salary components to calculate estimated deductions and take-home pay.</p>
-
-          <div class="field">
-            <label for="payLevel">
-              <span>Pay Level</span>
-              <span class="hint">Matrix level</span>
-            </label>
-            <div class="select-wrap">
-              <select id="payLevel">
-                <option value="1">Level 1</option>
-                <option value="2">Level 2</option>
-                <option value="3">Level 3</option>
-                <option value="4">Level 4</option>
-                <option value="5">Level 5</option>
-                <option value="6">Level 6</option>
-                <option value="7">Level 7</option>
-                <option value="8">Level 8</option>
-                <option value="9">Level 9</option>
-                <option value="10">Level 10</option>
-                <option value="11">Level 11</option>
-                <option value="12">Level 12</option>
-                <option value="13">Level 13</option>
-                <option value="14">Level 14</option>
-                <option value="15">Level 15</option>
-                <option value="16">Level 16</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="field">
-            <label for="payBand">
-              <span>Pay Band</span>
-              <span class="hint">Basic scale</span>
-            </label>
-            <div class="select-wrap">
-              <select id="payBand">
-                <option value="18000">₹18,000</option>
-                <option value="19900">₹19,900</option>
-                <option value="21700">₹21,700</option>
-                <option value="23600">₹23,600</option>
-                <option value="25500">₹25,500</option>
-                <option value="27500">₹27,500</option>
-                <option value="29800">₹29,800</option>
-                <option value="32100">₹32,100</option>
-                <option value="35400">₹35,400</option>
-                <option value="39100">₹39,100</option>
-                <option value="43200">₹43,200</option>
-                <option value="47600">₹47,600</option>
-                <option value="52300">₹52,300</option>
-                <option value="57300">₹57,300</option>
-                <option value="62800">₹62,800</option>
-                <option value="68900">₹68,900</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="field">
-            <label for="daRate">
-              <span>Dearness Allowance</span>
-              <span class="hint">DA %</span>
-            </label>
-            <div class="da-box">
-              <div class="select-wrap">
-                <select id="daRate">
-                  <option value="0">0%</option>
-                  <option value="10">10%</option>
-                  <option value="15">15%</option>
-                  <option value="20">20%</option>
-                  <option value="25">25%</option>
-                  <option value="30" selected>30%</option>
-                  <option value="35">35%</option>
-                  <option value="40">40%</option>
-                  <option value="45">45%</option>
-                  <option value="50">50%</option>
-                </select>
-              </div>
-              <div class="da-custom">
-                <label class="custom-label" for="customDaPercentage">Custom DA %</label>
-                <div class="custom-input-wrap">
-                  <input id="customDaPercentage" type="number" min="0" max="100" step="1" value="30">
-                  <span>%</span>
-                </div>
-              </div>
-              <p class="da-help">Use the custom value for a custom DA percentage.</p>
-            </div>
-          </div>
-
-          <div class="field">
-            <label for="hraRate">
-              <span>HRA</span>
-              <span class="hint">% of basic</span>
-            </label>
-            <div class="select-wrap">
-              <select id="hraRate">
-                <option value="8">8%</option>
-                <option value="10">10%</option>
-                <option value="12">12%</option>
-                <option value="15" selected>15%</option>
-                <option value="18">18%</option>
-                <option value="20">20%</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="actions">
-            <button id="calculateBtn" class="btn btn-primary" type="button">Calculate Salary</button>
-            <button id="resetBtn" class="btn btn-secondary" type="button">Reset</button>
-          </div>
-
-          <div class="form-note">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v6"/><path d="M12 16v6"/><path d="M2 12h6"/><path d="M16 12h6"/><circle cx="12" cy="12" r="8"/></svg>
-            Estimated values are for reference and do not replace official government payroll rules.
-          </div>
-        </aside>
-
-        <aside class="card info-card">
-          <h3 class="card-heading">
-            <span class="heading-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7H14.5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            </span>
-            Formula reference
-          </h3>
-          <p class="formula-intro">Quick estimate formula:</p>
-          <ul class="formula-list">
-            <li>Gross Salary = Basic + DA + HRA + Other Allowances</li>
-            <li>Estimated Deductions = PF + Professional Tax + Other statutory deduction</li>
-            <li>Net Salary = Gross Salary - Estimated Deductions</li>
-          </ul>
-        </aside>
+    <div class="summary-grid">
+      <div class="summary-box">
+        <div class="summary-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m4 16 6-6 4 3 6-7"></path><path d="M15 6h5v5"></path></svg>
+          Gross Salary
+        </div>
+        <div class="summary-value" id="sumGross">₹0</div>
       </div>
-
-      <div class="results-stack">
-        <section id="emptyState" class="card placeholder">
-          <div>
-            <div class="empty-eyebrow">Ready to compute</div>
-            <div class="placeholder-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18v12H3z"/><path d="M3 10h18"/><path d="M7 15h4"/><path d="M15 15h2"/></svg>
-            </div>
-            <h2>Choose a salary profile</h2>
-            <p>Set your pay band and allowance assumptions to generate a monthly gross and net salary overview.</p>
-            <div class="empty-steps">
-              <span><b>1</b> Select level</span>
-              <span><b>2</b> Set DA & HRA</span>
-              <span><b>3</b> Review report</span>
-            </div>
-          </div>
-        </section>
-
-        <section id="summaryCard" class="card summary-card hidden">
-          <div class="summary-head">
-            <span class="section-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18"/><path d="M12 3v18"/></svg></span>
-            <h3 class="summary-title">Salary summary</h3>
-          </div>
-
-          <div class="summary-grid">
-            <div class="summary-box">
-              <div class="summary-label">Gross Salary</div>
-              <div id="grossValue" class="summary-value">₹0</div>
-            </div>
-            <div class="summary-box ded">
-              <div class="summary-label">Total Deductions</div>
-              <div id="deductionValue" class="summary-value">₹0</div>
-            </div>
-          </div>
-
-          <div class="net-box">
-            <div class="net-label">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7H14.5a3.5 3.5 0 0 1 0 7H6"/></svg>
-              Estimated Net Pay
-            </div>
-            <div id="netValue" class="net-value">₹0</div>
-          </div>
-        </section>
-
-        <section id="breakdownCard" class="card breakdown-card hidden">
-          <div class="breakdown-head">
-            <span class="section-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18h16"/><path d="M7 14l3-3 3 2 5-7"/></svg></span>
-            <h3 class="section-title">Breakdown</h3>
-          </div>
-
-          <div class="category green"><span class="category-bullet">+</span> Earnings</div>
-          <div class="detail-panel">
-            <div class="detail-row"><span class="name">Basic Pay</span><strong id="basicPay">₹0</strong></div>
-            <div class="detail-row"><span class="name">Dearness Allowance</span><strong id="daValue">₹0</strong></div>
-            <div class="detail-row"><span class="name">HRA</span><strong id="hraValue">₹0</strong></div>
-            <div class="detail-row"><span class="name">Other Allowances</span><strong id="otherAllowance">₹0</strong></div>
-          </div>
-
-          <div class="total-box gross"><span>Gross Total</span><strong id="grossTotal">₹0</strong></div>
-
-          <div class="category red"><span class="category-bullet">−</span> Deductions</div>
-          <div class="detail-panel">
-            <div class="detail-row"><span class="name">Provident Fund</span><strong id="pfValue">₹0</strong></div>
-            <div class="detail-row"><span class="name">Professional Tax</span><strong id="ptValue">₹0</strong></div>
-            <div class="detail-row"><span class="name">Other Deductions</span><strong id="otherDeduction">₹0</strong></div>
-          </div>
-
-          <div class="total-box deductions"><span>Total Deductions</span><strong id="deductionTotal">₹0</strong></div>
-
-          <div class="net-box">
-            <div class="net-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7H14.5a3.5 3.5 0 0 1 0 7H6"/></svg> Net Salary</div>
-            <div id="netDetailValue" class="net-value">₹0</div>
-          </div>
-        </section>
-
-        <section class="card matrix-card">
-          <button class="matrix-toggle" type="button" aria-expanded="false">
-            <div>
-              <h2>Pay matrix reference</h2>
-              <small>Current band and level mapping</small>
-            </div>
-            <span class="arrow" aria-hidden="true">▾</span>
-          </button>
-          <div class="matrix-body">
-            <div class="matrix-grid">
-              <div class="mcell mhead">Level</div>
-              <div class="mcell mhead">Basic</div>
-              <div class="mcell mhead">DA</div>
-              <div class="mcell mhead">HRA</div>
-              <div class="mcell mhead">Gross</div>
-              <div class="mcell">1</div>
-              <div class="mcell">₹18,000</div>
-              <div class="mcell">₹5,400</div>
-              <div class="mcell">₹1,800</div>
-              <div class="mcell">₹25,200</div>
-              <div class="mcell">2</div>
-              <div class="mcell">₹19,900</div>
-              <div class="mcell">₹5,970</div>
-              <div class="mcell">₹1,990</div>
-              <div class="mcell">₹27,860</div>
-              <div class="mcell">3</div>
-              <div class="mcell">₹21,700</div>
-              <div class="mcell">₹6,510</div>
-              <div class="mcell">₹2,170</div>
-              <div class="mcell">₹30,380</div>
-              <div class="mcell">4</div>
-              <div class="mcell">₹23,600</div>
-              <div class="mcell">₹7,080</div>
-              <div class="mcell">₹2,360</div>
-              <div class="mcell">₹33,040</div>
-              <div class="mcell">5</div>
-              <div class="mcell">₹25,500</div>
-              <div class="mcell">₹7,650</div>
-              <div class="mcell">₹2,550</div>
-              <div class="mcell">₹35,700</div>
-              <div class="mcell">6</div>
-              <div class="mcell">₹27,500</div>
-              <div class="mcell">₹8,250</div>
-              <div class="mcell">₹2,750</div>
-              <div class="mcell">₹38,500</div>
-              <div class="mcell">7</div>
-              <div class="mcell">₹29,800</div>
-              <div class="mcell">₹8,940</div>
-              <div class="mcell">₹2,980</div>
-              <div class="mcell">₹41,720</div>
-              <div class="mcell">8</div>
-              <div class="mcell">₹32,100</div>
-              <div class="mcell">₹9,630</div>
-              <div class="mcell">₹3,210</div>
-              <div class="mcell">₹44,940</div>
-              <div class="mcell">9</div>
-              <div class="mcell">₹35,400</div>
-              <div class="mcell">₹10,620</div>
-              <div class="mcell">₹3,540</div>
-              <div class="mcell">₹49,560</div>
-              <div class="mcell">10</div>
-              <div class="mcell">₹39,100</div>
-              <div class="mcell">₹11,730</div>
-              <div class="mcell">₹3,910</div>
-              <div class="mcell">₹54,740</div>
-              <div class="mcell">11</div>
-              <div class="mcell">₹43,200</div>
-              <div class="mcell">₹12,960</div>
-              <div class="mcell">₹4,320</div>
-              <div class="mcell">₹60,480</div>
-              <div class="mcell">12</div>
-              <div class="mcell">₹47,600</div>
-              <div class="mcell">₹14,280</div>
-              <div class="mcell">₹4,760</div>
-              <div class="mcell">₹66,640</div>
-              <div class="mcell">13</div>
-              <div class="mcell">₹52,300</div>
-              <div class="mcell">₹15,690</div>
-              <div class="mcell">₹5,230</div>
-              <div class="mcell">₹73,220</div>
-              <div class="mcell">14</div>
-              <div class="mcell">₹57,300</div>
-              <div class="mcell">₹17,190</div>
-              <div class="mcell">₹5,730</div>
-              <div class="mcell">₹80,220</div>
-              <div class="mcell">15</div>
-              <div class="mcell">₹62,800</div>
-              <div class="mcell">₹18,840</div>
-              <div class="mcell">₹6,280</div>
-              <div class="mcell">₹87,920</div>
-              <div class="mcell">16</div>
-              <div class="mcell">₹68,900</div>
-              <div class="mcell">₹20,670</div>
-              <div class="mcell">₹6,890</div>
-              <div class="mcell">₹96,460</div>
-            </div>
-            <p class="matrix-note">This reference matrix is a simplified estimate for budget planning and does not replace official government payroll structures.</p>
-          </div>
-        </section>
+      <div class="summary-box ded">
+        <div class="summary-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m5 8 6 6 4-3 4 4"></path><path d="M14 15h5v-5"></path></svg>
+          Total Deductions
+        </div>
+        <div class="summary-value" id="sumDed">₹0</div>
       </div>
     </div>
-  </main>
 
-  <script>
-    const payLevel = document.getElementById('payLevel');
-    const payBand = document.getElementById('payBand');
-    const daRate = document.getElementById('daRate');
-    const customDaPercentage = document.getElementById('customDaPercentage');
-    const hraRate = document.getElementById('hraRate');
-    const calculateBtn = document.getElementById('calculateBtn');
-    const resetBtn = document.getElementById('resetBtn');
+    <div class="net-box">
+      <div class="net-label">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="5" width="16" height="14" rx="2"></rect><path d="M7 9h10M8 14h3"></path></svg>
+        Monthly In-Hand Salary
+      </div>
+      <div class="net-value" id="sumNet">₹0</div>
+    </div>
+  </section>
 
-    const emptyState = document.getElementById('emptyState');
-    const summaryCard = document.getElementById('summaryCard');
-    const breakdownCard = document.getElementById('breakdownCard');
+  <section class="card breakdown-card hidden" id="breakdown">
+    <div class="breakdown-head">
+      <div class="section-icon blue">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="3" width="14" height="18" rx="2"></rect><path d="M8 7h8M8 11h8M8 15h8M8 18h5"></path></svg>
+      </div>
+      <h2 class="section-title">Detailed Breakdown</h2>
+    </div>
 
-    const grossValue = document.getElementById('grossValue');
-    const deductionValue = document.getElementById('deductionValue');
-    const netValue = document.getElementById('netValue');
+    <h3 class="category green"><span class="category-bullet">+</span>Earnings</h3>
+    <div class="detail-panel">
+       <div id="ptNote" style="font-size:12px;color:#64748b;margin:-2px 0 10px">Professional Tax is ₹150 for Levels 1–14 and ₹200 for Level 15 and above.</div>
+      <div class="detail-row"><span class="name">Basic Pay</span><strong id="basicOut">₹0</strong></div>
+      <div class="detail-row"><span class="name" id="daLabel">Dearness Allowance (58.0%)</span><strong id="daOut">₹0</strong></div>
+      <div class="detail-row"><span class="name">House Rent Allowance</span><strong id="hraOut">₹0</strong></div>
+      <div class="detail-row"><span class="name">SBCA (8% of Basic)</span><strong id="sbcaOut">₹0</strong></div>
+      <div class="detail-row"><span class="name" id="taLabel">Transport Allowance</span><strong id="taOut">₹0</strong></div>
+    </div>
+    <div class="total-box gross"><span>Total Gross Salary</span><span id="grossOut">₹0</span></div>
 
-    const basicPay = document.getElementById('basicPay');
-    const daValue = document.getElementById('daValue');
-    const hraValue = document.getElementById('hraValue');
-    const otherAllowance = document.getElementById('otherAllowance');
-    const grossTotal = document.getElementById('grossTotal');
-    const pfValue = document.getElementById('pfValue');
-    const ptValue = document.getElementById('ptValue');
-    const otherDeduction = document.getElementById('otherDeduction');
-    const deductionTotal = document.getElementById('deductionTotal');
-    const netDetailValue = document.getElementById('netDetailValue');
+    <h3 class="category red" style="margin-top:26px"><span class="category-bullet">−</span>Deductions</h3>
+    <div class="detail-panel">
+      <div class="detail-row"><span class="name">CPF (10% of Basic + DA)</span><strong id="cpfOut">₹0</strong></div>
+      <div class="detail-row"><span class="name">Stamp Fee</span><strong id="stampOut">₹5</strong></div>
+       <div class="detail-row"><span class="name">Professional Tax</span><strong id="ptOut">₹150</strong></div>
+<div class="detail-row"><span>GIS Deduction</span><strong id="gisOut">₹10</strong></div>
+    </div>
+    <div class="total-box deductions"><span>Total Deductions</span><span id="dedOut">₹0</span></div>
 
-    const currency = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
+    <div class="net-box" style="margin-top:24px">
+      <div class="net-label">Net In-Hand Salary</div>
+      <div class="net-value" id="netOut">₹0</div>
+    </div>
+  </section>
 
-    function formatMoney(value) {
-      return currency.format(value || 0);
+  <section class="card matrix-card" id="matrixCard">
+    <button class="matrix-toggle" id="matrixToggle" type="button" aria-expanded="false">
+      <div>
+        <h2>Pay Matrix <span class="matrix-level-chip" id="matrixLevel">Select level</span></h2>
+        <small>View the cells for the selected level</small>
+      </div>
+      <span class="arrow" id="matrixArrow">＋</span>
+    </button>
+    <div class="matrix-body" id="matrixBody">
+      <div class="matrix-grid" id="matrixGrid"></div>
+      <p class="matrix-note">The selected basic-pay cell is highlighted. Values are shown for reference.</p>
+    </div>
+  </section>
+
+  <p class="disclaimer">This app provides salary estimates for informational purposes only and is not an official government calculator.</p>
+  <p class="source-note">Pay Matrix basis: Sikkim Government Services (Revised Pay) Rules, 2018 and published Government of Sikkim pay information. Allowance rates shown here are configurable/reference values and should be verified against the applicable notification for the pay period.</p>
+  </div>
+  </div>
+</main>
+
+<script>
+const starts = {"1": 15200, "2": 16200, "3": 19300, "4": 18000, "5": 19400, "6": 20300, "7": 21700, "8": 22800, "9": 25400, "10": 30200, "11": 33700, "12": 37100, "13": 37600, "14": 39100, "15": 46300, "16": 49700, "17": 56000, "18": 65000, "19": 71100, "20": 83700, "21": 105400, "22": 120500, "23": 124700};
+const matrix = {"1":[15200,15700,16200,16700,17200,17700,18200,18700,19300,19900,20500,21100,21700,22400,23100,23800,24500,25200,26000,26800,27600,28400,29300,30200,31100,32000,33000,34000,35000,36000,37100,38200,39300,40500,41700,43000,44300,45600,47000,48400],"2":[16200,16700,17200,17700,18200,18700,19300,19900,20500,21100,21700,22400,23100,23800,24500,25200,26000,26800,27600,28400,29300,30200,31100,32000,33000,34000,35000,36000,37100,38200,39300,40500,41700,43000,44300,45600,47000,48400,49900,51400],"3":[19300,19900,20500,21100,21700,22400,23100,23800,24500,25200,26000,26800,27600,28400,29300,30200,31100,32000,33000,34000,35000,36000,37100,38200,39300,40500,41700,43000,44300,45600,47000,48400,49900,51400,52900,54500,56100,57800,59500,61300],"4":[18000,18500,19100,19700,20300,20900,21500,22100,22800,23500,24200,24900,25600,26400,27200,28000,28800,29700,30600,31500,32400,33400,34400,35400,36500,37600,38700,39900,41100,42300,43600,44900,46200,47600,49000,50500,52000,53600,55200,56900],"5":[19400,20000,20600,21200,21800,22500,23200,23900,24600,25300,26100,26900,27700,28500,29400,30300,31200,32100,33100,34100,35100,36200,37300,38400,39600,40800,42000,43300,44600,45900,47300,48700,50200,51700,53300,54900,56500,58200,59900,61700],"6":[20300,20900,21500,22100,22800,23500,24200,24900,25600,26400,27200,28000,28800,29700,30600,31500,32400,33400,34400,35400,36500,37600,38700,39900,41100,42300,43600,44900,46200,47600,49000,50500,52000,53600,55200,56900,58600,60400,62200,64100],"7":[21700,22400,23100,23800,24500,25200,26000,26800,27600,28400,29300,30200,31100,32000,33000,34000,35000,36000,37100,38200,39300,40500,41700,43000,44300,45600,47000,48400,49900,51400,52900,54500,56100,57800,59500,61300,63100,65000,67000,69000],"8":[22800,23500,24200,24900,25600,26400,27200,28000,28800,29700,30600,31500,32400,33400,34400,35400,36500,37600,38700,39900,41100,42300,43600,44900,46200,47600,49000,50500,52000,53600,55200,56900,58600,60400,62200,64100,66000,68000,70000,72100],"9":[25400,26200,27000,27800,28600,29500,30400,31300,32200,33200,34200,35200,36300,37400,38500,39700,40900,42100,43400,44700,46000,47400,48800,50300,51800,53400,55000,56600,58300,60000,61800,63700,65600,67600,69600,71700,73900,76100,78400,80800],"10":[30200,31100,32000,33000,34000,35000,36000,37100,38200,39300,40500,41700,43000,44300,45600,47000,48400,49900,51400,52900,54500,56100,57800,59500,61300,63100,65000,67000,69000,71100,73200,75400,77700,80000,82400,84900,87400,90000,92700,95500],"11":[33700,34700,35700,36800,37900,39000,40200,41400,42600,43900,45200,46600,48000,49400,50900,52400,54000,55600,57300,59000,60800,62600,64500,66400,68400,70500,72600,74800,77000,79300,81700,84200,86700,89300,92000,94800,97600,100500,103500,106600],"12":[37100,38200,39300,40500,41700,43000,44300,45600,47000,48400,49900,51400,52900,54500,56100,57800,59500,61300,63100,65000,67000,69000,71100,73200,75400,77700,80000,82400,84900,87400,90000,92700,95500,98400,101400,104400,107500,110700,114000,117400],"13":[37600,38700,39900,41100,42300,43600,44900,46200,47600,49000,50500,52000,53600,55200,56900,58600,60400,62200,64100,66000,68000,70000,72100,74300,76500,78800,81200,83600,86100,88700,91400,94100,96900,99800,102800,105900,109100,112400,115800,119300],"14":[39100,40300,41500,42700,44000,45300,46700,48100,49500,51000,52500,54100,55700,57400,59100,60900,62700,64600,66500,68500,70600,72700,74900,77100,79400,81800,84300,86800,89400,92100,94900,97700,100600,103600,106700,109900,113200,116600,120100,123700],"15":[46300,47700,49100,50600,52100,53700,55300,57000,58700,60500,62300,64200,66100,68100,70100,72200,74400,76600,78900,81300,83700,86200,88800,91500,94200,97000,99900,102900,106000,109200,112500,115900,119400,123000,126700,130500,134400,138400,142600,146900],"16":[49700,51200,52700,54300,55900,57600,59300,61100,62900,64800,66700,68700,70800,72900,75100,77400,79700,82100,84600,87100,89700,92400,95200,98100,101000,104000,107100,110300,113600,117000,120500,124100,127800,131600,135500,139600,143800,148100,152500,157100],"17":[56000,57700,59400,61200,63000,64900,66800,68800,70900,73000,75200,77500,79800,82200,84700,87200,89800,92500,95300,98200,101100,104100,107200,110400,113700,117100,120600,124200,127900,131700,135700,139800,144000,148300,152700,157300,162000,166900,171900,177100],"18":[65000,67000,69000,71100,73200,75400,77700,80000,82400,84900,87400,90000,92700,95500,98400,101400,104400,107500,110700,114000,117400,120900,124500,128200,132000,136000,140100,144300,148600,153100,157700,162400,167300,172300,177500,182800,188300,193900,199700,205700],"19":[71100,73200,75400,77700,80000,82400,84900,87400,90000,92700,95500,98400,101400,104400,107500,110700,114000,117400,120900,124500,128200,132000,136000,140100,144300,148600,153100,157700,162400,167300,172300,177500,182800,188300,193900,199700,205700,211900,218300,224800],"20":[83700,86200,88800,91500,94200,97000,99900,102900,106000,109200,112500,115900,119400,123000,126700,130500,134400,138400,142600,146900,151300,155800,160500,165300,170300,175400,180700,186100,191700,197500,203400,209500,215800,222300,229000,235900,243000,250300,257800,265500],"21":[105400,108600,111900,115300,118800,122400,126100,129900,133800,137800,141900,146200,150600,155100,159800,164600,169500,174600,179800,185200,190800,196500,202400,208500,214800,221200,227800,234600,241600,248800,256300,264000,271900,280100,288500,297200,306100,315300,324800,334500],"22":[120500,124100,127800,131600,135500,139600,143800,148100,152500,157100,161800,166700,171700,176900,182200,187700,193300,199100,205100,211300,217600,224100,230800,237700,244800,252100,259700,267500,275500,283800,292300,301100,310100,319400,329000,338900,349100,359600,370400,381500],"23":[124700,128400,132300,136300,140400,144600,148900,153400,158000,162700,167600,172600,177800,183100,188600,194300,200100,206100,212300,218700,225300,232100,239100,246300,253700,261300,269100,277200,285500,294100,302900,312000,321400,331000,340900,351100,361600,372400,383600,395100]};
+
+const levelEl = document.getElementById('level');
+const basicEl = document.getElementById('basic');
+const daSelectEl = document.getElementById('daSelect');
+const daEl = document.getElementById('da');
+const daCustomWrap = document.getElementById('daCustomWrap');
+
+const emptyState = document.getElementById('emptyState');
+const summary = document.getElementById('summary');
+const breakdown = document.getElementById('breakdown');
+const calculateBtn = document.getElementById('calculate');
+const resetBtn = document.getElementById('reset');
+const formNote = document.getElementById('formNote');
+const selectionStatus = document.getElementById('selectionStatus');
+const selectionStatusText = document.getElementById('selectionStatusText');
+const calculatedMeta = document.getElementById('calculatedMeta');
+const calcTime = document.getElementById('calcTime');
+const themeIcon = document.getElementById('themeIcon');
+
+const fmt = value => '₹' + Math.round(value).toLocaleString('en-IN');
+
+function populateLevels() {
+  levelEl.innerHTML = '<option value="" selected disabled>Select Pay Level</option>';
+  for (let level = 1; level <= 23; level++) {
+    const opt = document.createElement('option');
+    opt.value = level;
+    opt.textContent = `Level ${level}`;
+    levelEl.appendChild(opt);
+  }
+}
+
+function populateBasicPays() {
+  basicEl.innerHTML = '<option value="" selected disabled>Select Basic Pay</option>';
+  if (!levelEl.value) {
+    syncFormState();
+    return;
+  }
+  matrix[Number(levelEl.value)].forEach((pay, i) => {
+    const opt = document.createElement('option');
+    opt.value = i + 1;
+    opt.textContent = `Cell ${i + 1} · ${fmt(pay)}`;
+    basicEl.appendChild(opt);
+  });
+  basicEl.value = '';
+  syncFormState();
+}
+
+function getSelected() {
+  const level = Number(levelEl.value);
+  const cell = Number(basicEl.value);
+  if (!level || !cell || !matrix[level]) return null;
+  return { level, cell, basic: matrix[level][cell - 1] };
+}
+
+function calculate() {
+  const selected = getSelected();
+
+  if (!selected) {
+    formNote.textContent = 'Please select both Pay Level and Basic Pay before calculating.';
+    formNote.classList.add('error');
+    setTimeout(() => formNote.classList.remove('error'), 500);
+    selectionStatus.classList.remove('ready');
+    selectionStatusText.textContent = 'Step 2 of 2 · Select Basic Pay';
+    return;
+  }
+
+  const {level, cell, basic} = selected;
+  const daPct = getDA();
+  const da = Math.round(basic * daPct / 100);
+  const hra = Math.max(3500, Math.round(basic * 0.12));
+  const sbca = Math.round(basic * 0.08);
+
+  let ta = 0;
+  let taLabel = 'Transport Allowance';
+  if (level <= 14) { ta = 500; taLabel += ' (L1-14)'; }
+  else if (level <= 18) { ta = 1000; taLabel += ' (L15-18)'; }
+  else { taLabel += ' (not included in reference formula)'; }
+
+  const gross = basic + da + hra + sbca + ta;
+  const cpf = Math.round((basic + da) * 0.10);
+  const stamp = 5;
+  const professionalTax = level < 15 ? 150 : 200;
+  const gis = 10;
+  const deductions = cpf + stamp + professionalTax + gis;
+  const net = gross - deductions;
+
+  // Update text fields that are not animated.
+  document.getElementById('daLabel').textContent = `Dearness Allowance (${daPct.toFixed(1)}%)`;
+  document.getElementById('hraOut').textContent = fmt(hra);
+  document.getElementById('sbcaOut').textContent = fmt(sbca);
+  document.getElementById('taLabel').textContent = taLabel;
+  document.getElementById('taOut').textContent = ta ? fmt(ta) : '—';
+  document.getElementById('stampOut').textContent = fmt(stamp);
+  document.getElementById('ptOut').textContent = fmt(professionalTax);
+  document.getElementById('gisOut').textContent = fmt(gis);
+
+  document.getElementById('matrixLevel').textContent = level;
+  if (typeof renderMatrix === 'function') renderMatrix(level, cell);
+
+  calculatedMeta.textContent = `Level ${level} · Cell ${cell} · Basic ${fmt(basic)} · DA ${daPct.toFixed(1)}%`;
+  calcTime.textContent = new Date().toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
+  formNote.textContent = 'Calculation updated successfully. Review the breakdown below.';
+  formNote.classList.remove('error');
+
+  emptyState.classList.add('hidden');
+  summary.classList.remove('hidden');
+  breakdown.classList.remove('hidden');
+
+  // Restart the reveal animation cleanly.
+  [summary, breakdown].forEach((el, i) => {
+    el.classList.remove('result-reveal', 'delay');
+    void el.offsetWidth;
+    el.classList.add('result-reveal');
+    if (i) el.classList.add('delay');
+  });
+
+  animateMoney(document.getElementById('sumGross'), gross);
+  animateMoney(document.getElementById('sumDed'), deductions);
+  animateMoney(document.getElementById('sumNet'), net);
+  animateMoney(document.getElementById('basicOut'), basic);
+  animateMoney(document.getElementById('daOut'), da);
+  animateMoney(document.getElementById('grossOut'), gross);
+  animateMoney(document.getElementById('cpfOut'), cpf);
+  animateMoney(document.getElementById('dedOut'), deductions);
+  animateMoney(document.getElementById('netOut'), net);
+
+  const netBoxes = summary.querySelectorAll('.net-box');
+  netBoxes.forEach(box => {
+    box.classList.remove('is-updated');
+    void box.offsetWidth;
+    box.classList.add('is-updated');
+  });
+
+  summary.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function renderMatrix(level, selectedCell) {
+  const grid = document.getElementById('matrixGrid');
+  grid.innerHTML = '';
+  const headCell = document.createElement('div');
+  headCell.className = 'mcell mhead';
+  headCell.textContent = 'Cell';
+  grid.appendChild(headCell);
+
+  for (let c = 1; c <= 4; c++) {
+    const h = document.createElement('div');
+    h.className = 'mcell mhead';
+    h.textContent = c;
+    grid.appendChild(h);
+  }
+  matrix[level].forEach((pay, i) => {
+    const cell = i + 1;
+    const rowIndex = Math.floor(i / 4) + 1;
+
+    if ((i % 4) === 0) {
+      const row = document.createElement('div');
+      row.className = 'mcell mhead';
+      row.textContent = rowIndex;
+      grid.appendChild(row);
     }
+    const value = document.createElement('div');
+    value.className = 'mcell' + (cell === selectedCell ? ' mselected' : '');
+    value.textContent = fmt(pay);
+    grid.appendChild(value);
+  });
+}
 
-    function getSelectedDaRate() {
-      const customValue = Number(customDaPercentage.value || 0);
-      if (customValue > 0 && customValue <= 100) return customValue;
-      return Number(daRate.value || 0);
+function resetAll() {
+  levelEl.value = '';
+  populateBasicPays();
+  setDA(58);
+  emptyState.classList.remove('hidden');
+  summary.classList.add('hidden');
+  breakdown.classList.add('hidden');
+  document.getElementById('matrixLevel').textContent = 'Select level';
+  document.getElementById('matrixBody').classList.remove('open');
+  document.getElementById('matrixArrow').textContent = '＋';
+  calculatedMeta.textContent = 'Select your salary details to begin';
+  calcTime.textContent = '—';
+  formNote.textContent = 'Your selections stay on this device only while this page is open.';
+  formNote.classList.remove('error');
+  syncFormState();
+  updateSelectionStatus();
+}
+
+levelEl.addEventListener('change', () => {
+  populateBasicPays();
+  syncFormState();
+  updateSelectionStatus();
+});
+
+basicEl.addEventListener('change', () => {
+  if (levelEl.value && basicEl.value) {
+    renderMatrix(Number(levelEl.value), Number(basicEl.value));
+  }
+  syncFormState();
+  updateSelectionStatus();
+});
+function clampDA(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return 58;
+  return Math.min(100, Math.max(0, Math.round(n * 2) / 2));
+}
+function getDA() {
+  return daSelectEl.value === 'custom'
+    ? clampDA(daEl.value)
+    : Number(daSelectEl.value);
+}
+function setDA(value) {
+  const rate = clampDA(value);
+  const matching = [...daSelectEl.options].find(o => Number(o.value) === rate);
+  if (matching) {
+    daSelectEl.value = String(rate);
+    daCustomWrap.classList.add('hidden');
+  } else {
+    daSelectEl.value = 'custom';
+    daEl.value = rate;
+    daCustomWrap.classList.remove('hidden');
+  }
+}
+daSelectEl.addEventListener('change', () => {
+  if (daSelectEl.value === 'custom') {
+    daCustomWrap.classList.remove('hidden');
+    daEl.focus();
+  } else {
+    daCustomWrap.classList.add('hidden');
+  }
+});
+daEl.addEventListener('input', () => { daEl.value = clampDA(daEl.value); });
+calculateBtn.addEventListener('click', calculate);
+resetBtn.addEventListener('click', resetAll);
+
+document.getElementById('matrixToggle').addEventListener('click', () => {
+  const body = document.getElementById('matrixBody');
+  const isOpen = body.classList.toggle('open');
+  document.getElementById('matrixToggle').setAttribute('aria-expanded', String(isOpen));
+  document.getElementById('matrixArrow').textContent = isOpen ? '−' : '＋';
+});
+
+
+const themeToggle = document.getElementById('themeToggle');
+const printBtn = document.getElementById('printBtn');
+const savedTheme = localStorage.getItem('sikkim-pay-theme');
+
+function updateThemeIcon() {
+  const isDark = document.documentElement.classList.contains('dark');
+  themeToggle.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+  themeToggle.title = isDark ? 'Light mode' : 'Dark mode';
+  themeIcon.innerHTML = isDark
+    ? '<path d="M20.2 15.3A8 8 0 1 1 8.7 3.8 6.2 6.2 0 0 0 20.2 15.3Z"></path>'
+    : '<circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path>';
+}
+
+if (savedTheme === 'dark') document.documentElement.classList.add('dark');
+updateThemeIcon();
+
+themeToggle.addEventListener('click', () => {
+  document.documentElement.classList.toggle('dark');
+  localStorage.setItem(
+    'sikkim-pay-theme',
+    document.documentElement.classList.contains('dark') ? 'dark' : 'light'
+  );
+  updateThemeIcon();
+});
+
+function preparePrint() {
+  const e = document.getElementById('printDate');
+  if (e) {
+    e.textContent = new Date().toLocaleString('en-IN', {
+      day:'2-digit', month:'short', year:'numeric',
+      hour:'2-digit', minute:'2-digit'
+    });
+  }
+}
+
+window.printSalaryStatement = function() {
+  preparePrint();
+  setTimeout(() => window.print(), 60);
+};
+
+window.addEventListener('beforeprint', preparePrint);
+
+const exportModal = document.getElementById('exportModal');
+const exportPdfBtn = document.getElementById('exportPdfBtn');
+const exportPrintBtn = document.getElementById('exportPrintBtn');
+const sharePdfBtn = document.getElementById('sharePdfBtn');
+const exportClose = document.getElementById('exportClose');
+const exportProgress = document.getElementById('exportProgress');
+const exportProgressText = document.getElementById('exportProgressText');
+
+function showExportProgress(message) {
+  if (!exportProgress) return;
+  exportProgressText.textContent = message;
+  exportProgress.classList.add('show');
+}
+
+function hideExportProgress(delay=700) {
+  if (!exportProgress) return;
+  setTimeout(() => exportProgress.classList.remove('show'), delay);
+}
+
+/*
+ * Generates a real PDF in the browser using the PDF file format itself.
+ * This avoids relying on window.print(), which is inconsistent in some
+ * Android/iOS in-app browsers and WebViews.
+ */
+function buildSalaryPdf() {
+  const selected = getSelected();
+  if (!selected) throw new Error('Please calculate the salary first.');
+
+  const {level, cell, basic} = selected;
+  const lines = [
+    ['Sikkim Govt Employee Salary Calculator', true],
+    ['Salary Calculation Statement', false],
+    ['', false],
+    [`Pay Level: ${level}`, false],
+    [`Basic Pay Cell: ${cell}`, false],
+    [`Basic Pay: Rs. ${document.getElementById('basicOut').textContent.replace(/[₹,]/g,'')}`, false],
+    [`DA: ${document.getElementById('daLabel').textContent.replace('Dearness Allowance','Dearness Allowance')}`, false],
+    ['', false],
+    ['EARNINGS', true],
+    [`Basic Pay                              ${toAsciiMoney(document.getElementById('basicOut'))}`, false],
+    [`Dearness Allowance                    ${toAsciiMoney(document.getElementById('daOut'))}`, false],
+    [`House Rent Allowance                  ${toAsciiMoney(document.getElementById('hraOut'))}`, false],
+    [`SBCA                                  ${toAsciiMoney(document.getElementById('sbcaOut'))}`, false],
+    [`Transport Allowance                   ${toAsciiMoney(document.getElementById('taOut'))}`, false],
+    [`Total Gross Salary                    ${toAsciiMoney(document.getElementById('grossOut'))}`, true],
+    ['', false],
+    ['DEDUCTIONS', true],
+    [`CPF                                   ${toAsciiMoney(document.getElementById('cpfOut'))}`, false],
+    [`Stamp Fee                             ${toAsciiMoney(document.getElementById('stampOut'))}`, false],
+    [`Professional Tax                      ${toAsciiMoney(document.getElementById('ptOut'))}`, false],
+    [`GIS Deduction                         ${toAsciiMoney(document.getElementById('gisOut'))}`, false],
+    [`Total Deductions                      ${toAsciiMoney(document.getElementById('dedOut'))}`, true],
+    ['', false],
+    [`MONTHLY IN-HAND SALARY                ${toAsciiMoney(document.getElementById('netOut'))}`, true],
+    ['', false],
+    [`Generated: ${new Date().toLocaleString('en-IN', {
+      day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'
+    })}`, false],
+    ['Note: Verify applicable allowances and deductions against current orders.', false]
+  ];
+
+  const pageWidth = 595;
+  const pageHeight = 842;
+  const margin = 42;
+  const contentWidth = pageWidth - (margin * 2);
+  const escapePdf = s => String(s)
+    .replace(/\\/g, '\\\\')
+    .replace(/\(/g, '\\(')
+    .replace(/\)/g, '\\)');
+  const wrap = (text, max=82) => {
+    if (!text) return [''];
+    const words = text.split(/\s+/);
+    const out = [];
+    let line = '';
+    for (const word of words) {
+      const next = line ? `${line} ${word}` : word;
+      if (next.length > max && line) {
+        out.push(line);
+        line = word;
+      } else line = next;
     }
+    if (line) out.push(line);
+    return out;
+  };
 
-    function calculateSalary() {
-      const basic = Number(payBand.value || 0);
-      const da = basic * (getSelectedDaRate() / 100);
-      const hra = basic * (Number(hraRate.value || 0) / 100);
-      const otherAllowanceVal = basic * 0.12;
+  const body = [];
+  let y = pageHeight - 68;
+  body.push('0.027 0.50 0.30 rg');
+  body.push(`${margin} ${y} ${contentWidth} 34 re f`);
+  body.push('1 1 1 rg');
+  body.push('BT /F2 16 Tf');
+  body.push(`${margin + 12} ${y + 21} Td (${escapePdf('Sikkim Govt Employee Salary Calculator')}) Tj ET`);
+  body.push('BT /F1 9 Tf');
+  body.push(`${margin + 12} ${y + 9} Td (${escapePdf('Salary Calculation Statement')}) Tj ET`);
+  y -= 56;
 
-      const gross = basic + da + hra + otherAllowanceVal;
-      const pf = basic * 0.12;
-      const pt = 200;
-      const otherDeductions = basic * 0.08;
-      const deductions = pf + pt + otherDeductions;
-      const net = gross - deductions;
-
-      grossValue.textContent = formatMoney(gross);
-      deductionValue.textContent = formatMoney(deductions);
-      netValue.textContent = formatMoney(net);
-
-      basicPay.textContent = formatMoney(basic);
-      daValue.textContent = formatMoney(da);
-      hraValue.textContent = formatMoney(hra);
-      otherAllowance.textContent = formatMoney(otherAllowanceVal);
-      grossTotal.textContent = formatMoney(gross);
-      pfValue.textContent = formatMoney(pf);
-      ptValue.textContent = formatMoney(pt);
-      otherDeduction.textContent = formatMoney(otherDeductions);
-      deductionTotal.textContent = formatMoney(deductions);
-      netDetailValue.textContent = formatMoney(net);
-
-      emptyState.classList.add('hidden');
-      summaryCard.classList.remove('hidden');
-      breakdownCard.classList.remove('hidden');
+  function addText(text, bold=false, size=10, leading=15, x=margin) {
+    const parts = wrap(text, 82);
+    for (const part of parts) {
+      if (y < 52) return false;
+      body.push('0.08 0.10 0.14 rg');
+      body.push(`BT /${bold ? 'F2' : 'F1'} ${size} Tf`);
+      body.push(`${x} ${y} Td (${escapePdf(part)}) Tj ET`);
+      y -= leading;
     }
+    return true;
+  }
 
-    function resetForm() {
-      payLevel.selectedIndex = 0;
-      payBand.selectedIndex = 0;
-      daRate.selectedIndex = 5;
-      customDaPercentage.value = 30;
-      hraRate.selectedIndex = 3;
-      emptyState.classList.remove('hidden');
-      summaryCard.classList.add('hidden');
-      breakdownCard.classList.add('hidden');
+  for (const [text, bold] of lines) {
+    if (text === '') { y -= 6; continue; }
+    if (bold && /^(EARNINGS|DEDUCTIONS)$/.test(text)) {
+      body.push('0.91 0.97 0.94 rg');
+      body.push(`${margin} ${y - 4} ${contentWidth} 19 re f`);
+      body.push('0.03 0.35 0.20 rg');
+      body.push(`BT /F2 9 Tf ${margin + 8} ${y + 2} Td (${escapePdf(text)}) Tj ET`);
+      y -= 25;
+    } else if (text.startsWith('MONTHLY IN-HAND')) {
+      body.push('0.91 0.99 0.95 rg');
+      body.push(`${margin} ${y - 8} ${contentWidth} 31 re f`);
+      body.push('0.02 0.39 0.23 rg');
+      body.push(`BT /F2 13 Tf ${margin + 10} ${y + 5} Td (${escapePdf(text)}) Tj ET`);
+      y -= 42;
+    } else if (bold) {
+      body.push('0.83 0.89 0.86 rg');
+      body.push(`${margin} ${y - 4} ${contentWidth} 19 re f`);
+      body.push('0.08 0.10 0.14 rg');
+      body.push(`BT /F2 10 Tf ${margin + 8} ${y + 2} Td (${escapePdf(text)}) Tj ET`);
+      y -= 25;
+    } else {
+      addText(text, false, 9.5, 15);
     }
+  }
 
-    calculateBtn.addEventListener('click', calculateSalary);
-    resetBtn.addEventListener('click', resetForm);
+  // Footer.
+  body.push('0.45 0.48 0.52 rg');
+  body.push(`BT /F1 7.5 Tf ${margin} 28 Td (${escapePdf('Generated by Sikkim Govt Employee Salary Calculator')}) Tj ET`);
 
-    customDaPercentage.addEventListener('input', () => {
-      const v = Number(customDaPercentage.value || 0);
-      if (v < 0) customDaPercentage.value = 0;
-      if (v > 100) customDaPercentage.value = 100;
-      if (v > 0) daRate.value = '0';
-    });
+  const objects = [];
+  objects.push('<< /Type /Catalog /Pages 2 0 R >>');
+  objects.push('<< /Type /Pages /Kids [3 0 R] /Count 1 >>');
+  objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>`);
+  objects.push('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>');
+  objects.push('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>');
 
-    daRate.addEventListener('change', () => {
-      if (daRate.value !== '0') customDaPercentage.value = daRate.value;
-    });
+  const stream = body.join('\n') + '\n';
+  objects.push(`<< /Length ${stream.length} >>\nstream\n${stream}endstream`);
 
-    document.querySelector('.matrix-toggle').addEventListener('click', function () {
-      const body = document.querySelector('.matrix-body');
-      const arrow = document.querySelector('.matrix-toggle .arrow');
-      const isOpen = body.classList.toggle('open');
-      this.setAttribute('aria-expanded', isOpen);
-      arrow.textContent = isOpen ? '▴' : '▾';
-    });
+  let pdf = '%PDF-1.4\n%\xE2\xE3\xCF\xD3\n';
+  const offsets = [0];
+  for (let i = 0; i < objects.length; i++) {
+    offsets.push(pdf.length);
+    pdf += `${i + 1} 0 obj\n${objects[i]}\nendobj\n`;
+  }
+  const xref = pdf.length;
+  pdf += `xref\n0 ${objects.length + 1}\n`;
+  pdf += '0000000000 65535 f \n';
+  for (let i = 1; i < offsets.length; i++) {
+    pdf += `${String(offsets[i]).padStart(10,'0')} 00000 n \n`;
+  }
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
 
-    document.getElementById('themeToggle').addEventListener('click', () => {
-      document.body.classList.toggle('dark');
-    });
-  </script>
+  return new Blob([pdf], {type:'application/pdf'});
+
+  function toAsciiMoney(el) {
+    if (!el) return 'Rs. 0';
+    const value = el.textContent.trim();
+    return value.replace('₹', 'Rs.').replace(/\u2014/g, '-');
+  }
+}
+
+function downloadPdfFile(blob) {
+  const selected = getSelected();
+  const level = selected ? selected.level : 'NA';
+  const cell = selected ? selected.cell : 'NA';
+  const stamp = new Date().toISOString().slice(0,19).replace(/[T:]/g,'-');
+  const filename = `Sikkim_Salary_Statement_L${level}_Cell${cell}_${stamp}.pdf`;
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.rel = 'noopener';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+async function exportPdfToDevice() {
+  if (!getSelected()) {
+    closeExportModal();
+    formNote.textContent = 'Please calculate the salary first, then export the statement.';
+    formNote.classList.add('error');
+    setTimeout(() => formNote.classList.remove('error'), 500);
+    return;
+  }
+  closeExportModal();
+  showExportProgress('Creating PDF…');
+  await new Promise(r => setTimeout(r, 120));
+  try {
+    const pdf = buildSalaryPdf();
+    downloadPdfFile(pdf);
+    showExportProgress('PDF ready — saved to your device');
+    hideExportProgress(1200);
+  } catch (err) {
+    showExportProgress('PDF export failed — opening print view');
+    hideExportProgress(1400);
+    setTimeout(() => printSalaryStatement(), 300);
+  }
+}
+
+async function shareSalaryPdf() {
+  if (!getSelected()) {
+    closeExportModal();
+    formNote.textContent = 'Please calculate the salary first, then share the statement.';
+    formNote.classList.add('error');
+    setTimeout(() => formNote.classList.remove('error'), 500);
+    return;
+  }
+  closeExportModal();
+  showExportProgress('Preparing PDF for sharing…');
+  await new Promise(r => setTimeout(r, 120));
+  try {
+    const pdf = buildSalaryPdf();
+    const file = new File([pdf], 'Sikkim_Salary_Statement.pdf', {type:'application/pdf'});
+    if (navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))) {
+      await navigator.share({
+        title:'Sikkim Salary Statement',
+        text:'Salary calculation statement',
+        files:[file]
+      });
+      showExportProgress('PDF shared successfully');
+      hideExportProgress(900);
+    } else {
+      downloadPdfFile(pdf);
+      showExportProgress('Sharing is unavailable — PDF saved instead');
+      hideExportProgress(1400);
+    }
+  } catch (err) {
+    if (err && err.name === 'AbortError') {
+      hideExportProgress(100);
+      return;
+    }
+    downloadPdfFile(buildSalaryPdf());
+    showExportProgress('PDF saved to your device');
+    hideExportProgress(1200);
+  }
+}
+
+function openExportModal(){
+  if (!exportModal) return printSalaryStatement();
+  exportModal.classList.add('open');
+  exportModal.setAttribute('aria-hidden','false');
+  setTimeout(() => exportPdfBtn && exportPdfBtn.focus(), 30);
+}
+
+function closeExportModal(){
+  if (!exportModal) return;
+  exportModal.classList.remove('open');
+  exportModal.setAttribute('aria-hidden','true');
+}
+
+printBtn.addEventListener('click', openExportModal);
+
+exportPdfBtn && exportPdfBtn.addEventListener('click', exportPdfToDevice);
+
+exportPrintBtn && exportPrintBtn.addEventListener('click', () => {
+  closeExportModal();
+  printSalaryStatement();
+});
+
+sharePdfBtn && sharePdfBtn.addEventListener('click', shareSalaryPdf);
+
+exportClose && exportClose.addEventListener('click', closeExportModal);
+
+exportModal && exportModal.addEventListener('click', (event) => {
+  if (event.target === exportModal) closeExportModal();
+});
+
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && exportModal && exportModal.classList.contains('open')) {
+    closeExportModal();
+  }
+});
+
+function animateMoney(el, target, duration=520) {
+  if (!el) return;
+  const start = Number(el.dataset.value || 0);
+  const begin = performance.now();
+  el.dataset.value = String(target);
+
+  function frame(now) {
+    const progress = Math.min(1, (now - begin) / duration);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const value = Math.round(start + (target - start) * eased);
+    el.textContent = fmt(value);
+    if (progress < 1) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+function syncFormState() {
+  const ready = Boolean(levelEl.value && basicEl.value);
+  calculateBtn.disabled = !ready;
+  calculateBtn.setAttribute('aria-disabled', String(!ready));
+}
+
+function updateSelectionStatus() {
+  const hasLevel = Boolean(levelEl.value);
+  const hasBasic = Boolean(basicEl.value);
+
+  selectionStatus.classList.toggle('ready', hasLevel && hasBasic);
+  if (!hasLevel) {
+    selectionStatusText.textContent = 'Step 1 of 2 · Select a Pay Level';
+  } else if (!hasBasic) {
+    selectionStatusText.textContent = 'Step 2 of 2 · Select Basic Pay';
+  } else {
+    selectionStatusText.textContent = 'Ready · Click Calculate Salary';
+  }
+}
+
+function addRipple(event) {
+  const button = event.currentTarget;
+  const rect = button.getBoundingClientRect();
+  const ripple = document.createElement('span');
+  ripple.className = 'ripple';
+  ripple.style.left = `${event.clientX - rect.left - 6}px`;
+  ripple.style.top = `${event.clientY - rect.top - 6}px`;
+  button.appendChild(ripple);
+  ripple.addEventListener('animationend', () => ripple.remove());
+}
+
+document.querySelectorAll('.btn').forEach(btn => {
+  btn.addEventListener('pointerdown', addRipple);
+});
+
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape') {
+    if (!summary.classList.contains('hidden') || !breakdown.classList.contains('hidden')) resetAll();
+  }
+  if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+    event.preventDefault();
+    if (!calculateBtn.disabled) calculate();
+  }
+});
+
+populateLevels();
+populateBasicPays();
+setDA(58);
+syncFormState();
+updateSelectionStatus();
+</script>
+<div class="print-report-footer">
+  <span>Sikkim Govt Employee Salary Calculator</span>
+  <span>For office reference — verify applicable allowances and deductions against current orders.</span>
+</div>
+
 </body>
 </html>
