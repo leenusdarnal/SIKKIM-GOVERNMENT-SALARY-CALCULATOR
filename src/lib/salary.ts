@@ -1,0 +1,138 @@
+export type PensionMode = 'cps' | 'gpf' | 'manual' | 'none';
+export type ProfessionalTaxMode = 'auto' | 'manual' | 'none';
+
+export interface SalaryInput {
+  basicPay: number;
+  daRate: number;
+  hraEligible: boolean;
+  hraRate: number;
+  hraMinimum: number;
+  sbcaRate: number;
+  transportAllowance: number;
+  otherEarnings: number;
+  pensionMode: PensionMode;
+  manualPension: number;
+  professionalTaxMode: ProfessionalTaxMode;
+  manualProfessionalTax: number;
+  gis: number;
+  stampFee: number;
+  otherDeductions: number;
+}
+
+export interface SalaryResult {
+  basicPay: number;
+  daRate: number;
+  da: number;
+  hra: number;
+  sbca: number;
+  transportAllowance: number;
+  otherEarnings: number;
+  gross: number;
+  pensionMode: PensionMode;
+  pensionLabel: string;
+  employeePension: number;
+  employerCpsContribution: number;
+  professionalTax: number;
+  professionalTaxBand: string;
+  gis: number;
+  stampFee: number;
+  otherDeductions: number;
+  totalDeductions: number;
+  takeHome: number;
+}
+
+export const roundRupee = (amount: number): number =>
+  Math.floor((Number.isFinite(amount) ? amount : 0) + 0.5);
+
+const safeAmount = (amount: number): number =>
+  Number.isFinite(amount) && amount > 0 ? amount : 0;
+
+export function getSikkimProfessionalTax(monthlySalary: number): {
+  amount: number;
+  band: string;
+} {
+  const salary = safeAmount(monthlySalary);
+  if (salary <= 20_000) return { amount: 0, band: 'Up to ₹20,000 — nil' };
+  if (salary <= 30_000) return { amount: 125, band: '₹20,001–₹30,000 — ₹125' };
+  if (salary <= 40_000) return { amount: 150, band: '₹30,001–₹40,000 — ₹150' };
+  return { amount: 200, band: 'Above ₹40,000 — ₹200' };
+}
+
+export function calculateSalary(input: SalaryInput): SalaryResult {
+  const basicPay = safeAmount(input.basicPay);
+  const daRate = Math.min(200, safeAmount(input.daRate));
+  const da = roundRupee((basicPay * daRate) / 100);
+  const hra = input.hraEligible
+    ? Math.max(safeAmount(input.hraMinimum), roundRupee((basicPay * safeAmount(input.hraRate)) / 100))
+    : 0;
+  const sbca = roundRupee((basicPay * safeAmount(input.sbcaRate)) / 100);
+  const transportAllowance = roundRupee(safeAmount(input.transportAllowance));
+  const otherEarnings = roundRupee(safeAmount(input.otherEarnings));
+  const gross = basicPay + da + hra + sbca + transportAllowance + otherEarnings;
+
+  let employeePension = 0;
+  let employerCpsContribution = 0;
+  let pensionLabel = 'No pension deduction applied';
+
+  switch (input.pensionMode) {
+    case 'cps':
+      employeePension = roundRupee(((basicPay + da) * 10) / 100);
+      employerCpsContribution = employeePension;
+      pensionLabel = 'Sikkim CPS employee contribution (10% of Basic + DA)';
+      break;
+    case 'gpf':
+      employeePension = roundRupee(safeAmount(input.manualPension));
+      pensionLabel = 'GPF contribution (manual amount)';
+      break;
+    case 'manual':
+      employeePension = roundRupee(safeAmount(input.manualPension));
+      pensionLabel = 'Other pension contribution (manual amount)';
+      break;
+  }
+
+  const automaticTax = getSikkimProfessionalTax(gross);
+  const professionalTax =
+    input.professionalTaxMode === 'none'
+      ? 0
+      : input.professionalTaxMode === 'manual'
+        ? roundRupee(safeAmount(input.manualProfessionalTax))
+        : automaticTax.amount;
+
+  const gis = roundRupee(safeAmount(input.gis));
+  const stampFee = roundRupee(safeAmount(input.stampFee));
+  const otherDeductions = roundRupee(safeAmount(input.otherDeductions));
+  const totalDeductions =
+    employeePension + professionalTax + gis + stampFee + otherDeductions;
+
+  return {
+    basicPay, daRate, da, hra, sbca, transportAllowance, otherEarnings, gross,
+    pensionMode: input.pensionMode, pensionLabel, employeePension,
+    employerCpsContribution, professionalTax,
+    professionalTaxBand:
+      input.professionalTaxMode === 'auto'
+        ? automaticTax.band
+        : input.professionalTaxMode === 'manual'
+          ? 'Manual override'
+          : 'Not applicable',
+    gis, stampFee, otherDeductions, totalDeductions,
+    takeHome: gross - totalDeductions
+  };
+}
+
+export const DEFAULT_SALARY_INPUT: SalaryInput = {
+  basicPay: 0,
+  daRate: 60,
+  hraEligible: true,
+  hraRate: 12,
+  hraMinimum: 0,
+  sbcaRate: 8,
+  transportAllowance: 0,
+  otherEarnings: 0,
+  pensionMode: 'cps',
+  manualPension: 0,
+  professionalTaxMode: 'auto',
+  manualProfessionalTax: 0,
+  gis: 0,
+  stampFee: 0,
+  otherDeductions: 0
+};
