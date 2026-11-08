@@ -1,67 +1,84 @@
 # Sikkim Government Salary Calculator
 
-A browser-based estimate calculator for employees drawing pay under the **Sikkim Government Services (Revised Pay) Rules, 2018**. It supports the 23-level pay matrix already included in the app and separates statutory calculations from allowances and deductions that depend on an employee's service conditions.
+A Sikkim-specific salary estimation application rebuilt with **SvelteKit 3, Svelte 5, TypeScript and Tailwind CSS 4**.
 
-> **Not an official payroll calculator.** Confirm all rates, allowances, eligibility and recoveries with the current Government of Sikkim Finance Department order and your DDO / Accounts section before relying on an estimate.
+The app preserves the repository's 23 pay levels and 920 pay-matrix cells while separating calculation logic, source references, UI components and automated tests.
+
+> This is an estimate tool, not an official Government payroll system. Confirm rates and eligibility with the applicable signed Government order and the employee's DDO / Accounts section.
+
+## Technology
+
+- SvelteKit 3 and Svelte 5
+- TypeScript
+- Tailwind CSS 4 with the official Vite plugin
+- Vitest for calculation regression tests
+- Vercel adapter
+- Node.js 24+
 
 ## Features
 
-- 23 pay levels and 40 pay cells per level, retained from the app's Sikkim pay-matrix data.
-- DA percentage selector with a 60% default for revised-pay estimates (publicly reported as effective 1 January 2026); historical/custom rates remain selectable.
-- Editable HRA and SBCA rates, HRA eligibility switch and optional HRA minimum.
-- Manual transport and other monthly allowance inputs. No unsupported level-based transport amount is assumed.
-- Sikkim CPF / Contributory Pension Scheme employee contribution at 10% of Basic Pay + DA, with the matching State contribution shown separately and excluded from employee deductions.
-- GPF/manual pension contribution option for employees not covered by the contributory scheme.
-- Professional Tax calculated by monthly salary slab, with manual and not-applicable overrides.
-- Editable GIS, stamp/fixed fee, TDS, loan and other deduction amounts.
-- Detailed earnings/deductions, take-home estimate, dark mode, responsive layout and PDF export.
+- All 23 State pay levels and 40 pay cells per level.
+- Editable DA rate, with 60% shown as the most recently publicly reported revised-pay rate effective 1 January 2026. Verify the signed Finance Department order before payroll use.
+- Editable HRA and SBCA reference rates, HRA eligibility and optional HRA minimum.
+- Manual transport and other monthly earnings.
+- Sikkim CPS employee contribution at 10% of Basic Pay + DA for eligible covered employees, with the State matching share displayed separately.
+- GPF, manual pension and no-pension options.
+- Sikkim Professional Tax salary slabs, with manual and exempt overrides.
+- Editable GIS, stamp/fixed fee, TDS, loan and other deductions.
+- Gross earnings, employee deductions, take-home pay and separate State CPS contribution.
+- Interactive pay-matrix viewer, responsive layout, dark mode, print-friendly statement and source register.
+- Browser-only calculations. No employee identity, bank details or payroll credentials are requested.
 
-## How to use
+## Project structure
 
-1. Open `index.html` in a modern browser.
-2. Select the pay level and pay-matrix cell matching the employee's Basic Pay.
-3. Select the DA rate applicable to the salary month. The default 60% is based on public reporting for Sikkim's revised-pay structure; verify it against the signed Finance Department circular.
-4. Open **Allowances, pension and deductions — customise**.
-5. Set HRA eligibility/rate and SBCA rate to the employee's applicable order. Enter transport and other allowances only where admissible.
-6. Select CPF/CPS, GPF, manual pension or no pension as appropriate. Enter the date of appointment to help check the general CPS cut-off; date alone does not establish coverage because rule exclusions apply.
-7. Leave Professional Tax on automatic for the salary-earner slab, or use a manual amount from the payslip.
-8. Enter GIS, stamp fee, TDS, loan and other deductions from the employee's actual record. They default to zero because a universal current deduction rate was not verified.
-9. Calculate and review the detailed statement. Use the PDF export for a copy.
+- src/routes — SvelteKit routes and layout.
+- src/lib/components — Svelte UI components.
+- src/lib/data/pay-matrix.ts — 23 × 40 pay-matrix data.
+- src/lib/salary.ts — framework-independent salary calculation engine.
+- src/lib/sources.ts — source register rendered in the app.
+- src/lib/salary.test.ts — Vitest calculation and matrix tests.
+- SOURCES.md — expanded source evidence and limitations.
 
-## Calculation rules and defaults
+## Run locally
 
-| Component | Current app behaviour | Evidence / qualification |
-|---|---|---|
-| Pay matrix | Uses Sikkim 2018 revised-pay levels/cells | Government of Sikkim Notification No. 56/GEN/DOP dated 23 June 2018; effective 1 January 2016 |
-| DA | 60% default from 1 January 2026; user can change it | Public reporting of a Sikkim Finance Department revision. The original signed circular is not linked here, so verify before payroll use. |
-| HRA | 12% reference default; no minimum by default; can be zeroed | A Government of Sikkim departmental RTI disclosure lists 12%, but that is not proof of a universal current rate. |
-| SBCA | 8% reference default | Same departmental disclosure limitation as HRA; editable. |
-| Transport / other allowances | Zero unless entered | No universal current amount is assumed. |
-| CPF / CPS | 10% of Basic Pay + DA for selected covered employees | Sikkim Government Servants (Contributory Pension) Rules, 2006. The State matching contribution is displayed separately. |
-| GPF | Employee-entered monthly amount | Depends on the applicable employee/service record. |
-| Professional Tax | Auto: up to ₹20,000 nil; ₹20,001–30,000 ₹125; ₹30,001–40,000 ₹150; above ₹40,000 ₹200 per month | Uses the Government of Sikkim Commercial Taxes Division salary-earner schedule. A manual override is provided for exemptions or payroll-specific treatment. |
-| GIS / stamp / TDS / loans | Zero unless entered | No universal current GIS/stamp amount is hardcoded; use the employee's actual deduction. |
+Requirements: Node.js 24+ and npm.
 
-The percentage-derived components are rounded to the nearest rupee (50 paise and above round up). Automatic Professional Tax uses the calculated regular monthly earnings as its salary base; actual payroll classification and exemptions should be confirmed.
+```bash
+npm install
+npm run dev
+```
 
-### Important pension distinction
+## Quality checks
 
-The 2006 Sikkim Contributory Pension Rules generally cover employees appointed on or after 1 April 2006 to posts on the new contributory pensionable establishment. The rules contain exclusions, including daily-rated and work-charged employees, contingency-paid employees, All India Services and contract employees unless their contract provides otherwise. The employee contribution is 10% and the State makes a matching contribution. The matching amount is **not** an employee deduction and is **not** added to take-home pay.
+```bash
+npm run check
+npm test
+npm run build
+```
 
-### Privacy
+GitHub Actions runs all three checks on pushes and pull requests.
 
-The calculator runs in the browser and does not ask for employee name, employee number, bank details or other personal identifiers. Avoid entering personally identifying details in any custom field. The app uses local storage only for the visual theme preference.
+## Deploy to Vercel
 
-## Sources and verification
+The repository is configured with @sveltejs/adapter-vercel and vercel.json. Connect the GitHub repository to the existing Vercel project, then use:
 
-See [SOURCES.md](SOURCES.md) for the source register, exact notifications and the limitations attached to each default. Worked calculation examples are in [tests/salary-calculation-cases.md](tests/salary-calculation-cases.md).
+- Install command: npm install
+- Build command: npm run build
+- Framework preset: SvelteKit
 
-## Project files
+The adapter manages the output directory. Node.js 24 is selected through .nvmrc and package.json.
 
-- `index.html` — single-file calculator.
-- `SOURCES.md` — legal / official source register and verification notes.
-- `tests/salary-calculation-cases.md` — manual regression cases for salary slabs and pension arithmetic.
+## Source and calculation notes
+
+See [SOURCES.md](SOURCES.md) for notification references, links and caveats. Important qualifications:
+
+- Pay matrix data is retained from the previous app and should be checked cell-by-cell against the signed 2018 Rules schedule before official use.
+- The 60% DA default is based on public reporting; the signed State circular was not located during implementation.
+- HRA 12% and SBCA 8% are departmental reference values, not claims of universal eligibility.
+- Sikkim CPS is not assumed to be identical to every Central Government NPS arrangement. Appointment category and rule exclusions matter.
+- GIS, transport, stamp fee, tax deductions and loans remain employee-specific inputs.
+- Automatic Professional Tax uses the Sikkim salary-earner slabs; manual override is available.
 
 ## License
 
-No license file has been added to this repository yet. Check with the repository owner before reusing or redistributing the code.
+No license file is currently provided. Obtain permission from the repository owner before reuse or redistribution.
