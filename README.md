@@ -64,4 +64,4 @@ See [SOURCES.md](SOURCES.md) for the source register, exact notifications and th
 
 ## License
 
-MIT License.
+No license file has been added to this repository yet. Check with the repository owner before reusing or redistributing the code.
