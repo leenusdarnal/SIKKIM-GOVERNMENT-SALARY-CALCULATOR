@@ -14,7 +14,6 @@ This file records which calculation inputs are backed by Government of Sikkim ma
 Public reporting dated **1 October 2026** says Sikkim revised-pay DA increased from **58% to 60%**, effective **1 January 2026**:
 
 - India Today NE, 1 October 2026: https://www.indiatodayne.in/sikkim/story/sikkim-govt-hikes-da-for-employees-dearness-relief-for-pensioners-1457702-2026-10-01
-- Moneycontrol report: https://www.moneycontrol.com/news/india/sikkim-government-hikes-dearness-allowance-for-employees-pensioners-13612345.html
 
 **Verification status:** The signed Sikkim Finance Department circular itself was not located during this implementation. Therefore 60% is the app's reported-rate default, not a claim that the original order has been independently authenticated here. DA remains editable; check the signed order for the salary month and employee category. This app addresses revised-pay matrix employees, not employees continuing on pre-revised pay.
 
@@ -37,7 +36,11 @@ The Commercial Taxes Division, Government of Sikkim, lists **Professional Rate-o
 - Direct official salary-earner schedule: http://www.sikkimtax.gov.in/wp-content/uploads/Professional-Rate-of-tax2.pdf
 - The PDF is headed *The Sikkim Tax on Professions, Trades, Callings and Employment Act, 2006*, Schedule (see section 4).
 
-**Calculator interpretation for salary/wage earners:** up to ₹20,000 per month — nil; ₹20,001–₹30,000 — ₹125; ₹30,001–₹40,000 — ₹150; above ₹40,000 — ₹200. The published schedule text has inconsistent boundary wording in parts of the extracted table; the slab boundaries implemented here should be checked against the current department circular/order if the employee is at a boundary or has a special exemption. The UI allows manual override or not-applicable selection.
+**Calculator interpretation for salary/wage earners:** up to ₹20,000 per month — nil; ₹20,001–₹30,000 — ₹125; ₹30,001–₹40,000 — ₹150; ₹40,001 and above — ₹200. The current PDF text has inconsistent boundary wording in places, but an earlier Sikkim CAG audit explicitly records these salary ranges and rates under the 2006 Act:
+
+- CAG, Audit of Transactions, Sikkim Civil Report 2008, Chapter IV, page 121: https://www.cag.gov.in/uploads/old_reports/state/Sikkim/2008/Civil/Civil_Sikkim_2008/civil_chap_4.pdf
+
+The slab boundaries implemented here follow that Sikkim-specific CAG audit cross-check. The UI allows manual override or not-applicable selection for exemptions or later payroll orders.
 
 ## 5. HRA and SBCA — historical departmental reference only
 
@@ -45,7 +48,9 @@ A Government of Sikkim proactive disclosure by the Directorate of Economics, Sta
 
 - Official Government of Sikkim disclosure (PDF, page showing remuneration/allowances): https://www.sikkim.gov.in/uploads/DeptUploads/Final_DESME_Proactive_Disclosure_under_Section_4_of_the_RTI_Ac%281%29_20230411.pdf
 
-**Important limitation:** This is a departmental disclosure, not a current State-wide order proving universal entitlement or rates for every employee. These two rates are retained as editable reference defaults only. The app does not assume a ₹3,500 HRA minimum. The HRA-eligibility switch must be turned off where accommodation is provided or HRA is otherwise inadmissible.
+**Important limitation:** This is a departmental disclosure, not a current State-wide order proving universal entitlement or rates for every employee. The 2008 Sikkim CAG audit had previously cited a 15% HRA rule for employees posted within Sikkim, showing why an older rate cannot safely be applied universally. The 12% rate is retained only as an editable departmental reference default; the app does not assume a ₹3,500 HRA minimum. The HRA-eligibility switch must be turned off where accommodation is provided or HRA is otherwise inadmissible.
+
+- CAG, Sikkim Civil Report 2008, Chapter IV, page 121 (historical HRA audit reference): https://www.cag.gov.in/uploads/old_reports/state/Sikkim/2008/Civil/Civil_Sikkim_2008/civil_chap_4.pdf
 
 ## 6. GIS, stamp/fixed fee, transport and other allowances/deductions
 
