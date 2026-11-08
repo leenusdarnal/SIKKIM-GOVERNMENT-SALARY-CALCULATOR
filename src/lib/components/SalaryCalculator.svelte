@@ -1,13 +1,13 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { PAY_LEVELS, PAY_MATRIX } from '$lib/data/pay-matrix';
+  import { PAY_LEVELS, PAY_MATRIX } from '#lib/data/pay-matrix';
   import {
     calculateSalary,
     DEFAULT_SALARY_INPUT,
     type SalaryInput,
     type SalaryResult
-  } from '$lib/salary';
-  import { SALARY_SOURCES } from '$lib/sources';
+  } from '#lib/salary';
+  import { SALARY_SOURCES } from '#lib/sources';
 
   let selectedLevel = $state<number | ''>('');
   let selectedCell = $state<number | ''>('');
