@@ -1,5 +1,5 @@
 <script lang="ts">
-  import SalaryCalculator from '$lib/components/SalaryCalculator.svelte';
+  import SalaryCalculator from '#lib/components/SalaryCalculator.svelte';
 </script>
 
 <svelte:head>
