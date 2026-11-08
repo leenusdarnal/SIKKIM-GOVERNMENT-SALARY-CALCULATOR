@@ -1339,7 +1339,7 @@ select:active,input:active{transform:scale(.995)}
         <div class="field"><label for="sbcaRate">SBCA rate (%) <span class="hint">8% reference</span></label><input class="calc-input" id="sbcaRate" type="number" min="0" max="100" step="0.5" value="8" inputmode="decimal"></div>
         <div class="field"><label for="transportAmount">Transport allowance (₹)</label><input class="calc-input" id="transportAmount" type="number" min="0" step="1" value="0" inputmode="numeric"></div>
         <div class="field"><label for="otherEarnings">Other monthly allowances (₹)</label><input class="calc-input" id="otherEarnings" type="number" min="0" step="1" value="0" inputmode="numeric"></div>
-        <div class="field"><label for="appointmentDate">Date of appointment <span class="hint">optional</span></label><input class="calc-input" id="appointmentDate" type="date" max="2026-11-08"></div>
+        <div class="field"><label for="appointmentDate">Date of appointment <span class="hint">optional</span></label><input class="calc-input" id="appointmentDate" type="date"></div>
         <div class="field"><label for="pensionMode">Pension deduction</label><div class="select-wrap"><select id="pensionMode"><option value="cpf" selected>CPF / Sikkim CPS — 10%</option><option value="gpf">GPF — enter your contribution</option><option value="custom">Other / manual amount</option><option value="none">No pension deduction</option></select></div></div>
         <div class="field hidden" id="pensionManualWrap"><label for="pensionManual">Monthly GPF / pension amount (₹)</label><input class="calc-input" id="pensionManual" type="number" min="0" step="1" value="0" inputmode="numeric"></div>
         <div class="field"><label for="ptMode">Professional Tax</label><div class="select-wrap"><select id="ptMode"><option value="auto" selected>Automatic — salary slab</option><option value="manual">Manual — use payslip amount</option><option value="none">Not applicable</option></select></div></div>
@@ -1493,7 +1493,7 @@ select:active,input:active{transform:scale(.995)}
   </section>
 
   <p class="disclaimer">This app provides estimates for planning only; it is not an official payroll system. Verify pay, eligibility, recoveries and effective dates with your DDO / Accounts section before relying on the result.</p>
-  <p class="source-note">Pay Matrix and pension rules: <a href="https://www.sikkimfred.gov.in/FCD/Documents/Vol%20III.pdf" target="_blank" rel="noopener">Government of Sikkim Finance Department rules collection</a>. Professional Tax: <a href="http://www.sikkimtax.gov.in/wp-content/uploads/Professional-Rate-of-tax2.pdf" target="_blank" rel="noopener">Commercial Taxes Division salary-earner schedule</a>. DA 60% from 01 Jan 2026 is the latest publicly reported Sikkim rate; <a href="https://www.indiatodayne.in/sikkim/story/sikkim-govt-hikes-da-for-employees-dearness-relief-for-pensioners-1457702-2026-10-01" target="_blank" rel="noopener">news report</a>. Check the signed Finance Department circular for official payroll use.</p>
+  <p class="source-note">Pay Matrix: <a href="https://www.sikkimfred.gov.in/FCD/DOCUMENTS15th_FC/SFTopicNote.pdf" target="_blank" rel="noopener">Sikkim Government Services (Revised Pay) Rules, 2018</a>. Pension: <a href="https://www.sikkimfred.gov.in/FCD/Documents/Vol%20III.pdf" target="_blank" rel="noopener">Sikkim Government Servants (Contributory Pension) Rules, 2006</a>. Professional Tax: <a href="http://www.sikkimtax.gov.in/wp-content/uploads/Professional-Rate-of-tax2.pdf" target="_blank" rel="noopener">Commercial Taxes Division salary-earner schedule</a>. DA 60% from 01 Jan 2026 is the latest publicly reported Sikkim rate; <a href="https://www.indiatodayne.in/sikkim/story/sikkim-govt-hikes-da-for-employees-dearness-relief-for-pensioners-1457702-2026-10-01" target="_blank" rel="noopener">news report</a>. Check the signed Finance Department circular for official payroll use.</p>
   </div>
   </div>
 </main>
@@ -1896,8 +1896,10 @@ function buildSalaryPdf() {
     [`Professional Tax                      ${toAsciiMoney(document.getElementById('ptOut'))}`, false],
     [`GIS Deduction                         ${toAsciiMoney(document.getElementById('gisOut'))}`, false],
     [`Other deductions                      ${toAsciiMoney(document.getElementById('otherDeductionsOut'))}`, false],
-    [`Employer matching CPS contribution    ${toAsciiMoney(document.getElementById('employerCpfOut'))}`, false],
     [`Total Deductions                      ${toAsciiMoney(document.getElementById('dedOut'))}`, true],
+    ['', false],
+    ['STATE EMPLOYER CONTRIBUTION (NOT AN EMPLOYEE DEDUCTION)', true],
+    [`Matching CPS contribution             ${toAsciiMoney(document.getElementById('employerCpfOut'))}`, false],
     ['', false],
     [`MONTHLY IN-HAND SALARY                ${toAsciiMoney(document.getElementById('netOut'))}`, true],
     ['', false],
