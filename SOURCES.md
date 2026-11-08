@@ -1,6 +1,6 @@
 # Source register and verification notes
 
-This file records which calculation inputs are backed by Government of Sikkim material and which remain editable estimates. Source review date: **8 November 2026**.
+This file records which calculation inputs are backed by Government of Sikkim material and which remain editable estimates. Source review date: **8 November 2026**. The framework rewrite keeps the earlier source assessment unchanged; the SvelteKit port itself does not constitute a fresh legal audit.
 
 ## 1. Pay matrix — primary Government source
 
