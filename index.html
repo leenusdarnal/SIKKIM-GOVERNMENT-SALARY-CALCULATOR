@@ -1592,8 +1592,8 @@ function calculate() {
   const hra = hraEligible ? Math.max(hraMin, roundRupee(basic * hraRate / 100)) : 0;
   const sbcaRate = inputPercent('sbcaRate');
   const sbca = roundRupee(basic * sbcaRate / 100);
-  const ta = inputAmount('transportAmount');
-  const otherEarnings = inputAmount('otherEarnings');
+  const ta = roundRupee(inputAmount('transportAmount'));
+  const otherEarnings = roundRupee(inputAmount('otherEarnings'));
   const gross = basic + da + hra + sbca + ta + otherEarnings;
 
   const pensionMode = pensionModeEl.value;
