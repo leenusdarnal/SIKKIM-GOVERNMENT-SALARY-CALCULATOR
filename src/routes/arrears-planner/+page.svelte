@@ -330,19 +330,19 @@
               </select>
             </label>
             <label class="text-sm font-bold">HRA rate (%)
-              <input type="number" min="0" max="100" step="0.01" bind:value={componentEvent.hraRate} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
+              <input type="number" min="0" max="100" step="0.01" value={componentEvent.hraRate} oninput={(event) => (componentEvent.hraRate = (event.currentTarget as HTMLInputElement).value)} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
             </label>
             <label class="text-sm font-bold">HRA minimum (₹)
-              <input type="number" min="0" step="1" bind:value={componentEvent.hraMinimum} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
+              <input type="number" min="0" step="1" value={componentEvent.hraMinimum} oninput={(event) => (componentEvent.hraMinimum = (event.currentTarget as HTMLInputElement).value)} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
             </label>
             <label class="text-sm font-bold">SBCA rate (%)
-              <input type="number" min="0" max="100" step="0.01" bind:value={componentEvent.sbcaRate} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
+              <input type="number" min="0" max="100" step="0.01" value={componentEvent.sbcaRate} oninput={(event) => (componentEvent.sbcaRate = (event.currentTarget as HTMLInputElement).value)} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
             </label>
             <label class="text-sm font-bold">Transport allowance (₹)
-              <input type="number" min="0" step="1" bind:value={componentEvent.transportAllowance} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
+              <input type="number" min="0" step="1" value={componentEvent.transportAllowance} oninput={(event) => (componentEvent.transportAllowance = (event.currentTarget as HTMLInputElement).value)} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
             </label>
             <label class="text-sm font-bold">Other earnings (₹)
-              <input type="number" min="0" step="1" bind:value={componentEvent.otherEarnings} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
+              <input type="number" min="0" step="1" value={componentEvent.otherEarnings} oninput={(event) => (componentEvent.otherEarnings = (event.currentTarget as HTMLInputElement).value)} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
             </label>
             <label class="text-sm font-bold">Pension arrangement
               <select bind:value={componentEvent.pensionMode} class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
@@ -350,7 +350,7 @@
               </select>
             </label>
             <label class="text-sm font-bold">Manual pension / GPF (₹)
-              <input type="number" min="0" step="1" bind:value={componentEvent.manualPension} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
+              <input type="number" min="0" step="1" value={componentEvent.manualPension} oninput={(event) => (componentEvent.manualPension = (event.currentTarget as HTMLInputElement).value)} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
             </label>
             <label class="text-sm font-bold">Professional Tax treatment
               <select bind:value={componentEvent.professionalTaxMode} class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
@@ -358,16 +358,16 @@
               </select>
             </label>
             <label class="text-sm font-bold">Manual Professional Tax (₹)
-              <input type="number" min="0" step="1" bind:value={componentEvent.manualProfessionalTax} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
+              <input type="number" min="0" step="1" value={componentEvent.manualProfessionalTax} oninput={(event) => (componentEvent.manualProfessionalTax = (event.currentTarget as HTMLInputElement).value)} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
             </label>
             <label class="text-sm font-bold">GIS (₹)
-              <input type="number" min="0" step="1" bind:value={componentEvent.gis} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
+              <input type="number" min="0" step="1" value={componentEvent.gis} oninput={(event) => (componentEvent.gis = (event.currentTarget as HTMLInputElement).value)} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
             </label>
             <label class="text-sm font-bold">Stamp / fixed fee (₹)
-              <input type="number" min="0" step="1" bind:value={componentEvent.stampFee} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
+              <input type="number" min="0" step="1" value={componentEvent.stampFee} oninput={(event) => (componentEvent.stampFee = (event.currentTarget as HTMLInputElement).value)} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
             </label>
             <label class="text-sm font-bold">Other monthly deductions (₹)
-              <input type="number" min="0" step="1" bind:value={componentEvent.otherDeductions} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
+              <input type="number" min="0" step="1" value={componentEvent.otherDeductions} oninput={(event) => (componentEvent.otherDeductions = (event.currentTarget as HTMLInputElement).value)} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
             </label>
           </div>
         </div>
