@@ -1,6 +1,6 @@
 # Source register and verification notes
 
-This file records which calculation inputs are backed by Government of Sikkim material and which remain editable estimates. Source review date: **8 November 2026**. The framework rewrite keeps the earlier source assessment unchanged; the SvelteKit port itself does not constitute a fresh legal audit.
+This file records which calculation inputs are backed by Government of Sikkim material and which remain editable estimates. Source review date: **9 November 2026**. The framework rewrite keeps the earlier source assessment unchanged; the SvelteKit port itself does not constitute a fresh legal audit.
 
 ## 1. Pay matrix — primary Government source
 
@@ -9,13 +9,18 @@ This file records which calculation inputs are backed by Government of Sikkim ma
 - Official Government of Sikkim Finance Department PDF: https://www.sikkimfred.gov.in/FCD/DOCUMENTS15th_FC/SFTopicNote.pdf
 - The app retains its 23 pay levels and cell values. The pay matrix is not generated from a Central Government pay matrix.
 
-## 2. DA — current public report, original circular not linked
+**Operational reference supplied for this project:** https://www.statebankofsikkim.com/SBSPAYMATRIX.pdf. As clarified by the project owner, this PDF is used as a pay-matrix reference for Sikkim State Government employees; it is not a separate State Bank of Sikkim employee salary scheme. The copy displays selected levels (4–7, 9–12, 14–17 and 19–22), while the Government Rules schedule remains the full 23-level authority. Missing levels must not be dropped from the State Government calculator.
 
-Public reporting dated **1 October 2026** says Sikkim revised-pay DA increased from **58% to 60%**, effective **1 January 2026**:
+## 2. DA — Finance Department circular effective 1 January 2026
 
-- India Today NE, 1 October 2026: https://www.indiatodayne.in/sikkim/story/sikkim-govt-hikes-da-for-employees-dearness-relief-for-pensioners-1457702-2026-10-01
+The Sikkim Finance Department circular dated **1 October 2026**, Circular No. **GOS/1(32)/Bud/Fin/2001-2002/Part II/07**, revises DA under the revised pay structure from **58% to 60%**, with effect from **1 January 2026**. The corresponding pre-revised pay rate is **262%**.
 
-**Verification status:** The signed Sikkim Finance Department circular itself was not located during this implementation. Therefore 60% is the app's reported-rate default, not a claim that the original order has been independently authenticated here. DA remains editable; check the signed order for the salary month and employee category. This app addresses revised-pay matrix employees, not employees continuing on pre-revised pay.
+- Primary Government circular: https://www.sikkimfred.gov.in/DA%20Enhancement/Documents/DA%20Circular%202026.pdf
+- Secondary report identifying the circular and effective date: https://www.indiatodayne.in/sikkim/story/sikkim-govt-hikes-da-for-employees-dearness-relief-for-pensioners-1457702-2026-10-01
+
+The circular's rounding instruction is to round 50 paise or more up to the next rupee and ignore amounts below 50 paise. The calculator uses whole-rupee rounding for DA.
+
+**Calculator treatment:** 60% is the latest located revised-pay reference and remains editable. This is not a full historical DA table. For salary months before January 2026, the app clears the default DA rate and requires manual entry from the applicable circular or payslip. Check for later orders and confirm the category covered by the circular. Employees on pre-revised pay are outside this revised-pay calculator.
 
 ## 3. Contributory Pension Scheme — primary Government rules
 
