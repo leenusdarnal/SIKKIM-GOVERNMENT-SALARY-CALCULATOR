@@ -68,12 +68,14 @@ export interface ArrearMonthRow {
   otherEarnings: number;
   grossEntitlement: number;
   employeePension: number;
+  employerCpsContribution: number;
   professionalTax: number;
   gis: number;
   stampFee: number;
   incomeTaxTds: number;
   otherDeductions: number;
   employeeDeductions: number;
+  employerCpsContribution: number;
   revisedTakeHome: number;
   actualTakeHome: number | null;
   recovery: number;
@@ -153,6 +155,7 @@ function validateSalaryBasis(input: SalaryInput): string[] {
   if (!(input.basicPay > 0)) errors.push('Enter a basic pay greater than zero.');
   if (input.daRate > 200) errors.push('DA rate must be between 0% and 200%.');
   if (input.cpsRate > 100) errors.push('CPS/CPF employee rate must be between 0% and 100%.');
+  if (input.cpsEmployerRate > 100) errors.push('CPS/CPF State contribution rate must be between 0% and 100%.');
   if (input.cpsEmployerRate > 100) errors.push('CPS/CPF State contribution rate must be between 0% and 100%.');
   if (input.hraRate > 100 || input.sbcaRate > 100) {
     errors.push('HRA and SBCA rates must be between 0% and 100%.');
@@ -376,6 +379,7 @@ export function calculateArrears(input: ArrearsInput): ArrearsResult {
       totals: {
         grossEntitlement: 0,
         employeeDeductions: 0,
+        employerCpsContribution: 0,
         revisedTakeHome: 0,
         actualTakeHome: 0,
         recoveries: 0,
@@ -453,6 +457,7 @@ export function calculateArrears(input: ArrearsInput): ArrearsResult {
       otherEarnings: salary.otherEarnings,
       grossEntitlement: salary.gross,
       employeePension: salary.employeePension,
+      employerCpsContribution: salary.employerCpsContribution,
       professionalTax: salary.professionalTax,
       gis: salary.gis,
       stampFee: salary.stampFee,
@@ -473,6 +478,7 @@ export function calculateArrears(input: ArrearsInput): ArrearsResult {
   const totals: ArrearsTotals = rows.reduce<ArrearsTotals>((sum, row) => ({
     grossEntitlement: sum.grossEntitlement + row.grossEntitlement,
     employeeDeductions: sum.employeeDeductions + row.employeeDeductions,
+    employerCpsContribution: sum.employerCpsContribution + row.employerCpsContribution,
     revisedTakeHome: sum.revisedTakeHome + row.revisedTakeHome,
     actualTakeHome: sum.actualTakeHome + (row.actualTakeHome ?? 0),
     recoveries: sum.recoveries + row.recovery,
@@ -488,6 +494,7 @@ export function calculateArrears(input: ArrearsInput): ArrearsResult {
   }), {
     grossEntitlement: 0,
     employeeDeductions: 0,
+    employerCpsContribution: 0,
     revisedTakeHome: 0,
     actualTakeHome: 0,
     recoveries: 0,
@@ -507,7 +514,7 @@ export function createArrearsCsv(result: ArrearsResult): string {
   }
 
   const rows = [
-    ['Month', 'Calendar Days', 'Payable Days', 'Leave / Pay Factor (%)', 'Effective Pay Fraction (%)', 'Basic Pay (INR)', 'DA Rate (%)', 'DA (INR)', 'HRA (INR)', 'SBCA (INR)', 'Transport Allowance (INR)', 'Other Earnings (INR)', 'Revised Gross (INR)', 'Employee Pension / GPF (INR)', 'Professional Tax (INR)', 'Income Tax TDS (INR)', 'GIS (INR)', 'Stamp / Fixed Fee (INR)', 'Other Deductions (INR)', 'Total Employee Deductions (INR)', 'Revised Take-home (INR)', 'Actual Credited (INR)', 'Recovery from Arrears (INR)', 'Net Difference (INR)', 'Interest Days', 'Indicative Simple Interest (INR)', 'Effective change / order reference'],
+    ['Month', 'Calendar Days', 'Payable Days', 'Leave / Pay Factor (%)', 'Effective Pay Fraction (%)', 'Basic Pay (INR)', 'DA Rate (%)', 'DA (INR)', 'HRA (INR)', 'SBCA (INR)', 'Transport Allowance (INR)', 'Other Earnings (INR)', 'Revised Gross (INR)', 'Employee Pension / GPF (INR)', 'State CPS Matching Contribution (INR; not deducted)', 'Professional Tax (INR)', 'Income Tax TDS (INR)', 'GIS (INR)', 'Stamp / Fixed Fee (INR)', 'Other Deductions (INR)', 'Total Employee Deductions (INR)', 'Revised Take-home (INR)', 'Actual Credited (INR)', 'Recovery from Arrears (INR)', 'Net Difference (INR)', 'Interest Days', 'Indicative Simple Interest (INR)', 'Effective change / order reference'],
     ...result.rows.map((row) => [
       row.month,
       row.daysInMonth,
@@ -523,6 +530,7 @@ export function createArrearsCsv(result: ArrearsResult): string {
       row.otherEarnings,
       row.grossEntitlement,
       row.employeePension,
+      row.employerCpsContribution,
       row.professionalTax,
       row.incomeTaxTds,
       row.gis,
