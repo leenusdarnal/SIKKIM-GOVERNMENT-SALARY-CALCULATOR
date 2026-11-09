@@ -18,10 +18,10 @@ The app preserves the repository's 23 pay levels and 920 pay-matrix cells while 
 ## Features
 
 - All 23 State pay levels and 40 pay cells per level.
-- Editable DA rate, with 60% shown as the most recently publicly reported revised-pay rate effective 1 January 2026. Verify the signed Finance Department order before payroll use.
-- Editable HRA and SBCA reference rates, HRA eligibility and optional HRA minimum.
+- Salary-month field and editable DA rate; 60% is the latest located revised-pay rate effective 1 January 2026. Historical months require a manually verified rate.
+- HRA and SBCA are not presumed payable: HRA starts disabled and SBCA starts at 0%; reference rates remain editable.
 - Manual transport and other monthly earnings.
-- Sikkim CPS employee contribution at 10% of Basic Pay + DA for eligible covered employees, with the State matching share displayed separately.
+- Explicit pension-scheme selection; CPS/CPF employee contribution at 10% of Basic Pay + DA is calculated only when the user selects it, with the State matching share shown separately.
 - GPF, manual pension and no-pension options.
 - Sikkim Professional Tax salary slabs, with manual and exempt overrides.
 - Editable GIS, stamp/fixed fee, TDS, loan and other deductions.
@@ -72,10 +72,10 @@ The adapter manages the output directory. Node.js 24 is selected through .nvmrc 
 
 See [SOURCES.md](SOURCES.md) for notification references, links and caveats. Important qualifications:
 
-- Pay matrix data is retained from the previous app and should be checked cell-by-cell against the signed 2018 Rules schedule before official use.
-- The 60% DA default is based on public reporting; the signed State circular was not located during implementation.
-- HRA 12% and SBCA 8% are departmental reference values, not claims of universal eligibility.
-- Sikkim CPS is not assumed to be identical to every Central Government NPS arrangement. Appointment category and rule exclusions matter.
+- The full Government pay matrix is in the 2018 Revised Pay Rules Schedule, Part A. The separately listed State Bank-hosted reference PDF is treated as an operational reference for Sikkim State Government employees and contains only selected levels; all 23 Government levels are retained.
+- The 60% DA reference is based on Finance Department Circular No. GOS/1(32)/Bud/Fin/2001-2002/Part II/07 dated 1 October 2026, effective 1 January 2026; verify later orders and employee category.
+- HRA 12% and SBCA 8% are departmental reference values, not universal entitlements; HRA is disabled and SBCA is 0% by default.
+- Pension scheme eligibility is employee- and service-specific. The calculator requires explicit selection and does not infer CPS/CPF or OPS from appointment date alone.
 - GIS, transport, stamp fee, tax deductions and loans remain employee-specific inputs.
 - Automatic Professional Tax uses the Sikkim salary-earner slabs; manual override is available.
 
