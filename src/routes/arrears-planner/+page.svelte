@@ -232,6 +232,15 @@
       ...(hasSalaryUpdates ? { salaryUpdates } : {})
     };
 
+    if (!months.includes(eventMonth)) {
+      formError = 'The effective month must fall within the selected arrears period.';
+      return;
+    }
+    if (eventPayableMonth.trim() !== '' &&
+        (!months.includes(eventPayableMonth) || eventPayableMonth < eventMonth)) {
+      formError = 'Payable-from month must be within the selected period and cannot precede the notional effective month.';
+      return;
+    }
     if (!candidate.description) {
       formError = 'Enter the Government order number, date or a clear payslip reference.';
       return;
@@ -635,6 +644,7 @@
         </label>
         <label class="text-sm font-bold">Payable from (optional)
           <input type="month" bind:value={eventPayableMonth} min={eventMonth} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
+          <span class="mt-1 block text-xs font-normal text-slate-500">For a notional increment, enter a later month only when the order says it becomes payable after joining.</span>
         </label>
         <label class="text-sm font-bold">Change type
           <select bind:value={eventType} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700">
@@ -865,9 +875,12 @@
       <ul class="mt-2 list-disc space-y-1 pl-5 text-slate-600 dark:text-slate-300">
         <li><a class="font-semibold text-emerald-800 underline dark:text-emerald-400" href="https://www.sikkimfred.gov.in/DA%20Enhancement/Documents/DA%20Circular%202026.pdf" target="_blank" rel="noreferrer">Finance Department DA Circular dated 1 October 2026</a> — verify the employee category, rate and effective date before entering a DA change.</li>
         <li><a class="font-semibold text-emerald-800 underline dark:text-emerald-400" href="https://dop.sikkim.gov.in/circular/6780.pdf" target="_blank" rel="noreferrer">Department of Personnel clarification on EOL and annual increment dates</a> — qualifying service and leave can affect an employee's actual increment date.</li>
+        <li><a class="font-semibold text-emerald-800 underline dark:text-emerald-400" href="https://dop.sikkim.gov.in/circular/2255.pdf" target="_blank" rel="noreferrer">Study Leave and annual increment clarification, OM No. 2255/GEN/DOP dated 20 March 2025</a> — an increment during study leave may be granted notionally and become payable after joining, as provided by the OM.</li>
+        <li><a class="font-semibold text-emerald-800 underline dark:text-emerald-400" href="https://dop.sikkim.gov.in/notificationdoc/44.pdf" target="_blank" rel="noreferrer">Sikkim Government Service (Leave) Amendment Rules, 2025 — Child Care Leave</a> — the notification provides leave salary equivalent to pay drawn immediately before proceeding on CCL; confirm the exact eligibility and period for the employee.</li>
+        <li><a class="font-semibold text-emerald-800 underline dark:text-emerald-400" href="https://dop.sikkim.gov.in/notificationdoc/35.pdf" target="_blank" rel="noreferrer">Sikkim Government Service (Leave) Amendment Rules, 2026 and CCL clarification dated 16 July 2026</a> — defines a leave-rule year and clarifies cross-calendar-year CCL reckoning.</li>
         <li><a class="font-semibold text-emerald-800 underline dark:text-emerald-400" href="https://www.sikkim.gov.in/uploads/Gazette/333_20240813.pdf" target="_blank" rel="noreferrer">Sikkim Government Services (Revised Pay) Rules, 2018</a> — use the applicable order and service book for individual fixation.</li>
       </ul>
-      <p class="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">Every dated component change carries forward from its effective month until superseded. The model still does not calculate interest on arrears, income-tax recomputation, leave salary, DA on pre-revised pay, statutory rounding differences beyond the salary engine, or partial-month proration.</p>
+      <p class="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">Every dated component change carries forward until superseded. Payable days and any leave/pay factor are manual inputs: the planner prorates the stated salary basis but does not decide leave eligibility or calculate statutory leave salary. Optional interest is simple interest on positive monthly net differences only and is not a finding of entitlement. Income Tax TDS is manually entered; annual tax liability, tax regime, exemptions and year-end reconciliation are not calculated. The planner uses revised-pay DA and does not convert pre-revised basic pay or calculate a pre-revised DA scale. Half-up rupee rounding follows the salary engine.</p>
     </section>
   </div>
 </main>
