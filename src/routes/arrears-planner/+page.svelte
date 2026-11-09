@@ -27,6 +27,7 @@
   let baseSalary = $state<SalaryInput>({ ...DEFAULT_SALARY_INPUT, daRate: 0 });
   let changes = $state<ArrearChange[]>([]);
   let eventMonth = $state('2026-01');
+  let eventPayableMonth = $state('');
   let eventType = $state<ArrearChangeType>('da-revision');
   let eventBasicPay = $state('');
   let eventDaRate = $state('');
@@ -207,6 +208,7 @@
   function clearEventEditor() {
     editingChangeIndex = null;
     eventMonth = startMonth;
+    eventPayableMonth = '';
     eventType = 'da-revision';
     eventBasicPay = '';
     eventDaRate = '';
@@ -221,6 +223,7 @@
     const hasSalaryUpdates = Object.keys(salaryUpdates).length > 0;
     const candidate: ArrearChange = {
       effectiveMonth: eventMonth,
+      ...(eventPayableMonth.trim() === '' ? {} : { payableFromMonth: eventPayableMonth }),
       type: eventType,
       description: eventDescription.trim(),
       ...(basicPay === undefined ? {} : { basicPay }),
@@ -263,6 +266,7 @@
     if (!change) return;
     editingChangeIndex = index;
     eventMonth = change.effectiveMonth;
+    eventPayableMonth = change.payableFromMonth ?? '';
     eventType = change.type;
     eventBasicPay = change.basicPay === undefined ? '' : String(change.basicPay);
     eventDaRate = change.daRate === undefined ? '' : String(change.daRate);
@@ -615,6 +619,9 @@
       <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <label class="text-sm font-bold">Effective month
           <input type="month" bind:value={eventMonth} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
+        </label>
+        <label class="text-sm font-bold">Payable from (optional)
+          <input type="month" bind:value={eventPayableMonth} min={eventMonth} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
         </label>
         <label class="text-sm font-bold">Change type
           <select bind:value={eventType} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700">
