@@ -2,8 +2,14 @@ export const SALARY_SOURCES = [
   {
     title: 'Sikkim Government Services (Revised Pay) Rules, 2018',
     authority: 'Government of Sikkim, Department of Personnel',
-    note: 'Primary basis for the State pay matrix. The 23-level, 40-cell matrix has been preserved during this rewrite.',
+    note: 'Notification No. 56/GEN/DOP dated 23 June 2018. The document includes the Rules and Schedule, Part A (Pay Matrix), applicable to covered State services/posts from 1 January 2016.',
     url: 'https://www.sikkimfred.gov.in/FCD/DOCUMENTS15th_FC/SFTopicNote.pdf'
+  },
+  {
+    title: 'Sikkim Government pay-matrix reference PDF (operational copy)',
+    authority: 'Reference supplied by the project owner; hosted by State Bank of Sikkim',
+    note: 'Used here as a pay-matrix reference for Sikkim State Government employees; it is not a separate State Bank employee salary scheme. It displays selected levels only, so the full 23-level Government schedule remains the controlling cross-check for omitted levels.',
+    url: 'https://www.statebankofsikkim.com/SBSPAYMATRIX.pdf'
   },
   {
     title: 'Sikkim Government Servants (Contributory Pension) Rules, 2006',
@@ -24,9 +30,15 @@ export const SALARY_SOURCES = [
     url: 'https://www.cag.gov.in/uploads/old_reports/state/Sikkim/2008/Civil/Civil_Sikkim_2008/civil_chap_4.pdf'
   },
   {
-    title: 'DA enhancement report — 60% from 1 January 2026',
+    title: 'Finance Department DA circular — 60% from 1 January 2026',
+    authority: 'Government of Sikkim, Finance Department',
+    note: 'Circular No. GOS/1(32)/Bud/Fin/2001-2002/Part II/07 dated 1 October 2026. Revised-pay DA is 60% with effect from 1 January 2026. The rate remains editable; confirm whether a later order applies to the selected salary month and employee category.',
+    url: 'https://www.sikkimfred.gov.in/DA%20Enhancement/Documents/DA%20Circular%202026.pdf'
+  },
+  {
+    title: 'DA circular reporting and cross-reference',
     authority: 'India Today NE, 1 October 2026',
-    note: 'Public reporting of the latest DA change. The signed Sikkim Finance Department circular was not located; verify the rate before official payroll use.',
+    note: 'Secondary report identifying the circular reference and effective date; the Finance Department circular is listed above as the primary source.',
     url: 'https://www.indiatodayne.in/sikkim/story/sikkim-govt-hikes-da-for-employees-dearness-relief-for-pensioners-1457702-2026-10-01'
   },
   {
