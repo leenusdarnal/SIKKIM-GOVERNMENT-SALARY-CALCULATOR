@@ -28,13 +28,14 @@ function isObject(value: unknown): value is Record<string, unknown> {
 function isSalaryInput(value: unknown): value is SalaryInput {
   if (!isObject(value)) return false;
   const required = [
-    'basicPay', 'daRate', 'hraRate', 'hraMinimum', 'sbcaRate', 'cpsRate',
+    'basicPay', 'daRate', 'hraRate', 'hraMinimum', 'sbcaRate', 'cpsRate', 'cpsEmployerRate',
     'transportAllowance', 'otherEarnings', 'manualPension', 'manualProfessionalTax',
     'gis', 'stampFee', 'incomeTaxTds', 'otherDeductions'
   ];
   return required.every((key) => typeof value[key] === 'number' && Number.isFinite(value[key]) && Number(value[key]) >= 0) &&
     Number(value.daRate) <= 300 &&
     Number(value.cpsRate) <= 100 &&
+    Number(value.cpsEmployerRate) <= 100 &&
     Number(value.hraRate) <= 100 &&
     Number(value.sbcaRate) <= 100 &&
     typeof value.hraEligible === 'boolean' &&
