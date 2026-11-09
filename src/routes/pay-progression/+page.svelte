@@ -9,6 +9,7 @@
     readPayHistory,
     savePayHistory
   } from '../../lib/pay-history-storage';
+  import { deletePayHistoryEntry, editPayHistoryEntry } from '../../lib/pay-history-management';
   let level = $state(17);
   let cell = $state(1);
   let increments = $state(1);
@@ -19,11 +20,42 @@
   let persistenceEnabled = $state(false);
   let storageMessage = $state('Checking this browser for saved service history…');
   let backupInput: HTMLInputElement | undefined;
-  let event = $state<PayHistoryEntry['event']>('appointment');
-  let note = $state('');
+  let historyDate = $state('2026-01-01');
+  let historyLevel = $state(17);
+  let historyCell = $state(1);
+  let historyEvent = $state<PayHistoryEntry['event']>('appointment');
+  let historyNote = $state('');
+  let editingIndex = $state<number | null>(null);
+  let searchQuery = $state('');
+  let eventFilter = $state('all');
+  let fromDate = $state('');
+  let toDate = $state('');
   let error = $state('');
   const result = $derived(calculateCellProgression(level, cell, increments, eligible));
   const historyResult = $derived(validatePayHistory(history));
+  const filteredHistory = $derived(
+    historyResult.rows
+      .map((row, index) => ({ row, index }))
+      .filter(({ row }) => {
+        const query = searchQuery.trim().toLocaleLowerCase();
+        const searchable = [
+          row.effectiveDate,
+          row.event.replaceAll('-', ' '),
+          'level ' + row.level,
+          'cell ' + row.cell,
+          String(row.level),
+          String(row.cell),
+          String(row.basicPay),
+          row.note ?? ''
+        ].join(' ').toLocaleLowerCase();
+        return (
+          (!query || searchable.includes(query)) &&
+          (eventFilter === 'all' || row.event === eventFilter) &&
+          (!fromDate || row.effectiveDate >= fromDate) &&
+          (!toDate || row.effectiveDate <= toDate)
+        );
+      })
+  );
   const fmt = (n: number | null) => n === null ? '—' : new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
 
   onMount(() => {
@@ -104,22 +136,102 @@
     }
   }
 
-  function clearHistory() {
-    if (!window.confirm('Clear all service-history entries saved in this browser? Export a backup first if you may need them later.')) return;
-    history = [];
+  function resetHistoryEditor() {
+    editingIndex = null;
+    historyDate = '2026-01-01';
+    historyLevel = 17;
+    historyCell = 1;
+    historyEvent = 'appointment';
+    historyNote = '';
+  }
+
+  function startEditing(index: number) {
+    const entry = history[index];
+    if (!entry) {
+      error = 'The selected history entry could not be found.';
+      return;
+    }
+    editingIndex = index;
+    historyDate = entry.effectiveDate;
+    historyLevel = entry.level;
+    historyCell = entry.cell;
+    historyEvent = entry.event;
+    historyNote = entry.note ?? '';
+    error = '';
+  }
+
+  function cancelEditing() {
+    resetHistoryEditor();
+    error = '';
+  }
+
+  function deleteEntry(index: number) {
+    if (!window.confirm('Delete this service-history entry? This change will also be saved in this browser.')) return;
+    const result = deletePayHistoryEntry(history, index);
+    if (!result.ok) {
+      error = result.message;
+      return;
+    }
+    history = result.entries;
+    if (editingIndex === index) resetHistoryEditor();
+    else if (editingIndex !== null && editingIndex > index) editingIndex -= 1;
     persistenceEnabled = true;
     error = '';
   }
 
-  function addEntry() {
+  function clearHistory() {
+    if (!window.confirm('Clear all service-history entries saved in this browser? Export a backup first if you may need them later.')) return;
+    history = [];
+    persistenceEnabled = true;
+    resetHistoryEditor();
+    error = '';
+  }
+
+  function clearHistoryFilters() {
+    searchQuery = '';
+    eventFilter = 'all';
+    fromDate = '';
+    toDate = '';
+  }
+
+  function submitHistoryEntry() {
+    const replacement: PayHistoryEntry = {
+      effectiveDate: historyDate,
+      event: historyEvent,
+      level: historyLevel,
+      cell: historyCell,
+      ...(historyNote.trim() ? { note: historyNote.trim() } : {})
+    };
+
+    if (replacement.note && replacement.note.length > 500) {
+      error = 'The order / service-book reference must be 500 characters or fewer.';
+      return;
+    }
+
+    if (editingIndex !== null) {
+      const result = editPayHistoryEntry(history, editingIndex, replacement);
+      if (!result.ok) {
+        error = result.message;
+        return;
+      }
+      history = result.entries;
+      persistenceEnabled = true;
+      resetHistoryEditor();
+      error = '';
+      return;
+    }
+
     if (history.length >= 500) {
       error = 'This browser history supports up to 500 entries. Export a backup before starting a separate record.';
       return;
     }
-    const candidate = [...history, { effectiveDate, event, level, cell, note: note.trim() || undefined }];
+    const candidate = [...history, replacement];
     const checked = validatePayHistory(candidate);
     if (!checked.valid) { error = checked.errors.join(' '); return; }
-    history = candidate; persistenceEnabled = true; error = ''; note = '';
+    history = candidate;
+    persistenceEnabled = true;
+    error = '';
+    historyNote = '';
   }
 </script>
 <svelte:head>
@@ -161,25 +273,77 @@
         </div>
       </div>
       <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <label class="text-sm font-bold">Effective date<input type="date" bind:value={effectiveDate} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" /></label>
-        <label class="text-sm font-bold">Event<select bind:value={event} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700"><option value="appointment">Appointment</option><option value="annual-increment">Annual increment</option><option value="promotion">Promotion</option><option value="financial-upgradation">Financial upgradation</option><option value="regularisation">Regularisation</option><option value="manual-correction">Manual correction</option></select></label>
-        <label class="text-sm font-bold">Pay level<select bind:value={level} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700">{#each PAY_LEVELS as item}<option value={item}>Level {item}</option>{/each}</select></label>
-        <label class="text-sm font-bold">Cell<select bind:value={cell} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700">{#each PAY_MATRIX[level] as _, i}<option value={i + 1}>Cell {i + 1}</option>{/each}</select></label>
+        <label class="text-sm font-bold">Effective date<input type="date" bind:value={historyDate} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" /></label>
+        <label class="text-sm font-bold">Event<select bind:value={historyEvent} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700"><option value="appointment">Appointment</option><option value="annual-increment">Annual increment</option><option value="promotion">Promotion</option><option value="financial-upgradation">Financial upgradation</option><option value="regularisation">Regularisation</option><option value="manual-correction">Manual correction</option></select></label>
+        <label class="text-sm font-bold">Pay level<select bind:value={historyLevel} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700">{#each PAY_LEVELS as item}<option value={item}>Level {item}</option>{/each}</select></label>
+        <label class="text-sm font-bold">Cell<select bind:value={historyCell} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700">{#each PAY_MATRIX[historyLevel] as _, i}<option value={i + 1}>Cell {i + 1}</option>{/each}</select></label>
       </div>
-      <label class="mt-4 block text-sm font-bold">Order / service-book reference (optional)<input bind:value={note} placeholder="Order number, date or brief reference" class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 font-normal dark:border-slate-700" /></label>
-      <button type="button" onclick={addEntry} class="mt-4 rounded-xl bg-emerald-800 px-5 py-3 text-sm font-extrabold text-white hover:bg-emerald-700">Add history entry</button>
+      <label class="mt-4 block text-sm font-bold">Order / service-book reference (optional)<input bind:value={historyNote} maxlength="500" placeholder="Order number, date or brief reference" class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 font-normal dark:border-slate-700" /></label>
+      <div class="mt-4 flex flex-wrap gap-2">
+        <button type="button" onclick={submitHistoryEntry} class="rounded-xl bg-emerald-800 px-5 py-3 text-sm font-extrabold text-white hover:bg-emerald-700">{editingIndex === null ? 'Add history entry' : 'Save changes'}</button>
+        {#if editingIndex !== null}
+          <button type="button" onclick={cancelEditing} class="rounded-xl border border-slate-300 px-5 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800">Cancel edit</button>
+        {/if}
+      </div>
       {#if error}<p role="alert" class="mt-3 text-sm font-semibold text-red-600">{error}</p>{/if}
       {#if history.length}
-        <div class="mt-5 overflow-x-auto">
-          <table class="w-full min-w-[620px] text-left text-sm">
-            <thead><tr class="border-b border-slate-200 text-xs uppercase text-slate-500 dark:border-slate-700"><th class="py-3">Effective date</th><th>Event</th><th>Pay level</th><th>Basic pay</th><th>Reference</th></tr></thead>
-            <tbody>
-              {#each historyResult.rows as row}
-                <tr class="border-b border-slate-100 dark:border-slate-800"><td class="py-3">{row.effectiveDate}</td><td>{row.event.replaceAll('-', ' ')}</td><td>Level {row.level}, Cell {row.cell}</td><td class="font-bold">{fmt(row.basicPay)}</td><td>{row.note ?? '—'}</td></tr>
-              {/each}
-            </tbody>
-          </table>
+        <div class="mt-6 rounded-2xl border border-slate-200 p-4 dark:border-slate-700">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <h3 class="text-sm font-extrabold">Find and filter entries</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Showing {filteredHistory.length} of {history.length}</p>
+          </div>
+          <div class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <label class="text-xs font-bold text-slate-600 dark:text-slate-300 lg:col-span-2">Search records
+              <input bind:value={searchQuery} type="search" placeholder="Search date, event, level, cell or reference" class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 text-sm font-normal dark:border-slate-700" />
+            </label>
+            <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Event type
+              <select bind:value={eventFilter} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 text-sm dark:border-slate-700">
+                <option value="all">All events</option>
+                <option value="appointment">Appointment</option>
+                <option value="annual-increment">Annual increment</option>
+                <option value="promotion">Promotion</option>
+                <option value="financial-upgradation">Financial upgradation</option>
+                <option value="regularisation">Regularisation</option>
+                <option value="manual-correction">Manual correction</option>
+              </select>
+            </label>
+            <div class="flex items-end">
+              <button type="button" onclick={clearHistoryFilters} class="rounded-xl border border-slate-300 px-4 py-3 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800">Clear filters</button>
+            </div>
+            <label class="text-xs font-bold text-slate-600 dark:text-slate-300">From date
+              <input bind:value={fromDate} type="date" class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 text-sm font-normal dark:border-slate-700" />
+            </label>
+            <label class="text-xs font-bold text-slate-600 dark:text-slate-300">To date
+              <input bind:value={toDate} type="date" min={fromDate || undefined} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 text-sm font-normal dark:border-slate-700" />
+            </label>
+          </div>
         </div>
+        {#if filteredHistory.length}
+          <div class="mt-5 overflow-x-auto">
+            <table class="w-full min-w-[820px] text-left text-sm">
+              <thead><tr class="border-b border-slate-200 text-xs uppercase text-slate-500 dark:border-slate-700"><th class="py-3">Effective date</th><th>Event</th><th>Pay level</th><th>Basic pay</th><th>Reference</th><th class="text-right">Actions</th></tr></thead>
+              <tbody>
+                {#each filteredHistory as item (item.index)}
+                  <tr class="border-b border-slate-100 align-top dark:border-slate-800">
+                    <td class="py-3">{item.row.effectiveDate}</td>
+                    <td>{item.row.event.replaceAll('-', ' ')}</td>
+                    <td>Level {item.row.level}, Cell {item.row.cell}</td>
+                    <td class="font-bold">{fmt(item.row.basicPay)}</td>
+                    <td class="max-w-[220px] whitespace-normal">{item.row.note ?? '—'}</td>
+                    <td class="text-right">
+                      <div class="flex justify-end gap-2 py-2">
+                        <button type="button" onclick={() => startEditing(item.index)} class="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800">Edit</button>
+                        <button type="button" onclick={() => deleteEntry(item.index)} class="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-950/40">Delete</button>
+                      </div>
+                    </td>
+                  </tr>
+                {/each}
+              </tbody>
+            </table>
+          </div>
+        {:else}
+          <p class="mt-5 rounded-xl border border-dashed border-slate-300 p-4 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">No service-history entries match the current search and filters. Clear the filters to see all records.</p>
+        {/if}
         <button type="button" onclick={clearHistory} class="mt-4 text-sm font-bold text-red-600 hover:underline">Clear all history</button>
       {:else}
         <p class="mt-5 rounded-xl border border-dashed border-slate-300 p-4 text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">No service-history entries yet. Add the first entry above; you can later export a backup or restore it on another device.</p>
