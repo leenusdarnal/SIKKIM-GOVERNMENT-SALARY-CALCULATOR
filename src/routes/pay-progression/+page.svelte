@@ -16,6 +16,7 @@
   let effectiveDate = $state('2026-01-01');
   let history = $state<PayHistoryEntry[]>([]);
   let historyReady = $state(false);
+  let persistenceEnabled = $state(false);
   let storageMessage = $state('Checking this browser for saved service history…');
   let backupInput: HTMLInputElement | undefined;
   let event = $state<PayHistoryEntry['event']>('appointment');
@@ -29,11 +30,12 @@
     const restored = readPayHistory(localStorage);
     history = restored.entries;
     storageMessage = restored.message;
+    persistenceEnabled = restored.ok;
     historyReady = true;
   });
 
   $effect(() => {
-    if (!historyReady) return;
+    if (!historyReady || !persistenceEnabled) return;
     const saved = savePayHistory(history, localStorage);
     storageMessage = saved.message;
   });
@@ -92,6 +94,7 @@
       }
 
       history = parsed.entries;
+      persistenceEnabled = true;
       error = '';
       storageMessage = 'Backup restored. The imported entries are being saved in this browser.';
     } catch {
@@ -104,6 +107,7 @@
   function clearHistory() {
     if (!window.confirm('Clear all service-history entries saved in this browser? Export a backup first if you may need them later.')) return;
     history = [];
+    persistenceEnabled = true;
     error = '';
   }
 
@@ -111,7 +115,7 @@
     const candidate = [...history, { effectiveDate, event, level, cell, note: note.trim() || undefined }];
     const checked = validatePayHistory(candidate);
     if (!checked.valid) { error = checked.errors.join(' '); return; }
-    history = candidate; error = ''; note = '';
+    history = candidate; persistenceEnabled = true; error = ''; note = '';
   }
 </script>
 <svelte:head>
