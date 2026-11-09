@@ -20,7 +20,7 @@ The Sikkim Finance Department circular dated **1 October 2026**, Circular No. **
 
 The circular's rounding instruction is to round 50 paise or more up to the next rupee and ignore amounts below 50 paise. The calculator uses whole-rupee rounding for DA.
 
-**Calculator treatment:** 60% is the latest located revised-pay reference and remains editable. This is not a full historical DA table. For salary months before January 2026, the app clears the default DA rate and requires manual entry from the applicable circular or payslip. Check for later orders and confirm the category covered by the circular. Employees on pre-revised pay are outside this revised-pay calculator.
+**Calculator treatment:** 60% is the latest located revised-pay reference and remains editable. This is not a full historical DA table. For months outside the currently verified January–November 2026 window, the app clears the default DA rate and requires manual entry from the applicable circular or payslip. Check for later orders and confirm the category covered by the circular. Employees on pre-revised pay are outside this revised-pay calculator.
 
 ## 3. Contributory Pension Scheme — primary Government rules
 
