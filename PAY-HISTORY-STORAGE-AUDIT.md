@@ -25,3 +25,14 @@ Review date: 9 November 2026
 The new unit tests cover storage round-tripping, empty storage, corrupt data, unsupported event types, oversized files, invalid pay-matrix cells, chronological-order enforcement, CSV escaping/formula hardening and blocked storage.
 
 The application remains an independent service-record aid. Persistence does not change official pay fixation, increment eligibility, promotion rules or entitlement decisions.
+
+
+## Service-history management enhancement
+
+- Users can edit an individual record's effective date, event, pay level, pay cell and optional order/service-book reference.
+- Edited records are sorted by effective date; existing same-date ordering remains stable. The entire resulting history is validated before saving.
+- Users can delete an individual record after confirmation, or continue to clear all records with a separate confirmation.
+- Search checks effective date, event, level, cell, basic pay and reference text.
+- Event-type and inclusive from/to date filters can be combined with search. Clearing filters does not modify the saved service record.
+- The entry editor now has separate inputs from the increment scenario, so editing an old service-history row does not change the values used for the pay-cell scenario.
+- Edit/delete helpers are covered by unit tests for valid updates, stable chronology, invalid matrix cells, invalid indexes and immutability.
