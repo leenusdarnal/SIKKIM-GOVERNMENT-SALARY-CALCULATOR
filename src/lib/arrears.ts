@@ -152,7 +152,8 @@ function validateSalaryBasis(input: SalaryInput): string[] {
 
   if (!(input.basicPay > 0)) errors.push('Enter a basic pay greater than zero.');
   if (input.daRate > 300) errors.push('DA rate must be between 0% and 300%.');
-  if (input.cpsRate > 100) errors.push('CPS/CPF rate must be between 0% and 100%.');
+  if (input.cpsRate > 100) errors.push('CPS/CPF employee rate must be between 0% and 100%.');
+  if (input.cpsEmployerRate > 100) errors.push('CPS/CPF State contribution rate must be between 0% and 100%.');
   if (input.hraRate > 100 || input.sbcaRate > 100) {
     errors.push('HRA and SBCA rates must be between 0% and 100%.');
   }
