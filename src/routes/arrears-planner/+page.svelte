@@ -142,6 +142,30 @@
     formError = '';
   }
 
+  function componentChangeSummary(change: ArrearChange): string {
+    const labels: Record<string, string> = {
+      hraEligible: 'HRA eligibility',
+      hraRate: 'HRA rate',
+      hraMinimum: 'HRA minimum',
+      sbcaRate: 'SBCA rate',
+      transportAllowance: 'Transport',
+      otherEarnings: 'Other earnings',
+      pensionMode: 'Pension',
+      manualPension: 'GPF / manual pension',
+      professionalTaxMode: 'Professional Tax mode',
+      manualProfessionalTax: 'Professional Tax',
+      gis: 'GIS',
+      stampFee: 'Stamp / fixed fee',
+      otherDeductions: 'Other deductions'
+    };
+    return Object.entries(change.salaryUpdates ?? {}).map(([key, value]) => {
+      const display = typeof value === 'boolean'
+        ? value ? 'Eligible' : 'Not eligible'
+        : String(value) + (key.endsWith('Rate') ? '%' : '');
+      return (labels[key] ?? key) + ': ' + display;
+    }).join(' · ') || '—';
+  }
+
   function removeChange(index: number) {
     changes = changes.filter((_, itemIndex) => itemIndex !== index);
   }
@@ -384,8 +408,8 @@
       <button type="button" onclick={addChange} class="mt-4 rounded-xl bg-emerald-800 px-5 py-3 text-sm font-extrabold text-white hover:bg-emerald-700">Add effective-dated change</button>
       {#if changes.length}
         <div class="mt-5 overflow-x-auto">
-          <table class="w-full min-w-[720px] text-left text-sm">
-            <thead><tr class="border-b border-slate-200 text-xs uppercase text-slate-500 dark:border-slate-700"><th class="py-3">Effective month</th><th>Change</th><th>New basic pay</th><th>New DA</th><th>Order / reference</th><th></th></tr></thead>
+          <table class="w-full min-w-[1050px] text-left text-sm">
+            <thead><tr class="border-b border-slate-200 text-xs uppercase text-slate-500 dark:border-slate-700"><th class="py-3">Effective month</th><th>Change</th><th>New basic pay</th><th>New DA</th><th>Component changes</th><th>Order / reference</th><th></th></tr></thead>
             <tbody>
               {#each changes as change, index}
                 <tr class="border-b border-slate-100 dark:border-slate-800">
@@ -393,6 +417,7 @@
                   <td>{change.type.replaceAll('-', ' ')}</td>
                   <td>{change.basicPay === undefined ? '—' : fmt(change.basicPay)}</td>
                   <td>{change.daRate === undefined ? '—' : change.daRate + '%'}</td>
+                  <td class="max-w-[280px] whitespace-normal text-xs">{componentChangeSummary(change)}</td>
                   <td>{change.description}</td>
                   <td class="text-right"><button type="button" onclick={() => removeChange(index)} class="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-950/40">Remove</button></td>
                 </tr>
