@@ -785,6 +785,7 @@
           <div class="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800"><p class="text-xs text-slate-500">Revised take-home total</p><p class="mt-1 text-xl font-black">{fmt(result.totals.revisedTakeHome)}</p></div>
           <div class="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800"><p class="text-xs text-slate-500">Actual credited total</p><p class="mt-1 text-xl font-black">{result.complete ? fmt(result.totals.actualTakeHome) : 'Pending'}</p></div>
           <div class="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800"><p class="text-xs text-slate-500">Additional recoveries</p><p class="mt-1 text-xl font-black">{fmt(result.totals.recoveries)}</p></div>
+          <div class="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800"><p class="text-xs text-slate-500">State CPS matching contribution (not deducted)</p><p class="mt-1 text-xl font-black">{fmt(result.totals.employerCpsContribution)}</p></div>
           <div class="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800"><p class="text-xs text-slate-500">Net arrears before interest</p><p class="mt-1 text-xl font-black">{result.complete ? fmt(result.totals.netArrears) : 'Pending'}</p></div>
           <div class="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800"><p class="text-xs text-slate-500">Indicative interest</p><p class="mt-1 text-xl font-black">{fmt(result.totals.interestAmount)}</p></div>
           <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900 dark:bg-emerald-950/30"><p class="text-xs text-emerald-800 dark:text-emerald-300">Total including interest</p><p class="mt-1 text-xl font-black text-emerald-950 dark:text-emerald-100">{result.complete ? fmt(result.totals.totalIncludingInterest) : 'Incomplete'}</p></div>
@@ -803,7 +804,7 @@
           <table class="w-full min-w-[2700px] text-left text-sm">
             <thead>
               <tr class="border-b border-slate-200 text-[10px] uppercase tracking-wide text-slate-500 dark:border-slate-700">
-                <th class="py-3">Month</th><th>Calendar days</th><th>Payable days</th><th>Pay factor (%)</th><th>Basic pay</th><th>DA rate</th><th>DA</th><th>HRA</th><th>SBCA</th><th>Transport</th><th>Other earnings</th><th>Revised gross</th><th>CPS / GPF</th><th>Professional Tax</th><th>Income Tax TDS</th><th>GIS</th><th>Stamp fee</th><th>Other deductions</th><th>Total deductions</th><th>Revised take-home</th><th>Actual net paid (₹)</th><th>Recovery (₹)</th><th>Net difference</th><th>Interest days</th><th>Interest (₹)</th>
+                <th class="py-3">Month</th><th>Calendar days</th><th>Payable days</th><th>Pay factor (%)</th><th>Basic pay</th><th>DA rate</th><th>DA</th><th>HRA</th><th>SBCA</th><th>Transport</th><th>Other earnings</th><th>Revised gross</th><th>Employee CPS / GPF</th><th>State CPS matching share</th><th>Professional Tax</th><th>Income Tax TDS</th><th>GIS</th><th>Stamp fee</th><th>Other deductions</th><th>Total deductions</th><th>Revised take-home</th><th>Actual net paid (₹)</th><th>Recovery (₹)</th><th>Net difference</th><th>Interest days</th><th>Interest (₹)</th>
               </tr>
             </thead>
             <tbody>
@@ -822,6 +823,7 @@
                   <td>{fmt(row.otherEarnings)}</td>
                   <td>{fmt(row.grossEntitlement)}</td>
                   <td>{fmt(row.employeePension)}</td>
+                  <td>{fmt(row.employerCpsContribution)}</td>
                   <td>{fmt(row.professionalTax)}</td>
                   <td>{fmt(row.incomeTaxTds)}</td>
                   <td>{fmt(row.gis)}</td>
@@ -836,7 +838,7 @@
                   <td>{fmt(row.interestAmount)}</td>
                 </tr>
                 {#if row.appliedChanges.length}
-                  <tr class="border-b border-slate-100 bg-emerald-50/60 dark:border-slate-800 dark:bg-emerald-950/20"><td colspan="25" class="px-3 py-2 text-xs text-emerald-900 dark:text-emerald-200">Applied from this month: {row.appliedChanges.join(' · ')}</td></tr>
+                  <tr class="border-b border-slate-100 bg-emerald-50/60 dark:border-slate-800 dark:bg-emerald-950/20"><td colspan="26" class="px-3 py-2 text-xs text-emerald-900 dark:text-emerald-200">Applied from this month: {row.appliedChanges.join(' · ')}</td></tr>
                 {/if}
               {/each}
             </tbody>
