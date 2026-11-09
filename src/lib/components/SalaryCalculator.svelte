@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { PAY_LEVELS, PAY_MATRIX } from '../data/pay-matrix';
+  import { PAY_LEVELS, PAY_MATRIX, PAY_MATRIX_TOTAL_CELLS } from '../data/pay-matrix';
   import {
     calculateSalary,
     DEFAULT_SALARY_INPUT,
@@ -186,7 +186,7 @@
             </div>
             <div class="flex flex-wrap gap-2">
               <span class="stat-chip"><strong>23</strong> pay levels</span>
-              <span class="stat-chip"><strong>920</strong> pay cells</span>
+              <span class="stat-chip"><strong>{PAY_MATRIX_TOTAL_CELLS}</strong> official pay cells</span>
               <span class="stat-chip"><strong>INR</strong> currency</span>
             </div>
           </div>
@@ -523,7 +523,7 @@
             <div class="flex items-center gap-3"><span class="step-badge muted">03</span><div><p class="eyebrow">Reference table</p><h2 class="text-lg font-black">Sikkim Government pay matrix</h2></div></div>
             <button type="button" onclick={() => (matrixOpen = !matrixOpen)} class="button-secondary">{matrixOpen ? 'Close matrix' : 'Explore pay cells'}</button>
           </div>
-          <p class="mt-3 max-w-3xl text-xs leading-5 text-slate-500 dark:text-slate-400">Choose a level in the calculator to browse its 40 pay cells. Selecting a cell here also updates the employee details form.</p>
+          <p class="mt-3 max-w-3xl text-xs leading-5 text-slate-500 dark:text-slate-400">Choose a level in the calculator to browse the cells printed for that level in the official Government schedule. Selecting a cell here also updates the employee details form.</p>
           {#if matrixOpen && selectedLevel !== ''}
             <div class="mt-5 flex flex-wrap items-center justify-between gap-3">
               <p class="text-sm font-extrabold">Level {selectedLevel} <span class="font-normal text-slate-400">· {currentCells.length} cells</span></p>

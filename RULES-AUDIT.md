@@ -10,9 +10,9 @@ Branch: `feature/salary-rule-safeguards`
 3. **No salary month was requested.** A month selector was added. The known 60% DA reference is effective 1 January 2026. Choosing an earlier month clears DA to 0 and prompts the user to enter the historically applicable rate; the calculator does not invent a missing DA history.
 4. **Pay-matrix source description was insufficient.** The official Government PDF is Notification No. 56/GEN/DOP dated 23 June 2018 and includes the Schedule, Part A (Pay Matrix). The State Bank-hosted PDF is separately disclosed as the operational reference supplied by the project owner, not as a separate salary scheme for bank employees. It contains selected levels only; the complete Government schedule remains the full-level cross-check.
 
-## Known limitations still open
+## Updated status after the pay-matrix audit
 
-- The 920 pay-matrix values still need a full cell-by-cell comparison against the 2018 Government schedule, using a machine-readable transcription and review.
+- The 2018 Schedule Part A transcription has now been reconciled cell by cell. See [PAY-MATRIX-AUDIT.md](PAY-MATRIX-AUDIT.md). The old 920-entry padded matrix was replaced with 794 printed cells and the identified incorrect values were corrected.
 - The DA rate is verified in this implementation only for January–November 2026. Earlier historical months and future months require manual DA entry from the applicable order.
 - CPS/CPF versus OPS coverage needs to be represented using the applicable individual service order and current Department of Personnel guidance. Appointment date alone is not treated as conclusive.
 - HRA, SBCA, transport, compensatory / high-altitude allowance, GIS and stamp fee remain employee-specific; current universal entitlement rules have not been fully verified.

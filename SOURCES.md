@@ -6,8 +6,8 @@ This file records which calculation inputs are backed by Government of Sikkim ma
 
 **Sikkim Government Services (Revised Pay) Rules, 2018**, Notification No. **56/GEN/DOP**, dated **23 June 2018**. The Rules state that they are deemed to have come into force on **1 January 2016** and apply to eligible State services/posts (with listed exclusions).
 
-- Official Government of Sikkim Finance Department PDF: https://www.sikkimfred.gov.in/FCD/DOCUMENTS15th_FC/SFTopicNote.pdf
-- The app retains its 23 pay levels and cell values. The pay matrix is not generated from a Central Government pay matrix.
+- Official Government of Sikkim Finance Department PDF: https://www.sikkim.gov.in/uploads/Gazette/333_20240813.pdf
+- The complete Schedule Part A contains 23 levels and 794 printed pay cells. Levels 1–14 contain 40 cells each; Levels 15–23 contain 36, 35, 32, 28, 26, 23, 19, 18 and 17 cells respectively. The calculator now stores only cells actually printed in the Government schedule; it does not extrapolate higher cells.
 
 **Operational reference supplied for this project:** https://www.statebankofsikkim.com/SBSPAYMATRIX.pdf. As clarified by the project owner, this PDF is used as a pay-matrix reference for Sikkim State Government employees; it is not a separate State Bank of Sikkim employee salary scheme. The copy displays selected levels (4–7, 9–12, 14–17 and 19–22), while the Government Rules schedule remains the full 23-level authority. Missing levels must not be dropped from the State Government calculator.
 

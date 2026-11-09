@@ -1,15 +1,41 @@
 import { describe, expect, it } from 'vitest';
 import { calculateSalary, DEFAULT_SALARY_INPUT, getSikkimProfessionalTax } from './salary';
-import { PAY_MATRIX } from './data/pay-matrix';
+import { PAY_LEVELS, PAY_MATRIX, PAY_MATRIX_CELL_COUNTS, PAY_MATRIX_TOTAL_CELLS } from './data/pay-matrix';
 
 describe('Sikkim pay matrix', () => {
-  it('contains all 23 levels with 40 cells each', () => {
+  it('contains all 23 Government levels and exactly 794 printed cells', () => {
+    expect(PAY_LEVELS).toEqual(Array.from({ length: 23 }, (_, index) => index + 1));
     expect(Object.keys(PAY_MATRIX)).toHaveLength(23);
-    for (const row of Object.values(PAY_MATRIX)) expect(row).toHaveLength(40);
+    expect(PAY_MATRIX_TOTAL_CELLS).toBe(794);
+    expect(Object.values(PAY_MATRIX).reduce((total, row) => total + row.length, 0)).toBe(794);
+  });
+
+  it('uses the exact number of cells printed for each level in Schedule Part A', () => {
+    expect(PAY_LEVELS.map((level) => PAY_MATRIX_CELL_COUNTS[level])).toEqual([
+      40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 36, 35, 32, 28, 26, 23, 19, 18, 17
+    ]);
+    for (const level of PAY_LEVELS) {
+      const row = PAY_MATRIX[level];
+      expect(row.every((value, index) => index === 0 || value > row[index - 1])).toBe(true);
+    }
+  });
+
+  it('does not expose a pay cell beyond the official final cell', () => {
+    expect(PAY_MATRIX[15][35]).toBe(130_500);
+    expect(PAY_MATRIX[15][36]).toBeUndefined();
+    expect(PAY_MATRIX[16][34]).toBe(135_500);
+    expect(PAY_MATRIX[16][35]).toBeUndefined();
+    expect(PAY_MATRIX[17][31]).toBe(139_800);
+    expect(PAY_MATRIX[17][32]).toBeUndefined();
+    expect(PAY_MATRIX[23][16]).toBe(200_100);
+    expect(PAY_MATRIX[23][17]).toBeUndefined();
   });
 
   it('retains known starting values', () => {
     expect(PAY_MATRIX[1][0]).toBe(15_200);
+    expect(PAY_MATRIX[1][29]).toBe(36_100);
+    expect(PAY_MATRIX[9][27]).toBe(56_700);
+    expect(PAY_MATRIX[10][6]).toBe(36_100);
     expect(PAY_MATRIX[15][0]).toBe(46_300);
     expect(PAY_MATRIX[17][0]).toBe(56_000);
     expect(PAY_MATRIX[23][0]).toBe(124_700);
