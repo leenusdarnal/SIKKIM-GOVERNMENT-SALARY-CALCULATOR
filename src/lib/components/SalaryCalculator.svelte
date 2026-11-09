@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { PAY_LEVELS, PAY_MATRIX } from '../data/pay-matrix';
+  import { PAY_LEVELS, PAY_MATRIX, PAY_MATRIX_TOTAL_CELLS } from '../data/pay-matrix';
   import {
     calculateSalary,
     DEFAULT_SALARY_INPUT,
