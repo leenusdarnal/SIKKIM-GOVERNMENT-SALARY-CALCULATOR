@@ -568,6 +568,9 @@
             <label class="text-sm font-bold">CPS / CPF employee rate (%)
               <input type="number" min="0" max="100" step="0.01" bind:value={baseSalary.cpsRate} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
             </label>
+            <label class="text-sm font-bold">State matching contribution rate (%)
+              <input type="number" min="0" max="100" step="0.01" bind:value={baseSalary.cpsEmployerRate} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
+            </label>
           {/if}
           <label class="text-sm font-bold">Professional Tax treatment
             <select bind:value={baseSalary.professionalTaxMode} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700">
@@ -658,8 +661,11 @@
                 <option value="">Unchanged</option><option value="cps">CPS / CPF</option><option value="gpf">GPF</option><option value="manual">Manual pension</option><option value="none">No pension deduction</option>
               </select>
             </label>
-            <label class="text-sm font-bold">CPS / CPF rate (%)
+            <label class="text-sm font-bold">CPS / CPF employee rate (%)
               <input type="number" min="0" max="100" step="0.01" value={componentEvent.cpsRate} oninput={(event) => (componentEvent.cpsRate = (event.currentTarget as HTMLInputElement).value)} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
+            </label>
+            <label class="text-sm font-bold">State matching contribution rate (%)
+              <input type="number" min="0" max="100" step="0.01" value={componentEvent.cpsEmployerRate} oninput={(event) => (componentEvent.cpsEmployerRate = (event.currentTarget as HTMLInputElement).value)} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
             </label>
             <label class="text-sm font-bold">Manual pension / GPF (₹)
               <input type="number" min="0" step="1" value={componentEvent.manualPension} oninput={(event) => (componentEvent.manualPension = (event.currentTarget as HTMLInputElement).value)} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
