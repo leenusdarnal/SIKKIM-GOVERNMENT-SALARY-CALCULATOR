@@ -363,7 +363,7 @@
                     <span class="rounded-full bg-sky-50 px-2.5 py-1 text-[10px] font-extrabold text-sky-800 dark:bg-sky-950 dark:text-sky-200">{daNeedsManualVerification ? 'Rate needs verification' : '60% latest reference'}</span>
                   </div>
                   <div class="relative">
-                    <input id="daRate" type="number" min="0" max="200" step="0.5" bind:value={form.daRate} class="field-control pr-12 text-right font-bold tabular-nums" />
+                    <input id="daRate" type="number" min="0" max="300" step="0.5" bind:value={form.daRate} class="field-control pr-12 text-right font-bold tabular-nums" />
                     <span class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">%</span>
                   </div>
                   {#if daNeedsManualVerification}
@@ -445,7 +445,13 @@
                     </select>
                   </div>
                   <p class="field-help">Choose the scheme supported by your appointment/service records or latest DDO confirmation. Do not infer CPS/CPF or OPS eligibility from appointment date alone.</p>
-                  {#if form.pensionMode === 'gpf' || form.pensionMode === 'manual'}
+                  {#if form.pensionMode === 'cps'}
+                    <div class="mt-4">
+                      <label for="cpsRate" class="field-label">Employee CPS / CPF contribution rate (%)</label>
+                      <input id="cpsRate" type="number" min="0" max="100" step="0.01" bind:value={form.cpsRate} class="field-control" />
+                      <p class="field-help">The standard reference is 10%. Change this only when an applicable order or DDO record confirms a different rate.</p>
+                    </div>
+                  {:else if form.pensionMode === 'gpf' || form.pensionMode === 'manual'}
                     <div class="mt-4">
                       <label for="manualPension" class="field-label">Monthly GPF / pension amount (₹)</label>
                       <input id="manualPension" type="number" min="0" bind:value={form.manualPension} class="field-control" />
@@ -482,8 +488,13 @@
                       <input id="stampFee" type="number" min="0" bind:value={form.stampFee} class="field-control" />
                       <p class="field-help">Enter only when required by a current order or displayed on your payslip.</p>
                     </div>
-                    <div class="sm:col-span-2">
-                      <label for="otherDeductions" class="field-label">TDS, loans and other deductions (₹)</label>
+                    <div>
+                      <label for="incomeTaxTds" class="field-label">Income Tax TDS (₹)</label>
+                      <input id="incomeTaxTds" type="number" min="0" bind:value={form.incomeTaxTds} class="field-control" />
+                      <p class="field-help">Manual monthly TDS from the payroll / tax computation; this tool does not determine annual income-tax liability.</p>
+                    </div>
+                    <div>
+                      <label for="otherDeductions" class="field-label">Loans and other deductions (₹)</label>
                       <input id="otherDeductions" type="number" min="0" bind:value={form.otherDeductions} class="field-control" />
                     </div>
                   </div>
