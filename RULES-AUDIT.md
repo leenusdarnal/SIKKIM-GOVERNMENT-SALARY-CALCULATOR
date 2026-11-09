@@ -25,3 +25,14 @@ Branch: `feature/salary-rule-safeguards`
 - Confirm that an unselected pension scheme blocks the UI calculation.
 - Confirm that an earlier salary month does not retain the current 60% DA default.
 - Confirm that selecting CPS displays the employee contribution and matching State share separately.
+
+
+## Allowance and deduction safeguards — 9 November 2026
+
+- Professional Tax now starts in an unselected state. The user must choose a manual payslip amount, an optional automatic gross-pay estimate, or not-applicable / exempt before calculating. The automatic estimate is explicitly labelled because the statutory assessment base, exclusions and individual exemptions have not been fully reconciled.
+- HRA remains disabled by default. The 12% HRA and 8% SBCA references are described as departmental disclosures only; SBCA remains 0% until entered by the employee. No 2018 allowance is treated as a universal current entitlement.
+- The Department of Personnel's Notification No. 85/GEN/DOP dated 25 August 2018 (Gazette No. 462) is added to the source register as a historical allowance baseline effective from 1 September 2018. Current amendments and employee/posting-specific applicability still require confirmation.
+- Transport, GIS, stamp/fixed fee, compensatory / high-altitude and other posting-specific amounts remain manual. GPF remains manual because the current employee-specific contribution is not inferable from pay level alone.
+- HRA and SBCA percentage inputs are bounded at 100% in the calculation engine. Tests cover the required Professional Tax choice, existing slab boundaries and percentage bounds.
+
+See [ALLOWANCE-DEDUCTION-AUDIT.md](ALLOWANCE-DEDUCTION-AUDIT.md) for the detailed scope and limitations.
