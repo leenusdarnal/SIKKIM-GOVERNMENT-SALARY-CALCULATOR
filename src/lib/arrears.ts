@@ -75,7 +75,6 @@ export interface ArrearMonthRow {
   incomeTaxTds: number;
   otherDeductions: number;
   employeeDeductions: number;
-  employerCpsContribution: number;
   revisedTakeHome: number;
   actualTakeHome: number | null;
   recovery: number;
@@ -88,6 +87,7 @@ export interface ArrearMonthRow {
 export interface ArrearsTotals {
   grossEntitlement: number;
   employeeDeductions: number;
+  employerCpsContribution: number;
   revisedTakeHome: number;
   actualTakeHome: number;
   recoveries: number;
@@ -155,7 +155,6 @@ function validateSalaryBasis(input: SalaryInput): string[] {
   if (!(input.basicPay > 0)) errors.push('Enter a basic pay greater than zero.');
   if (input.daRate > 200) errors.push('DA rate must be between 0% and 200%.');
   if (input.cpsRate > 100) errors.push('CPS/CPF employee rate must be between 0% and 100%.');
-  if (input.cpsEmployerRate > 100) errors.push('CPS/CPF State contribution rate must be between 0% and 100%.');
   if (input.cpsEmployerRate > 100) errors.push('CPS/CPF State contribution rate must be between 0% and 100%.');
   if (input.hraRate > 100 || input.sbcaRate > 100) {
     errors.push('HRA and SBCA rates must be between 0% and 100%.');
@@ -297,11 +296,10 @@ function calculateInterest(principal: number, annualRate: number, month: string,
   const [year, monthNumber] = month.split('-').map(Number);
   const monthEnd = Date.UTC(year, monthNumber, 0);
   const settlement = Date.parse(settlementDate + 'T00:00:00.000Z');
-  const days = Math.max(0, Math.floor((settlement - monthEnd) / 86_400_000));
-  const amount = principal > 0 && annualRate > 0
-    ? Math.floor((principal * annualRate * days / 36_500) + 0.5)
-    : 0;
-  return { days, amount };
+  const elapsedDays = Math.max(0, Math.floor((settlement - monthEnd) / 86_400_000));
+  if (principal <= 0 || annualRate <= 0 || elapsedDays === 0) return { days: 0, amount: 0 };
+  const amount = Math.floor((principal * annualRate * elapsedDays / 36_500) + 0.5);
+  return { days: elapsedDays, amount };
 }
 
 function csvCell(value: string | number): string {
