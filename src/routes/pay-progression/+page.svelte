@@ -112,6 +112,10 @@
   }
 
   function addEntry() {
+    if (history.length >= 500) {
+      error = 'This browser history supports up to 500 entries. Export a backup before starting a separate record.';
+      return;
+    }
     const candidate = [...history, { effectiveDate, event, level, cell, note: note.trim() || undefined }];
     const checked = validatePayHistory(candidate);
     if (!checked.valid) { error = checked.errors.join(' '); return; }
