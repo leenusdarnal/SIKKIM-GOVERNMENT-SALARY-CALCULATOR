@@ -11,7 +11,10 @@ export type ArrearChangeType =
 export type ArrearSalaryUpdate = Partial<Omit<SalaryInput, 'basicPay' | 'daRate'>>;
 
 export interface ArrearChange {
+  /** Notional / order effective month, e.g. increment accrual date. */
   effectiveMonth: string;
+  /** Month from which the amount becomes payable; defaults to effectiveMonth. */
+  payableFromMonth?: string;
   type: ArrearChangeType;
   description: string;
   /** New basic pay from this month onward; enter the pay fixed by the competent order. */
@@ -217,6 +220,14 @@ function validateChange(change: ArrearChange, index: number, months: string[]): 
   if (!months.includes(change.effectiveMonth)) {
     errors.push('Change ' + (index + 1) + ': effective month must be within the selected arrears period.');
   }
+  if (change.payableFromMonth !== undefined) {
+    if (!months.includes(change.payableFromMonth)) {
+      errors.push('Change ' + (index + 1) + ': payable-from month must be within the selected arrears period.');
+    }
+    if (change.payableFromMonth < change.effectiveMonth) {
+      errors.push('Change ' + (index + 1) + ': payable-from month cannot precede the notional effective month.');
+    }
+  }
   if (!CHANGE_TYPES.has(change.type)) {
     errors.push('Change ' + (index + 1) + ': select a supported change type.');
   }
@@ -377,9 +388,13 @@ export function calculateArrears(input: ArrearsInput): ArrearsResult {
   }
 
   const orderedChanges = input.changes
-    .map((change, originalIndex) => ({ change, originalIndex }))
+    .map((change, originalIndex) => ({
+      change,
+      originalIndex,
+      payableMonth: change.payableFromMonth ?? change.effectiveMonth
+    }))
     .sort((a, b) =>
-      a.change.effectiveMonth.localeCompare(b.change.effectiveMonth) ||
+      a.payableMonth.localeCompare(b.payableMonth) ||
       a.originalIndex - b.originalIndex
     );
 
@@ -391,7 +406,7 @@ export function calculateArrears(input: ArrearsInput): ArrearsResult {
     const appliedChanges: string[] = [];
     while (
       nextChange < orderedChanges.length &&
-      orderedChanges[nextChange].change.effectiveMonth <= month
+      orderedChanges[nextChange].payableMonth <= month
     ) {
       const change = orderedChanges[nextChange].change;
       if (change.basicPay !== undefined) salaryState.basicPay = change.basicPay;
@@ -399,7 +414,11 @@ export function calculateArrears(input: ArrearsInput): ArrearsResult {
       if (change.salaryUpdates !== undefined) {
         salaryState = { ...salaryState, ...change.salaryUpdates };
       }
-      appliedChanges.push(change.description);
+      appliedChanges.push(
+        change.payableFromMonth && change.payableFromMonth !== change.effectiveMonth
+          ? change.description + ' (notional ' + change.effectiveMonth + ', payable ' + change.payableFromMonth + ')'
+          : change.description
+      );
       nextChange += 1;
     }
 
