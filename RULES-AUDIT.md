@@ -36,3 +36,16 @@ Branch: `feature/salary-rule-safeguards`
 - HRA and SBCA percentage inputs are bounded at 100% in the calculation engine. Tests cover the required Professional Tax choice, existing slab boundaries and percentage bounds.
 
 See [ALLOWANCE-DEDUCTION-AUDIT.md](ALLOWANCE-DEDUCTION-AUDIT.md) for the detailed scope and limitations.
+
+
+## Temporary and training pay implementation — 9 November 2026
+
+- Added the Department of Personnel Notification No. M(164)/42/GEN/DOP dated 12 August 2026, which supersedes the 2018 temporary consolidated-pay notification.
+- Implemented the five Group C/D equivalent-grade-pay rows and all 16 specific-post consolidated-pay rows as separate temporary-pay options.
+- Added the direct-recruit first-year training allowance rates from Notifications J(1)/86-GEN/DOP and J(1)/87/GEN/DOP, both dated 25 July 2024, split by group and training location.
+- Temporary driver pay is not hardcoded: the 2026 notification refers to Labour Department daily-wage rates but does not specify the amount. The calculator requires a manual daily rate and payable days.
+- Regularisation is described only as a 2024 transitional reference for a specifically defined cohort. No automatic regularisation eligibility, pay level, cell or pay-fixation calculation is made because Notification No. 99/GEN/DOP and later amendments have not yet been fully audited.
+- Temporary consolidated pay is kept separate from regular salary calculations. DA, HRA, SBCA and pension deductions are not automatically added. Deductions and other terms require the appointment order / DDO bill.
+- Added regression tests for the prescribed monthly rates, all 16 special-post rows, training rates and manual driver calculations.
+
+See [TEMPORARY-PAY-AUDIT.md](TEMPORARY-PAY-AUDIT.md).

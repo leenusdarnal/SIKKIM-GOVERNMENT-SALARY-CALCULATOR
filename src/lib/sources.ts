@@ -52,5 +52,23 @@ export const SALARY_SOURCES = [
     authority: 'Government of Sikkim, Directorate of Economics, Statistics, Monitoring and Evaluation',
     note: 'Departmental disclosure showing 12% HRA and 8% SBCA. It is not proof of universal entitlement; both rates remain editable references.',
     url: 'https://www.sikkim.gov.in/uploads/DeptUploads/Final_DESME_Proactive_Disclosure_under_Section_4_of_the_RTI_Ac%281%29_20230411.pdf'
-  }
+  },
+  {
+    title: 'Temporary consolidated pay — Notification No. M(164)/42/GEN/DOP',
+    authority: 'Government of Sikkim, Department of Personnel',
+    note: 'Dated 12 August 2026. Supersedes Notification No. M(64)/09/GEN/DOP dated 11 April 2018. Sets Group C/D equivalent-grade-pay consolidated rates, specific-post rates and states that temporary drivers are paid at Labour Department-notified daily wage rates. Applies with immediate effect.',
+    url: 'https://dop.sikkim.gov.in/notificationdoc/M(164).pdf'
+  },
+  {
+    title: 'Regularisation transition guidelines — Notification No. J(1)/87/GEN/DOP',
+    authority: 'Government of Sikkim, Department of Personnel',
+    note: 'Dated 25 July 2024. Specific transitional provisions for employees regularised on completion of 8 or 4 years of service as on 31 December 2023. Not a universal regularisation entitlement; later orders and individual regularisation orders must be checked.',
+    url: 'https://dop.sikkim.gov.in/notificationdoc/J(1)87-GEN-DOP(Regularisation).pdf'
+  },
+  {
+    title: 'Direct recruitment training allowance — Notification No. J(1)/86/GEN/DOP',
+    authority: 'Government of Sikkim, Department of Personnel',
+    note: 'Dated 25 July 2024. Amends Rule 26 of the Sikkim Government Service Rules, 1974 and sets first-year training allowance by Group B/C/D and training location.',
+    url: 'https://dop.sikkim.gov.in/notificationdoc/J(1)86-GEN-DOP%20(Direct).pdf'
+  },
 ] as const;

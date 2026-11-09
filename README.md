@@ -18,6 +18,8 @@ The app preserves the repository's 23 pay levels and 794 official pay-matrix cel
 ## Features
 
 - All 23 State pay levels with the exact variable cell counts printed in Schedule Part A (794 cells total).
+- Separate temporary consolidated-pay calculator based on Department of Personnel Notification No. M(164)/42/GEN/DOP dated 12 August 2026, including equivalent-grade-pay and specific-post categories.
+- Direct-recruit first-year training allowance references by group and training location; temporary driver pay remains manually entered from the Labour Department daily-wage rate.
 - Salary-month field and editable DA rate; 60% is the latest located revised-pay rate effective 1 January 2026. Historical months require a manually verified rate.
 - HRA and SBCA are not presumed payable: HRA starts disabled and SBCA starts at 0%; reference rates remain editable.
 - Manual transport and other monthly earnings.
@@ -34,7 +36,8 @@ The app preserves the repository's 23 pay levels and 794 official pay-matrix cel
 - src/routes — SvelteKit routes and layout.
 - src/lib/components — Svelte UI components.
 - src/lib/data/pay-matrix.ts — 23 Government pay levels and 794 official pay-matrix cells.
-- src/lib/salary.ts — framework-independent salary calculation engine.
+- src/lib/salary.ts — framework-independent regular salary calculation engine.
+- src/lib/temporary-pay.ts — temporary consolidated-pay and training allowance schedule.
 - src/lib/sources.ts — source register rendered in the app.
 - src/lib/salary.test.ts — Vitest calculation and matrix tests.
 - SOURCES.md — expanded source evidence and limitations.
