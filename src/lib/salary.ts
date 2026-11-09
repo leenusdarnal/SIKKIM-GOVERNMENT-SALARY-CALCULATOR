@@ -64,7 +64,7 @@ export function getSikkimProfessionalTax(monthlySalary: number): {
 
 export function calculateSalary(input: SalaryInput): SalaryResult {
   const basicPay = safeAmount(input.basicPay);
-  const daRate = Math.min(300, safeAmount(input.daRate));
+  const daRate = Math.min(200, safeAmount(input.daRate));
   const da = roundRupee((basicPay * daRate) / 100);
   const hraRate = Math.min(100, safeAmount(input.hraRate));
   const sbcaRate = Math.min(100, safeAmount(input.sbcaRate));
