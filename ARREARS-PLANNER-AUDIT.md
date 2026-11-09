@@ -2,48 +2,76 @@
 
 Review date: 9 November 2026
 
-## Purpose
+## Purpose and status
 
-The arrears planner creates a month-by-month estimate of revised net salary, compares it with actual net salary credited, and subtracts additional recoveries that are to be adjusted against the arrears settlement.
+The arrears planner is an employee-side estimate and reconciliation aid. It reconstructs a revised monthly salary basis from user-entered opening figures and signed-order/pay-slip changes, compares the result with the net salary actually credited, subtracts separately recorded arrears recoveries, and produces a month-by-month statement.
 
-It is an independent estimate utility, not a payroll, pay-fixation or sanctioning system.
+It is not an official payroll, pay-fixation, leave-sanction, tax-computation or arrears-sanction system. No personal salary records are sent to a backend; drafts are stored in the user's browser only.
 
 ## Calculation model
 
-1. The user selects a monthly period of up to 60 consecutive months.
-2. The opening salary basis is entered for the first month: basic pay, DA rate, HRA eligibility/rate/minimum, SBCA rate, transport and other earnings, pension mode and deductions.
-3. Effective-dated changes can update DA rate, basic pay, HRA eligibility/rate/minimum, SBCA rate, transport and other earnings, pension mode/manual GPF, Professional Tax treatment/manual amount, GIS, stamp fee and other deductions. Annual increment, promotion and pay-fixation events require the user to enter the new basic pay fixed by the competent authority.
-4. Each dated update carries forward until a later entry changes that component. Multiple entries in the same month are applied in the order entered.
-5. For each month, the application calls the existing `calculateSalary` engine using the current effective-dated salary state. It records itemized earnings and employee deductions in the monthly statement.
-6. The user enters actual net salary credited for each month from the payslip/bank record, plus any additional recovery to be adjusted from the arrears settlement.
-7. Monthly net difference is:
+1. Select up to 60 consecutive calendar months.
+2. Enter the opening revised-pay basis for the first month: basic pay, DA, HRA eligibility/rate/minimum, SBCA, transport and other earnings; pension scheme/rates; Professional Tax mode/amount; Income Tax TDS; GIS, stamp fee and other deductions.
+3. Add dated changes supported by the employee's actual order, eligibility record or payslip. Basic-pay events cover increment, promotion, financial upgradation or pay fixation. Allowance/deduction events can change HRA, SBCA, CPS rates, transport, other earnings, GPF/manual pension, Professional Tax, Income Tax TDS, GIS, stamp fee and other deductions.
+4. Changes carry forward from their payable month until superseded. A later `payableFromMonth` can represent a notional effective month followed by an actual payable month (for example, where a study-leave increment is payable only after joining, as stated in the applicable order). The calculator does not infer employee eligibility.
+5. Enter actual monthly net pay credited, additional arrears recoveries, payable days and (only where supported by the order/DDO calculation) a manual pay/leave factor.
+6. For each month, the existing `calculateSalary` engine calculates itemized monthly earnings and deductions; the net comparison is:
 
    `Revised calculated take-home - Actual net credited - Additional recovery from arrears`
 
-A final net total and CSV statement are withheld until actual credited pay has been entered for every month. Negative monthly/overall balances are retained and displayed as possible overpayment or recoverable balance; they are not silently clamped to zero.
+7. Optional simple interest is disabled at zero. When explicitly entered, it is calculated on positive monthly net differences from month-end to the settlement date using a 365-day denominator. It is displayed separately from the underlying arrears estimate.
 
-## Change rules
+A final net total and CSV statement are withheld until actual net credited pay has been entered for every month. Negative monthly and overall balances are shown rather than silently clamped to zero.
 
-- Changes take effect for the whole effective month and every later month in the selected period.
-- If multiple changes share a month, they are applied in the order entered.
-- DA rates and new basic pay must be supported by the applicable signed Government order / pay-fixation statement.
-- The tool does not determine increment eligibility, qualifying service, EOL impact, promotion fixation, ACPS entitlement or regularisation eligibility.
-- The Department of Personnel's clarification No. 6780/GEN/DOP discusses the effect of EOL on annual-increment dates; employees must confirm the date applicable to their own service record.
+## Payable days and leave/pay factor
 
-## Important assumptions and exclusions
+- Full calendar-month pay is used when payable days are blank. Where entered, the salary basis is prorated by `payableDays / calendarDays`.
+- A separately entered `salaryFactorPercent` (0–100) further scales the pay base. This is a manual approximation factor, not a leave entitlement or statutory leave-salary formula.
+- Basic Pay, DA, HRA, SBCA, transport and other earnings follow the prorated pay base. Percentage-based CPS/CPF is calculated on the prorated Basic Pay + DA.
+- Manual GPF/pension, manual Professional Tax, Income Tax TDS, GIS, stamp fee and other fixed deductions remain at their entered monthly amounts unless a later effective-dated change is provided. Automatic Professional Tax is recalculated against the prorated gross under the salary engine's indicative slab.
+- The DDO's approved leave-salary calculation may not be equivalent to simple daily proration or a single pay factor. For full-pay, half-pay, commuted leave, Child Care Leave, maternity leave, Study Leave, EOL and other categories, use the applicable rule, leave sanction and pay bill. Do not rely on the factor unless the DDO confirms it is a reasonable representation for the case.
+- The planner does not calculate leave balances, admissibility, service eligibility or the legally payable leave salary.
 
-- The opening salary components remain constant until a dated change for that component is entered. Dated allowance/deduction updates are user-entered historical values; the app does not derive them from location, cadre, pay level or an assumed universal order.
-- HRA eligibility, HRA rate/minimum, SBCA rate, transport, other earnings, manual pension/GPF, Professional Tax treatment/manual amount, GIS, stamp fee and other deductions can be changed independently from an effective month. Blank fields in the dated change form mean “keep the previous value”.
-- CPS/CPF is recalculated by the existing salary engine as 10% of Basic Pay + DA. A dated switch to GPF/manual pension uses the manually entered subscription amount. Professional Tax automatic mode uses the calculator's indicative slabs; select manual mode and use the amount shown on the applicable payslip/order where appropriate.
-- Each monthly row and CSV includes an itemized breakdown of DA, HRA, SBCA, transport, other earnings, employee pension/GPF, Professional Tax, GIS, stamp fee and other deductions.
-- Actual pay is compared at the net credited level. The planner does not independently reconstruct old gross salary or historical deduction schedules.
-- The historical component schedule is not a legal rules engine. Effective months and revised component amounts must be taken from the employee's actual orders, eligibility records and payslips. No interest on arrears, tax recomputation, DA on pre-revised pay, leave salary, partial-month proration, rounding variations between DDO systems or pension revision is calculated.
-- An additional recovery must not duplicate a deduction already included in the actual net credited salary.
+## Pension, tax and interest
 
-## Source references
+- CPS/CPF employee rate and State matching rate are separately configurable. Both default to 10% as the project reference; verify the applicable appointment coverage, scheme and order. The State matching contribution is reported separately and is not deducted from employee take-home.
+- GPF and other manual pension amounts are entered from the employee's subscription/payslip record; the planner does not infer membership or apply an annual minimum/maximum subscription test here.
+- Professional Tax supports the existing salary engine's indicative automatic estimate, manual payslip amount or none/exempt. Confirm the statutory base and employee exemption with the Accounts/DDO section.
+- Income Tax TDS is a separate manually entered monthly deduction. There is no annual income-tax liability engine, tax regime selection, rebate/deduction/relief computation, or year-end TDS reconciliation.
+- Interest is a user-supplied simple-interest estimate only. It does not establish a right to interest, choose a legally applicable rate, compound interest, or calculate interest on a negative balance. Enter a rate only where an order, court decision or competent authority authorises it.
 
-- Finance Department DA circular dated 1 October 2026: https://www.sikkimfred.gov.in/DA%20Enhancement/Documents/DA%20Circular%202026.pdf
-- Department of Personnel clarification No. 6780/GEN/DOP on EOL and annual-increment dates: https://dop.sikkim.gov.in/circular/6780.pdf
+## Effective-dated order handling
+
+- Each change must have a month within the selected period, a non-empty order/payslip reference and valid amounts/rates.
+- If `payableFromMonth` is omitted, the change is payable from its effective month. A later payable month preserves the notional date for display and begins salary recalculation from the later month.
+- Multiple changes for the same payable month are applied in the order they were entered.
+- Increment, promotion, ACPS, regularisation and fixation pay levels must be entered from the employee's actual signed fixation order. The tool does not decide eligibility, qualifying service, EOL impact, ACP entitlement, pay-cell conversion or arrears entitlement.
+- Revised-pay DA is restricted to the revised-pay basis used by the salary engine. The 262% pre-revised DA scale is not a substitute rate to apply to revised basic pay; pre-revised pay conversion and DA-on-pre-revised-pay calculations are outside this tool.
+
+## Drafts, import and export
+
+- A versioned JSON scenario can be saved and restored in browser-local storage; JSON backup/restore is available for moving between devices.
+- Monthly actual credited amounts, recoveries, payable days and factor percentages can be imported using the generated CSV template.
+- The detailed arrears statement exports to CSV with monthly line items, order references, recoveries and optional interest.
+- Browser-local data is not encrypted and is not transmitted to a server. Do not use shared devices or expose backup files containing salary information.
+
+## Important exclusions
+
+- Historical tax computation and year-end income-tax reconciliation.
+- Automatic pre-revised pay conversion, DA on pre-revised pay, revised-pay fixation or matrix-cell derivation.
+- Automated pay-fixation rules for direct recruits, promotions, ACPS/MACP, regularisation, EOL, study leave, CCL, maternity leave or other leave categories.
+- Legal entitlement or sanction of HRA/SBCA, travel/transport, special allowances, pension contributions, recoveries, interest or arrears.
+- Partial-month rules more complex than the manual payable-days/pay-factor approximation; leave-specific salary formulas.
+- Automatic interest eligibility, compound interest, tax gross-up or retrospective recalculation of historical payroll-system-specific rounding.
+- Employee details, service book records, appointment data, leave balances, annual taxable income, deductions/rebates and actual payslip data are not sourced automatically.
+
+## Official references
+
 - Sikkim Government Services (Revised Pay) Rules, 2018: https://www.sikkim.gov.in/uploads/Gazette/333_20240813.pdf
+- Finance Department DA circular dated 1 October 2026: https://www.sikkimfred.gov.in/DA%20Enhancement/Documents/DA%20Circular%202026.pdf
+- DOP clarification No. 6780/GEN/DOP on EOL and annual-increment dates: https://dop.sikkim.gov.in/circular/6780.pdf
+- DOP OM No. 2255/GEN/DOP dated 20 March 2025 — Study Leave allowance and notional annual increment payable after joining: https://dop.sikkim.gov.in/circular/2255.pdf
+- Sikkim Government Service (Leave) (Amendment) Rules, 2025 — Child Care Leave and leave salary: https://dop.sikkim.gov.in/notificationdoc/44.pdf
+- Sikkim Government Service (Leave) Amendment Rules, 2026 and CCL cross-year clarification dated 16 July 2026: https://dop.sikkim.gov.in/notificationdoc/35.pdf
 
-These sources are references for user verification. The application does not hardcode a complete historical DA rate table or assume that an order applies to every employee category.
+These official references help users verify the order applicable to their own case. They are not used to auto-derive employee-specific entitlements.
