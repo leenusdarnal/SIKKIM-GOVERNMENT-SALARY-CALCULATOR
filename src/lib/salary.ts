@@ -1,4 +1,4 @@
-export type PensionMode = 'cps' | 'gpf' | 'manual' | 'none';
+export type PensionMode = 'unselected' | 'cps' | 'gpf' | 'manual' | 'none';
 export type ProfessionalTaxMode = 'auto' | 'manual' | 'none';
 
 export interface SalaryInput {
@@ -72,9 +72,11 @@ export function calculateSalary(input: SalaryInput): SalaryResult {
 
   let employeePension = 0;
   let employerCpsContribution = 0;
-  let pensionLabel = 'No pension deduction applied';
+  let pensionLabel = 'Pension scheme not selected — amount not calculated';
 
   switch (input.pensionMode) {
+    case 'unselected':
+      break;
     case 'cps':
       employeePension = roundRupee(((basicPay + da) * 10) / 100);
       employerCpsContribution = employeePension;
@@ -122,13 +124,13 @@ export function calculateSalary(input: SalaryInput): SalaryResult {
 export const DEFAULT_SALARY_INPUT: SalaryInput = {
   basicPay: 0,
   daRate: 60,
-  hraEligible: true,
+  hraEligible: false,
   hraRate: 12,
   hraMinimum: 0,
-  sbcaRate: 8,
+  sbcaRate: 0,
   transportAllowance: 0,
   otherEarnings: 0,
-  pensionMode: 'cps',
+  pensionMode: 'unselected',
   manualPension: 0,
   professionalTaxMode: 'auto',
   manualProfessionalTax: 0,

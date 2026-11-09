@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calculateSalary, getSikkimProfessionalTax } from './salary';
+import { calculateSalary, DEFAULT_SALARY_INPUT, getSikkimProfessionalTax } from './salary';
 import { PAY_MATRIX } from './data/pay-matrix';
 
 describe('Sikkim pay matrix', () => {
@@ -14,6 +14,17 @@ describe('Sikkim pay matrix', () => {
     expect(PAY_MATRIX[17][0]).toBe(56_000);
     expect(PAY_MATRIX[23][0]).toBe(124_700);
   });
+
+  it('matches the published first-cell values across all 23 Government pay levels', () => {
+    const officialStartingValues = [
+      15_200, 16_200, 19_300, 18_000, 19_400, 20_300, 21_700, 22_800,
+      25_400, 30_200, 33_700, 37_100, 37_600, 39_100, 46_300, 49_700,
+      56_000, 65_000, 71_100, 83_700, 105_400, 120_500, 124_700
+    ];
+    expect(Object.keys(PAY_MATRIX)).toHaveLength(officialStartingValues.length);
+    expect(Object.keys(PAY_MATRIX).map((level) => PAY_MATRIX[Number(level)][0]))
+      .toEqual(officialStartingValues);
+  });
 });
 
 describe('Sikkim Professional Tax slabs', () => {
@@ -26,6 +37,12 @@ describe('Sikkim Professional Tax slabs', () => {
 });
 
 describe('salary calculation', () => {
+  it('does not assume a pension scheme or allowance eligibility by default', () => {
+    expect(DEFAULT_SALARY_INPUT.pensionMode).toBe('unselected');
+    expect(DEFAULT_SALARY_INPUT.hraEligible).toBe(false);
+    expect(DEFAULT_SALARY_INPUT.sbcaRate).toBe(0);
+  });
+
   const base = {
     basicPay: 56_000, daRate: 60, hraEligible: true,
     hraRate: 12, hraMinimum: 0, sbcaRate: 8,
@@ -34,6 +51,13 @@ describe('salary calculation', () => {
     professionalTaxMode: 'auto' as const, manualProfessionalTax: 0,
     gis: 0, stampFee: 0, otherDeductions: 0
   };
+
+  it('does not deduct CPS when the scheme has not been selected', () => {
+    const result = calculateSalary({ ...base, pensionMode: 'unselected' });
+    expect(result.employeePension).toBe(0);
+    expect(result.employerCpsContribution).toBe(0);
+    expect(result.pensionLabel).toContain('not selected');
+  });
 
   it('calculates Level 17 Cell 1', () => {
     const result = calculateSalary(base);
