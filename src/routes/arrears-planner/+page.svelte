@@ -502,7 +502,7 @@
         <li>Income Tax TDS is entered from the employee's tax computation or payslip. This planner does not estimate annual income-tax liability or select a tax regime.</li>
         <li>Interest is optional and defaults to zero. Enter a rate only where an order, court decision or competent authority authorises interest; the tool gives a simple-interest estimate on positive monthly net differences only.</li>
         <li>Enter actual net take-home credited for each month. Additional recovery is deducted from the arrears settlement; do not duplicate an amount already deducted in payroll.</li>
-        <li>Periods are limited to 60 months. The 2018 revised-pay calculator does not convert pre-revised basic pay or automate pre-revised fixation. Manually entered DA rates up to 300% are available for a separately verified basis.</li>
+        <li>Periods are limited to 60 months. The 2018 revised-pay calculator does not convert pre-revised basic pay or automate pre-revised fixation. The planner uses revised-pay DA only; pre-revised pay and its separate DA scale are not calculated.</li>
       </ul>
     </section>
 
@@ -532,7 +532,7 @@
             <input type="number" min="1" step="1" bind:value={baseSalary.basicPay} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
           </label>
           <label class="text-sm font-bold">DA rate (%)
-            <input type="number" min="0" max="300" step="0.01" bind:value={baseSalary.daRate} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
+            <input type="number" min="0" max="200" step="0.01" bind:value={baseSalary.daRate} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
           </label>
           <label class="text-sm font-bold">HRA rate (%)
             <input type="number" min="0" max="100" step="0.01" bind:value={baseSalary.hraRate} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
@@ -705,7 +705,7 @@
             <input type="number" min="1" step="1" value={eventBasicPay} oninput={(event) => (eventBasicPay = (event.currentTarget as HTMLInputElement).value)} placeholder="Leave blank when unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
           </label>
           <label class="text-sm font-bold">New DA rate (%)
-            <input type="number" min="0" max="300" step="0.01" value={eventDaRate} oninput={(event) => (eventDaRate = (event.currentTarget as HTMLInputElement).value)} placeholder="Leave blank when unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
+            <input type="number" min="0" max="200" step="0.01" value={eventDaRate} oninput={(event) => (eventDaRate = (event.currentTarget as HTMLInputElement).value)} placeholder="Leave blank when unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
           </label>
         </div>
       {/if}
