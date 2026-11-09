@@ -12,6 +12,7 @@ export interface SalaryInput {
   otherEarnings: number;
   pensionMode: PensionMode;
   cpsRate: number;
+  cpsEmployerRate: number;
   manualPension: number;
   professionalTaxMode: ProfessionalTaxMode;
   manualProfessionalTax: number;
@@ -76,6 +77,7 @@ export function calculateSalary(input: SalaryInput): SalaryResult {
   const gross = basicPay + da + hra + sbca + transportAllowance + otherEarnings;
 
   const cpsRate = Math.min(100, safeAmount(input.cpsRate));
+  const cpsEmployerRate = Math.min(100, safeAmount(input.cpsEmployerRate));
   let employeePension = 0;
   let employerCpsContribution = 0;
   let pensionLabel = 'Pension scheme not selected — amount not calculated';
@@ -85,7 +87,7 @@ export function calculateSalary(input: SalaryInput): SalaryResult {
       break;
     case 'cps':
       employeePension = roundRupee(((basicPay + da) * cpsRate) / 100);
-      employerCpsContribution = employeePension;
+      employerCpsContribution = roundRupee(((basicPay + da) * cpsEmployerRate) / 100);
       pensionLabel = 'Sikkim CPS employee contribution (' + cpsRate + '% of Basic + DA)';
       break;
     case 'gpf':
@@ -141,6 +143,7 @@ export const DEFAULT_SALARY_INPUT: SalaryInput = {
   otherEarnings: 0,
   pensionMode: 'unselected',
   cpsRate: 10,
+  cpsEmployerRate: 10,
   manualPension: 0,
   professionalTaxMode: 'unselected',
   manualProfessionalTax: 0,
