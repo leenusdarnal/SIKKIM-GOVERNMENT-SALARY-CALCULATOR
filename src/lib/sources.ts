@@ -90,6 +90,24 @@ export const SALARY_SOURCES = [
     url: 'https://dop.sikkim.gov.in/circular/2799%20GEN%2002.07.2021.pdf'
   },
   {
+    title: 'Study Leave and annual increment clarification — OM No. 2255/GEN/DOP',
+    authority: 'Government of Sikkim, Department of Personnel',
+    note: 'Dated 20 March 2025. Study Leave allowance is equivalent to the leave salary admissible during half-pay leave. An increment accruing during Study Leave may be granted notionally on its accrual date and made payable with effect from the date of joining after completing Study Leave. The arrears tool permits separate notional effective and actual payable months; the DDO must confirm eligibility and pay fixation.',
+    url: 'https://dop.sikkim.gov.in/circular/2255.pdf'
+  },
+  {
+    title: 'Sikkim Government Service (Leave) (Amendment) Rules, 2025 — Child Care Leave',
+    authority: 'Government of Sikkim, Department of Personnel',
+    note: 'Notification dated 11 April 2025 substituting Rule 21A. It provides up to 180 days of Child Care Leave and leave salary equivalent to the pay drawn immediately before proceeding on leave, subject to the rule conditions. The arrears planner does not determine eligibility or calculate CCL entitlement; payable days and the leave/pay factor are manual inputs verified against the employee leave sanction and DDO calculation.',
+    url: 'https://dop.sikkim.gov.in/notificationdoc/44.pdf'
+  },
+  {
+    title: 'Sikkim Government Service (Leave) Amendment Rules, 2026 and CCL cross-year clarification',
+    authority: 'Government of Sikkim, Department of Personnel',
+    note: 'Notification No. 35/GEN/DOP and Office Memorandum No. 4576/GEN/DOP, both dated 16 July 2026. The amendment defines a leave-rule year as the calendar year; the OM clarifies that a Child Care Leave spell spanning two calendar years is reckoned against the year in which it commences. Use the actual sanctioned leave record; the calculator does not decide leave eligibility.',
+    url: 'https://dop.sikkim.gov.in/notificationdoc/35.pdf'
+  },
+  {
     title: 'General Provident Fund (Sikkim Services) Rules, 1984',
     authority: 'Government of Sikkim, Finance Department',
     note: 'Notification No. 8/Fin dated 16 October 1984, effective 1 January 1985. The rules prescribe a 6% minimum and 100% maximum subscription against applicable reference emoluments; verify GPF membership and the preceding 31 March reference-pay basis with the Accounts/DDO section.',
