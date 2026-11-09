@@ -67,6 +67,7 @@ describe('salary calculation', () => {
     expect(DEFAULT_SALARY_INPUT.pensionMode).toBe('unselected');
     expect(DEFAULT_SALARY_INPUT.hraEligible).toBe(false);
     expect(DEFAULT_SALARY_INPUT.sbcaRate).toBe(0);
+    expect(DEFAULT_SALARY_INPUT.professionalTaxMode).toBe('unselected');
   });
 
   const base = {
@@ -77,6 +78,12 @@ describe('salary calculation', () => {
     professionalTaxMode: 'auto' as const, manualProfessionalTax: 0,
     gis: 0, stampFee: 0, otherDeductions: 0
   };
+
+  it('does not calculate Professional Tax until the treatment is selected', () => {
+    const result = calculateSalary({ ...base, professionalTaxMode: 'unselected' });
+    expect(result.professionalTax).toBe(0);
+    expect(result.professionalTaxBand).toContain('Not selected');
+  });
 
   it('does not deduct CPS when the scheme has not been selected', () => {
     const result = calculateSalary({ ...base, pensionMode: 'unselected' });
@@ -120,6 +127,18 @@ describe('salary calculation', () => {
     expect(result.employerCpsContribution).toBe(8_960);
     expect(result.totalDeductions).toBe(9_160);
     expect(result.takeHome).toBe(91_640);
+  });
+
+  it('caps percentage-based allowance inputs at 100%', () => {
+    const result = calculateSalary({ ...base, hraRate: 150, sbcaRate: 125 });
+    expect(result.hra).toBe(56_000);
+    expect(result.sbca).toBe(56_000);
+  });
+
+  it('uses manual Professional Tax without applying an automatic slab', () => {
+    const result = calculateSalary({ ...base, professionalTaxMode: 'manual', manualProfessionalTax: 135 });
+    expect(result.professionalTax).toBe(135);
+    expect(result.professionalTaxBand).toBe('Manual override');
   });
 
   it('uses manual GPF without creating an employer CPS match', () => {
