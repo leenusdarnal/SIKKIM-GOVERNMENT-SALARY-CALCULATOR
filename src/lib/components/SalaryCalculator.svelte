@@ -363,7 +363,7 @@
                     <span class="rounded-full bg-sky-50 px-2.5 py-1 text-[10px] font-extrabold text-sky-800 dark:bg-sky-950 dark:text-sky-200">{daNeedsManualVerification ? 'Rate needs verification' : '60% latest reference'}</span>
                   </div>
                   <div class="relative">
-                    <input id="daRate" type="number" min="0" max="300" step="0.5" bind:value={form.daRate} class="field-control pr-12 text-right font-bold tabular-nums" />
+                    <input id="daRate" type="number" min="0" max="200" step="0.5" bind:value={form.daRate} class="field-control pr-12 text-right font-bold tabular-nums" />
                     <span class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">%</span>
                   </div>
                   {#if daNeedsManualVerification}
