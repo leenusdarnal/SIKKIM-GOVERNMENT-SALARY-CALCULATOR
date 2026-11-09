@@ -21,7 +21,9 @@
   let showSources = $state(false);
 
   const currentCells = $derived(selectedLevel !== '' ? PAY_MATRIX[selectedLevel] ?? [] : []);
-  const historicalDaNeedsManualRate = $derived(salaryMonth !== '' && salaryMonth < '2026-01');
+  const daNeedsManualVerification = $derived(
+    salaryMonth !== '' && (salaryMonth < '2026-01' || salaryMonth > '2026-11')
+  );
   const selectedBasic = $derived(
     selectedLevel !== '' && selectedCell !== ''
       ? PAY_MATRIX[selectedLevel]?.[selectedCell - 1] ?? 0
@@ -64,7 +66,7 @@
   }
 
   function changeSalaryMonth() {
-    if (salaryMonth && salaryMonth < '2026-01') {
+    if (salaryMonth && (salaryMonth < '2026-01' || salaryMonth > '2026-11')) {
       form.daRate = 0;
     } else if (form.daRate === 0) {
       form.daRate = 60;
@@ -277,14 +279,14 @@
                 <div>
                   <div class="mb-2 flex items-center justify-between gap-3">
                     <label for="daRate" class="field-label mb-0">Dearness Allowance (DA)</label>
-                    <span class="rounded-full bg-sky-50 px-2.5 py-1 text-[10px] font-extrabold text-sky-800 dark:bg-sky-950 dark:text-sky-200">{historicalDaNeedsManualRate ? 'Historical rate required' : '60% latest reference'}</span>
+                    <span class="rounded-full bg-sky-50 px-2.5 py-1 text-[10px] font-extrabold text-sky-800 dark:bg-sky-950 dark:text-sky-200">{daNeedsManualVerification ? 'Rate needs verification' : '60% latest reference'}</span>
                   </div>
                   <div class="relative">
                     <input id="daRate" type="number" min="0" max="200" step="0.5" bind:value={form.daRate} class="field-control pr-12 text-right font-bold tabular-nums" />
                     <span class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">%</span>
                   </div>
-                  {#if historicalDaNeedsManualRate}
-                    <p class="field-help text-amber-700 dark:text-amber-300">The available rule register does not yet contain a complete historical DA table for this month. Enter the rate from the applicable Finance Department order or payslip.</p>
+                  {#if daNeedsManualVerification}
+                    <p class="field-help text-amber-700 dark:text-amber-300">The available rule register verifies 60% only for January–November 2026. For this earlier or future month, enter the rate from the applicable Finance Department order or payslip.</p>
                   {:else}
                     <p class="field-help">60% is the latest revised-pay reference located, effective 1 January 2026. Check for any later order covering the selected month and verify the rate for your employee category.</p>
                   {/if}
