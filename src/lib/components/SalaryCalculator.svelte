@@ -61,6 +61,11 @@
       calculationError = 'Select the pension arrangement applicable to your service before calculating.';
       return;
     }
+    if (form.professionalTaxMode === 'unselected') {
+      hasCalculated = false;
+      calculationError = 'Select a Professional Tax treatment, enter the amount from your payslip, or mark it not applicable where exempt.';
+      return;
+    }
     calculationError = '';
     hasCalculated = true;
   }
@@ -321,27 +326,29 @@
                   <div>
                     <label for="hraRate" class="field-label">HRA rate (%)</label>
                     <input id="hraRate" type="number" min="0" max="100" step="0.5" bind:value={form.hraRate} class="field-control" />
-                    <p class="field-help">12% departmental reference</p>
+                    <p class="field-help">12% departmental disclosure reference only; not a verified universal rate.</p>
                   </div>
                   <div>
                     <label for="hraMinimum" class="field-label">HRA minimum (₹)</label>
                     <input id="hraMinimum" type="number" min="0" bind:value={form.hraMinimum} class="field-control" />
+                    <p class="field-help">No current universal minimum has been verified; leave at ₹0 unless your applicable order specifies one.</p>
                   </div>
                 </div>
                 <label class="flex items-start gap-3 rounded-xl border border-slate-200 p-3 text-xs font-semibold leading-5 dark:border-slate-700">
                   <input type="checkbox" bind:checked={form.hraEligible} class="mt-0.5 size-4 accent-emerald-700" />
-                  <span>HRA is admissible to this employee. Turn this off where Government accommodation is provided or HRA is not payable.</span>
+                  <span>HRA is admissible to this employee under the applicable order. Turn this off where Government accommodation is provided or HRA is otherwise not payable.</span>
                 </label>
 
                 <div class="grid gap-4 sm:grid-cols-2">
                   <div>
                     <label for="sbcaRate" class="field-label">SBCA rate (%)</label>
                     <input id="sbcaRate" type="number" min="0" max="100" step="0.5" bind:value={form.sbcaRate} class="field-control" />
-                    <p class="field-help">8% departmental reference only</p>
+                    <p class="field-help">8% departmental disclosure reference only; eligibility and current rate are not verified for every posting.</p>
                   </div>
                   <div>
                     <label for="transport" class="field-label">Transport allowance (₹)</label>
                     <input id="transport" type="number" min="0" bind:value={form.transportAllowance} class="field-control" />
+                    <p class="field-help">Enter only where admissible under the current order or shown on your payslip.</p>
                   </div>
                   <div>
                     <label for="otherEarnings" class="field-label">Other monthly earnings (₹)</label>
@@ -375,10 +382,12 @@
                   <div>
                     <label for="ptMode" class="field-label">Professional Tax</label>
                     <select id="ptMode" bind:value={form.professionalTaxMode} class="field-control">
-                      <option value="auto">Automatic — Sikkim salary slabs</option>
-                      <option value="manual">Manual amount from payslip</option>
+                      <option value="unselected" disabled>Select Professional Tax treatment</option>
+                      <option value="manual">Manual amount from payslip (recommended)</option>
+                      <option value="auto">Automatic estimate — based on gross monthly earnings</option>
                       <option value="none">Not applicable / exempt</option>
                     </select>
+                    <p class="field-help">Automatic mode is an estimate using gross monthly earnings. The exact statutory assessment base, exclusions and employee-specific exemptions need confirmation. Use the amount on your payslip or confirm with your DDO / Accounts section.</p>
                   </div>
                   {#if form.professionalTaxMode === 'manual'}
                     <div class="mt-4">
@@ -390,10 +399,12 @@
                     <div>
                       <label for="gis" class="field-label">GIS deduction (₹)</label>
                       <input id="gis" type="number" min="0" bind:value={form.gis} class="field-control" />
+                      <p class="field-help">Current universal subscription rate not verified; use your payslip / office order.</p>
                     </div>
                     <div>
                       <label for="stampFee" class="field-label">Stamp / fixed fee (₹)</label>
                       <input id="stampFee" type="number" min="0" bind:value={form.stampFee} class="field-control" />
+                      <p class="field-help">Enter only when required by a current order or displayed on your payslip.</p>
                     </div>
                     <div class="sm:col-span-2">
                       <label for="otherDeductions" class="field-label">TDS, loans and other deductions (₹)</label>
