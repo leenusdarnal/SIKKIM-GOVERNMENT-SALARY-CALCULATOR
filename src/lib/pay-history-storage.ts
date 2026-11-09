@@ -160,8 +160,9 @@ function csvCell(value: string | number): string {
 }
 
 export function createPayHistoryCsv(entries: PayHistoryEntry[]): string {
+  const validationError = validateEntries(entries);
+  if (validationError) throw new Error(validationError);
   const validation = validatePayHistory(entries);
-  if (!validation.valid) throw new Error(validation.errors.join(' '));
 
   const rows = [
     ['Effective date', 'Event', 'Pay level', 'Cell', 'Basic pay (INR)', 'Order / service-book reference'],
