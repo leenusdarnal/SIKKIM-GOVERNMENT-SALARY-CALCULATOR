@@ -89,4 +89,10 @@ export const SALARY_SOURCES = [
     note: 'Dated 2 July 2021. Narrowly applies to temporary employees granted regular time scale while posted at Sikkim Houses in New Delhi, Kolkata and Guwahati; the OM says they are not entitled to annual increments.',
     url: 'https://dop.sikkim.gov.in/circular/2799%20GEN%2002.07.2021.pdf'
   }
+  {
+    title: 'General Provident Fund (Sikkim Services) Rules, 1984',
+    authority: 'Government of Sikkim, Finance Department',
+    note: 'Notification No. 8/Fin dated 16 October 1984, effective 1 January 1985. The rules prescribe a 6% minimum and 100% maximum subscription against applicable reference emoluments; verify GPF membership and the preceding 31 March reference-pay basis with the Accounts/DDO section.',
+    url: 'http://www.sikkimfred.gov.in/user/Rules_1984.aspx'
+  },
 ] as const;
