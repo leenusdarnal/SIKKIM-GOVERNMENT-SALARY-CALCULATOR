@@ -112,6 +112,15 @@ describe('arrears draft storage and import/export', () => {
     expect(validateArrearsScenario(invalidUpdate)).toBe(false);
   });
 
+  it('accepts an authorised simple-interest setting with a valid settlement date', () => {
+    const scenario = createArrearsScenario({
+      ...input(),
+      interestSettings: { annualRate: 8, settlementDate: '2026-04-30' }
+    });
+    expect(validateArrearsScenario(scenario)).toBe(true);
+    expect(parseArrearsScenarioBackup(serializeArrearsScenario(scenario)).interestSettings?.annualRate).toBe(8);
+  });
+
   it('saves, loads and restores the scenario locally', () => {
     const store = new MemoryStorage();
     saveArrearsScenario(input(), store);
