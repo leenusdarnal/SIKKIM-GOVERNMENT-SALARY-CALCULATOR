@@ -74,11 +74,11 @@ const CHANGE_TYPES = new Set<ArrearChangeType>([
   'manual-adjustment'
 ]);
 
-const NUMERIC_SALARY_FIELDS: Array<keyof SalaryInput> = [
+const NUMERIC_SALARY_FIELDS = [
   'basicPay', 'daRate', 'hraRate', 'hraMinimum', 'sbcaRate',
   'transportAllowance', 'otherEarnings', 'manualPension',
   'manualProfessionalTax', 'gis', 'stampFee', 'otherDeductions'
-];
+] as const;
 
 function monthIndex(value: string): number | null {
   if (!/^\\d{4}-(0[1-9]|1[0-2])$/.test(value)) return null;
@@ -312,5 +312,5 @@ export function createArrearsCsv(result: ArrearsResult): string {
     ])
   ];
 
-  return '\\uFEFF' + rows.map((row) => row.map(csvCell).join(',')).join('\\r\\n') + '\\r\\n';
+  return '\uFEFF' + rows.map((row) => row.map(csvCell).join(',')).join('\r\n') + '\r\n';
 }
