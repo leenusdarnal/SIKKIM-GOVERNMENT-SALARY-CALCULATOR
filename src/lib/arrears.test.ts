@@ -185,6 +185,29 @@ describe('Sikkim salary arrears planner', () => {
     expect(result.errors.some((message) => message.includes('gis must be a non-negative number'))).toBe(true);
   });
 
+  it('defers a notional increment until the employee joins and the increase becomes payable', () => {
+    const result = calculateArrears(makeInput({
+      startMonth: '2026-01',
+      endMonth: '2026-04',
+      changes: [{
+        effectiveMonth: '2026-02',
+        payableFromMonth: '2026-04',
+        type: 'annual-increment',
+        basicPay: 57_700,
+        description: 'Study leave increment; payable after joining'
+      }],
+      monthlyRecords: [
+        { month: '2026-01', actualTakeHome: 0, recovery: 0 },
+        { month: '2026-02', actualTakeHome: 0, recovery: 0 },
+        { month: '2026-03', actualTakeHome: 0, recovery: 0 },
+        { month: '2026-04', actualTakeHome: 0, recovery: 0 }
+      ]
+    }));
+    expect(result.valid).toBe(true);
+    expect(result.rows.map((row) => row.basicPay)).toEqual([56_000, 56_000, 56_000, 57_700]);
+    expect(result.rows[3].appliedChanges[0]).toContain('notional 2026-02, payable 2026-04');
+  });
+
   it('prorates the salary base using calendar payable days and a verified leave-salary factor', () => {
     const result = calculateArrears(makeInput({
       startMonth: '2026-01',
