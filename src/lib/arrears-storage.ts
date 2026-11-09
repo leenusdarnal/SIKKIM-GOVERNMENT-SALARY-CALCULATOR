@@ -62,7 +62,7 @@ function isMonthlyRecord(value: unknown): value is MonthlyPaidRecord {
 }
 
 function isSalaryUpdate(value: unknown): boolean {
-  if (!isObject(value)) return false;
+  if (!isObject(value) || Object.keys(value).length === 0) return false;
   const numeric = [
     'hraRate', 'hraMinimum', 'sbcaRate', 'cpsRate', 'cpsEmployerRate',
     'transportAllowance', 'otherEarnings', 'manualPension',
@@ -119,13 +119,14 @@ export function validateArrearsScenario(value: unknown): value is ArrearsScenari
       typeof change.description === 'string' &&
       change.description.trim().length > 0 &&
       (change.basicPay === undefined || (typeof change.basicPay === 'number' && Number.isFinite(change.basicPay) && change.basicPay > 0)) &&
-      (change.daRate === undefined || (typeof change.daRate === 'number' && Number.isFinite(change.daRate) && change.daRate >= 0 && change.daRate <= 300)) &&
+      (change.daRate === undefined || (typeof change.daRate === 'number' && Number.isFinite(change.daRate) && change.daRate >= 0 && change.daRate <= 200)) &&
       (change.payableFromMonth === undefined || typeof change.payableFromMonth === 'string') &&
       (change.salaryUpdates === undefined || isSalaryUpdate(change.salaryUpdates)))) return false;
   if (!value.monthlyRecords.every(isMonthlyRecord)) return false;
 
   const allowedMonths = new Set(getArrearsMonthKeys(value.startMonth, value.endMonth));
   if (!allowedMonths.size || !value.monthlyRecords.every((record) => allowedMonths.has(record.month))) return false;
+  if (new Set(value.monthlyRecords.map((record) => record.month)).size !== value.monthlyRecords.length) return false;
   if (!value.changes.every((change) =>
       typeof change.effectiveMonth === 'string' &&
       allowedMonths.has(change.effectiveMonth) &&
@@ -135,7 +136,7 @@ export function validateArrearsScenario(value: unknown): value is ArrearsScenari
           change.payableFromMonth >= change.effectiveMonth)) &&
       typeof change.type === 'string' &&
       typeof change.description === 'string' &&
-      (change.salaryUpdates === undefined || isObject(change.salaryUpdates)))) return false;
+      (change.salaryUpdates === undefined || isSalaryUpdate(change.salaryUpdates)))) return false;
 
   const settings = value.interestSettings;
   if (settings !== undefined && (!isObject(settings) ||
