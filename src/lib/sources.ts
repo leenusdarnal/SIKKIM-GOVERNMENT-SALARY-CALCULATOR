@@ -88,7 +88,7 @@ export const SALARY_SOURCES = [
     authority: 'Government of Sikkim, Department of Personnel',
     note: 'Dated 2 July 2021. Narrowly applies to temporary employees granted regular time scale while posted at Sikkim Houses in New Delhi, Kolkata and Guwahati; the OM says they are not entitled to annual increments.',
     url: 'https://dop.sikkim.gov.in/circular/2799%20GEN%2002.07.2021.pdf'
-  }
+  },
   {
     title: 'General Provident Fund (Sikkim Services) Rules, 1984',
     authority: 'Government of Sikkim, Finance Department',
