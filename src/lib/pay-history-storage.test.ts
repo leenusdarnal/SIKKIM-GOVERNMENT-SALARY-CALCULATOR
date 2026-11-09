@@ -79,7 +79,7 @@ describe('private pay-history storage and exports', () => {
       { effectiveDate: '2026-01-01', event: 'appointment', level: 17, cell: 1, note: '=HYPERLINK("https://example.com","open"), signed' }
     ];
     const csv = createPayHistoryCsv(entries);
-    expect(csv).toContain('"'=HYPERLINK(""https://example.com"",""open""), signed"');
+    expect(csv).toContain("\"'=HYPERLINK(\"\"https://example.com\"\",\"\"open\"\"), signed\"");
     expect(csv).toContain('"Basic pay (INR)"');
     expect(csv.startsWith('\uFEFF')).toBe(true);
   });
