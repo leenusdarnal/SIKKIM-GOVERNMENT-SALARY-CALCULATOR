@@ -160,7 +160,7 @@ function validateChange(change: ArrearChange, index: number, months: string[]): 
 
 function csvCell(value: string | number): string {
   let text = String(value);
-  if (/^[\\u0000-\\u0020]*[=+\\-@]/.test(text)) text = "'" + text;
+  if (/^[\u0000-\u0020]*[=+@-]/.test(text)) text = "'" + text;
   return '"' + text.replace(/"/g, '""') + '"';
 }
 
