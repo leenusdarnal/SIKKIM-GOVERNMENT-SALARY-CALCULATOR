@@ -2,7 +2,7 @@
 
 A Sikkim-specific salary estimation application rebuilt with **SvelteKit 3, Svelte 5, TypeScript and Tailwind CSS 4**.
 
-The app preserves the repository's 23 pay levels and 920 pay-matrix cells while separating calculation logic, source references, UI components and automated tests.
+The app preserves the repository's 23 pay levels and 794 official pay-matrix cells while separating calculation logic, source references, UI components and automated tests.
 
 > This is an estimate tool, not an official Government payroll system. Confirm rates and eligibility with the applicable signed Government order and the employee's DDO / Accounts section.
 
@@ -17,7 +17,7 @@ The app preserves the repository's 23 pay levels and 920 pay-matrix cells while 
 
 ## Features
 
-- All 23 State pay levels and 40 pay cells per level.
+- All 23 State pay levels with the exact variable cell counts printed in Schedule Part A (794 cells total).
 - Salary-month field and editable DA rate; 60% is the latest located revised-pay rate effective 1 January 2026. Historical months require a manually verified rate.
 - HRA and SBCA are not presumed payable: HRA starts disabled and SBCA starts at 0%; reference rates remain editable.
 - Manual transport and other monthly earnings.
@@ -33,7 +33,7 @@ The app preserves the repository's 23 pay levels and 920 pay-matrix cells while 
 
 - src/routes — SvelteKit routes and layout.
 - src/lib/components — Svelte UI components.
-- src/lib/data/pay-matrix.ts — 23 × 40 pay-matrix data.
+- src/lib/data/pay-matrix.ts — 23 Government pay levels and 794 official pay-matrix cells.
 - src/lib/salary.ts — framework-independent salary calculation engine.
 - src/lib/sources.ts — source register rendered in the app.
 - src/lib/salary.test.ts — Vitest calculation and matrix tests.
