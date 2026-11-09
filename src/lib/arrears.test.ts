@@ -1,0 +1,122 @@
+import { describe, expect, it } from 'vitest';
+import { DEFAULT_SALARY_INPUT, type SalaryInput } from './salary';
+import {
+  calculateArrears,
+  createArrearsCsv,
+  getArrearsMonthKeys,
+  type ArrearsInput
+} from './arrears';
+
+const baseSalary: SalaryInput = {
+  ...DEFAULT_SALARY_INPUT,
+  basicPay: 56_000,
+  daRate: 58,
+  pensionMode: 'cps',
+  professionalTaxMode: 'auto'
+};
+
+function makeInput(overrides: Partial<ArrearsInput> = {}): ArrearsInput {
+  return {
+    startMonth: '2026-01',
+    endMonth: '2026-03',
+    baseSalary,
+    changes: [],
+    monthlyRecords: [
+      { month: '2026-01', actualTakeHome: 0, recovery: 0 },
+      { month: '2026-02', actualTakeHome: 0, recovery: 0 },
+      { month: '2026-03', actualTakeHome: 0, recovery: 0 }
+    ],
+    ...overrides
+  };
+}
+
+describe('Sikkim salary arrears planner', () => {
+  it('generates consecutive month keys and rejects invalid or overlong periods', () => {
+    expect(getArrearsMonthKeys('2026-11', '2027-02')).toEqual([
+      '2026-11', '2026-12', '2027-01', '2027-02'
+    ]);
+    expect(getArrearsMonthKeys('2026-13', '2027-01')).toEqual([]);
+    expect(getArrearsMonthKeys('2026-04', '2026-03')).toEqual([]);
+    expect(getArrearsMonthKeys('2020-01', '2025-01')).toEqual([]);
+  });
+
+  it('uses the starting salary basis until the effective month of a DA change', () => {
+    const result = calculateArrears(makeInput({
+      changes: [{ effectiveMonth: '2026-02', type: 'da-revision', daRate: 60, description: 'DA order 01/2026' }]
+    }));
+    expect(result.valid).toBe(true);
+    expect(result.rows.map((row) => row.daRate)).toEqual([58, 60, 60]);
+    expect(result.rows[0].revisedTakeHome).toBeLessThan(result.rows[1].revisedTakeHome);
+  });
+
+  it('applies increments and promotion pay from their effective month forward', () => {
+    const result = calculateArrears(makeInput({
+      changes: [
+        { effectiveMonth: '2026-02', type: 'annual-increment', basicPay: 57_700, description: 'Annual increment order' },
+        { effectiveMonth: '2026-03', type: 'promotion', basicPay: 65_000, description: 'Promotion fixation order' }
+      ]
+    }));
+    expect(result.rows.map((row) => row.basicPay)).toEqual([56_000, 57_700, 65_000]);
+  });
+
+  it('applies recoveries after comparing revised take-home to actual credited salary', () => {
+    const noRecovery = calculateArrears(makeInput());
+    const withRecovery = calculateArrears(makeInput({
+      monthlyRecords: [
+        { month: '2026-01', actualTakeHome: 50_000, recovery: 500 },
+        { month: '2026-02', actualTakeHome: 50_000, recovery: 500 },
+        { month: '2026-03', actualTakeHome: 50_000, recovery: 500 }
+      ]
+    }));
+    expect(noRecovery.rows[0].netArrears).toBe(noRecovery.rows[0].revisedTakeHome);
+    expect(withRecovery.rows[0].netArrears).toBe(withRecovery.rows[0].revisedTakeHome - 50_500);
+    expect(withRecovery.totals.recoveries).toBe(1_500);
+  });
+
+  it('does not show a final total until actual credited salary is entered for every month', () => {
+    const result = calculateArrears(makeInput({
+      monthlyRecords: [
+        { month: '2026-01', actualTakeHome: 50_000, recovery: 0 },
+        { month: '2026-02', actualTakeHome: null, recovery: 0 }
+      ]
+    }));
+    expect(result.valid).toBe(true);
+    expect(result.complete).toBe(false);
+    expect(result.totals.netArrears).toBeNull();
+    expect(() => createArrearsCsv(result)).toThrow(/Complete all actual credited salary/);
+  });
+
+  it('rejects invalid changes, unselected pension/PT and negative monthly values', () => {
+    const invalid = calculateArrears(makeInput({
+      baseSalary: { ...baseSalary, pensionMode: 'unselected', professionalTaxMode: 'unselected' },
+      changes: [{ effectiveMonth: '2026-04', type: 'da-revision', daRate: 250, description: '' }],
+      monthlyRecords: [
+        { month: '2026-01', actualTakeHome: -1, recovery: -2 }
+      ]
+    }));
+    expect(invalid.valid).toBe(false);
+    expect(invalid.errors.length).toBeGreaterThanOrEqual(5);
+  });
+
+  it('reports monthly overpayment as a negative balance instead of hiding it', () => {
+    const result = calculateArrears(makeInput({
+      monthlyRecords: [
+        { month: '2026-01', actualTakeHome: 100_000, recovery: 0 },
+        { month: '2026-02', actualTakeHome: 100_000, recovery: 0 },
+        { month: '2026-03', actualTakeHome: 100_000, recovery: 0 }
+      ]
+    }));
+    expect(result.totals.netArrears).toBeLessThan(0);
+    expect(result.totals.negativeBalance).toBe(result.totals.netArrears);
+  });
+
+  it('exports CSV with quoted values and protects formula-like references', () => {
+    const result = calculateArrears(makeInput({
+      changes: [{ effectiveMonth: '2026-02', type: 'da-revision', daRate: 60, description: '=DA circular, revised' }]
+    }));
+    const csv = createArrearsCsv(result);
+    expect(csv.startsWith('\uFEFF')).toBe(true);
+    expect(csv).toContain('"\'=DA circular, revised"');
+    expect(csv).toContain('Net Difference (INR)');
+  });
+});

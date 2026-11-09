@@ -13,20 +13,23 @@ A Sikkim-specific salary estimation application built with SvelteKit 3, Svelte 5
 - GPF, manual pension, Professional Tax manual/estimate/exempt options and editable employee-specific deductions.
 - Pay progression and service history: exact matrix-cell scenario, explicit eligibility confirmation and a chronological service record saved in browser-local storage, with validated JSON backup/restore and CSV export. Individual entries can be edited or deleted, with search by date/event/pay details/reference and filters by event/date range.
 - GPF contribution planner: estimates monthly and annual subscription using the Sikkim GPF Rules' 6%–100% limits, with manual reference-pay input and explicit membership caveats.
+- Salary arrears planner: month-by-month revised take-home using opening salary components and effective-dated DA/basic-pay changes for increments, promotion or pay fixation; compares against actual net credited salary and subtracts separately entered arrears recoveries, with CSV export.
 - Browser-only calculations. No employee identity, bank details or payroll credentials are requested.
 
 ## Project structure
-- src/routes — SvelteKit routes; /pay-progression provides pay history and progression.
+- src/routes — SvelteKit routes; /pay-progression provides pay history, /gpf-planner provides the GPF planner, and /arrears-planner provides the arrears estimator.
 - src/lib/data/pay-matrix.ts — 23 Government pay levels and 794 official cells.
 - src/lib/salary.ts — regular salary calculation engine.
 - src/lib/pay-progression.ts — pay-cell progression and history validation.
 - src/lib/pay-history-management.ts — validated edit/delete helpers and chronology-preserving updates.
 - src/lib/pay-history-storage.ts — browser-local history persistence, versioned backup/restore and CSV export.
+- src/lib/arrears.ts — effective-dated month-by-month arrears model and CSV statement export.
 - src/lib/temporary-pay.ts — temporary consolidated-pay and training allowance schedule.
 - src/lib/sources.ts — in-app source register.
 - SOURCES.md — source evidence and limitations.
 - PAY-PROGRESSION-AUDIT.md — progression scope, sources and limitations.
 - PAY-HISTORY-STORAGE-AUDIT.md — service-history storage, backup and data-handling notes. The same page also supports individual record management and filtering.
+- ARREARS-PLANNER-AUDIT.md — arrears formula, effective-dated inputs, assumptions and exclusions.
 
 ## Run locally
 Requires Node.js 24+ and npm.
