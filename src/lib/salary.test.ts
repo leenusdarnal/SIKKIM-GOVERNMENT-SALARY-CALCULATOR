@@ -68,6 +68,8 @@ describe('salary calculation', () => {
     expect(DEFAULT_SALARY_INPUT.hraEligible).toBe(false);
     expect(DEFAULT_SALARY_INPUT.sbcaRate).toBe(0);
     expect(DEFAULT_SALARY_INPUT.professionalTaxMode).toBe('unselected');
+    expect(DEFAULT_SALARY_INPUT.cpsRate).toBe(10);
+    expect(DEFAULT_SALARY_INPUT.incomeTaxTds).toBe(0);
   });
 
   const base = {
@@ -76,7 +78,8 @@ describe('salary calculation', () => {
     transportAllowance: 0, otherEarnings: 0,
     pensionMode: 'cps' as const, manualPension: 0,
     professionalTaxMode: 'auto' as const, manualProfessionalTax: 0,
-    gis: 0, stampFee: 0, otherDeductions: 0
+    gis: 0, stampFee: 0, incomeTaxTds: 0, otherDeductions: 0,
+    cpsRate: 10
   };
 
   it('does not calculate Professional Tax until the treatment is selected', () => {
@@ -133,6 +136,26 @@ describe('salary calculation', () => {
     const result = calculateSalary({ ...base, hraRate: 150, sbcaRate: 125 });
     expect(result.hra).toBe(56_000);
     expect(result.sbca).toBe(56_000);
+  });
+
+  it('uses a configurable CPS rate and keeps the matching contribution separate', () => {
+    const result = calculateSalary({ ...base, cpsRate: 8 });
+    expect(result.employeePension).toBe(7_168);
+    expect(result.employerCpsContribution).toBe(7_168);
+    expect(result.totalDeductions).toBe(7_368);
+  });
+
+  it('includes manually entered income-tax TDS as a separate deduction', () => {
+    const result = calculateSalary({ ...base, incomeTaxTds: 2_250 });
+    expect(result.incomeTaxTds).toBe(2_250);
+    expect(result.totalDeductions).toBe(11_410);
+    expect(result.takeHome).toBe(89_390);
+  });
+
+  it('rounds half a rupee upward and supports a manually entered pre-revised DA rate', () => {
+    const result = calculateSalary({ ...base, daRate: 262, pensionMode: 'none', professionalTaxMode: 'none' });
+    expect(result.da).toBe(146_720);
+    expect(result.daRate).toBe(262);
   });
 
   it('uses manual Professional Tax without applying an automatic slab', () => {
