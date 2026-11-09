@@ -1,5 +1,4 @@
 import {
-  calculateArrears,
   getArrearsMonthKeys,
   type ArrearsInterestSettings,
   type ArrearsInput,
@@ -33,7 +32,11 @@ function isSalaryInput(value: unknown): value is SalaryInput {
     'transportAllowance', 'otherEarnings', 'manualPension', 'manualProfessionalTax',
     'gis', 'stampFee', 'incomeTaxTds', 'otherDeductions'
   ];
-  return required.every((key) => typeof value[key] === 'number' && Number.isFinite(value[key])) &&
+  return required.every((key) => typeof value[key] === 'number' && Number.isFinite(value[key]) && Number(value[key]) >= 0) &&
+    Number(value.daRate) <= 300 &&
+    Number(value.cpsRate) <= 100 &&
+    Number(value.hraRate) <= 100 &&
+    Number(value.sbcaRate) <= 100 &&
     typeof value.hraEligible === 'boolean' &&
     ['unselected', 'cps', 'gpf', 'manual', 'none'].includes(String(value.pensionMode)) &&
     ['unselected', 'auto', 'manual', 'none'].includes(String(value.professionalTaxMode));
@@ -75,20 +78,21 @@ export function validateArrearsScenario(value: unknown): value is ArrearsScenari
       typeof change.description === 'string')) return false;
   if (!value.monthlyRecords.every(isMonthlyRecord)) return false;
 
+  const allowedMonths = new Set(getArrearsMonthKeys(value.startMonth, value.endMonth));
+  if (!allowedMonths.size || !value.monthlyRecords.every((record) => allowedMonths.has(record.month))) return false;
+  if (!value.changes.every((change) =>
+      typeof change.effectiveMonth === 'string' &&
+      allowedMonths.has(change.effectiveMonth) &&
+      typeof change.type === 'string' &&
+      typeof change.description === 'string' &&
+      (change.salaryUpdates === undefined || isObject(change.salaryUpdates)))) return false;
+
   const settings = value.interestSettings;
   if (settings !== undefined && (!isObject(settings) ||
       typeof settings.annualRate !== 'number' ||
       typeof settings.settlementDate !== 'string')) return false;
 
-  const input: ArrearsInput = {
-    startMonth: value.startMonth,
-    endMonth: value.endMonth,
-    baseSalary: value.baseSalary,
-    changes: value.changes as ArrearsInput['changes'],
-    monthlyRecords: value.monthlyRecords,
-    interestSettings: (settings ?? { annualRate: 0, settlementDate: '' }) as ArrearsInterestSettings
-  };
-  return calculateArrears(input).valid;
+  return true;
 }
 
 function encodedSize(text: string): number {
