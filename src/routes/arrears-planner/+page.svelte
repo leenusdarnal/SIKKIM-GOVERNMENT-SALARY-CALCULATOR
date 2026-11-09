@@ -61,6 +61,7 @@
   let draftStatus = $state('Waiting for local draft');
   let fileStatus = $state('');
   let draftReady = $state(false);
+  let draftPersistenceEnabled = $state(true);
 
   const months = $derived(getArrearsMonthKeys(startMonth, endMonth));
   const monthlyRecords = $derived(months.map((month) => ({
@@ -120,7 +121,7 @@
   });
 
   $effect(() => {
-    if (!draftReady) return;
+    if (!draftReady || !draftPersistenceEnabled) return;
     try {
       saveArrearsScenario(arrearsInput, window.localStorage);
       draftStatus = 'Saved privately in this browser';
@@ -371,10 +372,11 @@
     target.value = '';
     if (!file) return;
     try {
-      const scenario = parseArrearsScenarioBackup(await file.text());
+      const json = await file.text();
+      const scenario = parseArrearsScenarioBackup(json);
       applyScenario(scenario);
       try {
-        restoreArrearsScenario(await file.text(), window.localStorage);
+        restoreArrearsScenario(json, window.localStorage);
         draftStatus = 'Backup restored and saved locally';
       } catch {
         draftStatus = 'Backup restored in this session; browser storage is unavailable';
@@ -423,6 +425,7 @@
   function clearSavedScenario() {
     try {
       window.localStorage.removeItem('sikkim-salary-arrears-scenario-v1');
+      draftPersistenceEnabled = false;
       startMonth = '2026-01';
       endMonth = '2026-11';
       baseSalary = { ...DEFAULT_SALARY_INPUT, daRate: 0 };
@@ -434,11 +437,18 @@
       interestAnnualRate = '0';
       interestSettlementDate = '';
       clearEventEditor();
-      fileStatus = 'Saved scenario cleared from this browser.';
-      draftStatus = 'No saved scenario';
+      fileStatus = 'Saved scenario cleared from this browser. Automatic saving is paused until you choose Save draft.';
+      draftStatus = 'No saved scenario — automatic saving paused';
     } catch {
       fileStatus = 'Unable to clear browser-local storage.';
     }
+  }
+
+  function enableDraftSaving() {
+    draftPersistenceEnabled = true;
+    draftReady = true;
+    draftStatus = 'Saving enabled for this browser';
+    fileStatus = 'Automatic local saving resumed.';
   }
 
   function printStatement() {
@@ -475,6 +485,9 @@
         </div>
         <div class="flex flex-wrap gap-2">
           <button type="button" onclick={exportJsonBackup} class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold dark:border-slate-700">Download JSON backup</button>
+          {#if !draftPersistenceEnabled}
+            <button type="button" onclick={enableDraftSaving} class="rounded-lg border border-emerald-300 px-3 py-2 text-xs font-bold text-emerald-800 dark:border-emerald-900 dark:text-emerald-300">Save draft</button>
+          {/if}
           <button type="button" onclick={downloadCsvTemplate} class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold dark:border-slate-700">Download CSV template</button>
           <button type="button" onclick={clearSavedScenario} class="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-700 dark:border-red-900 dark:text-red-300">Clear scenario</button>
         </div>
