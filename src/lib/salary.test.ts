@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calculateSalary, getSikkimProfessionalTax } from './salary';
+import { calculateSalary, DEFAULT_SALARY_INPUT, getSikkimProfessionalTax } from './salary';
 import { PAY_MATRIX } from './data/pay-matrix';
 
 describe('Sikkim pay matrix', () => {
@@ -26,6 +26,12 @@ describe('Sikkim Professional Tax slabs', () => {
 });
 
 describe('salary calculation', () => {
+  it('does not assume a pension scheme or allowance eligibility by default', () => {
+    expect(DEFAULT_SALARY_INPUT.pensionMode).toBe('unselected');
+    expect(DEFAULT_SALARY_INPUT.hraEligible).toBe(false);
+    expect(DEFAULT_SALARY_INPUT.sbcaRate).toBe(0);
+  });
+
   const base = {
     basicPay: 56_000, daRate: 60, hraEligible: true,
     hraRate: 12, hraMinimum: 0, sbcaRate: 8,
@@ -34,6 +40,13 @@ describe('salary calculation', () => {
     professionalTaxMode: 'auto' as const, manualProfessionalTax: 0,
     gis: 0, stampFee: 0, otherDeductions: 0
   };
+
+  it('does not deduct CPS when the scheme has not been selected', () => {
+    const result = calculateSalary({ ...base, pensionMode: 'unselected' });
+    expect(result.employeePension).toBe(0);
+    expect(result.employerCpsContribution).toBe(0);
+    expect(result.pensionLabel).toContain('not selected');
+  });
 
   it('calculates Level 17 Cell 1', () => {
     const result = calculateSalary(base);
