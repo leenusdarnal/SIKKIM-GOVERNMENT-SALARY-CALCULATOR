@@ -4,7 +4,8 @@
     createArrearsCsv,
     getArrearsMonthKeys,
     type ArrearChange,
-    type ArrearChangeType
+    type ArrearChangeType,
+    type ArrearSalaryUpdate
   } from '../../lib/arrears';
   import { DEFAULT_SALARY_INPUT, type SalaryInput } from '../../lib/salary';
 
@@ -17,6 +18,21 @@
   let eventBasicPay = $state('');
   let eventDaRate = $state('');
   let eventDescription = $state('');
+  let componentEvent = $state({
+    hraEligible: '',
+    hraRate: '',
+    hraMinimum: '',
+    sbcaRate: '',
+    transportAllowance: '',
+    otherEarnings: '',
+    pensionMode: '',
+    manualPension: '',
+    professionalTaxMode: '',
+    manualProfessionalTax: '',
+    gis: '',
+    stampFee: '',
+    otherDeductions: ''
+  });
   let actualPaid = $state<Record<string, string>>({});
   let recoveryAmounts = $state<Record<string, string>>({});
   let formError = $state('');
@@ -60,15 +76,36 @@
     recoveryAmounts = { ...recoveryAmounts, [month]: target.value };
   }
 
+  function buildComponentUpdate(): ArrearSalaryUpdate {
+    const update: ArrearSalaryUpdate = {};
+    if (componentEvent.hraEligible !== '') update.hraEligible = componentEvent.hraEligible === 'yes';
+    if (componentEvent.hraRate.trim() !== '') update.hraRate = Number(componentEvent.hraRate);
+    if (componentEvent.hraMinimum.trim() !== '') update.hraMinimum = Number(componentEvent.hraMinimum);
+    if (componentEvent.sbcaRate.trim() !== '') update.sbcaRate = Number(componentEvent.sbcaRate);
+    if (componentEvent.transportAllowance.trim() !== '') update.transportAllowance = Number(componentEvent.transportAllowance);
+    if (componentEvent.otherEarnings.trim() !== '') update.otherEarnings = Number(componentEvent.otherEarnings);
+    if (componentEvent.pensionMode !== '') update.pensionMode = componentEvent.pensionMode as SalaryInput['pensionMode'];
+    if (componentEvent.manualPension.trim() !== '') update.manualPension = Number(componentEvent.manualPension);
+    if (componentEvent.professionalTaxMode !== '') update.professionalTaxMode = componentEvent.professionalTaxMode as SalaryInput['professionalTaxMode'];
+    if (componentEvent.manualProfessionalTax.trim() !== '') update.manualProfessionalTax = Number(componentEvent.manualProfessionalTax);
+    if (componentEvent.gis.trim() !== '') update.gis = Number(componentEvent.gis);
+    if (componentEvent.stampFee.trim() !== '') update.stampFee = Number(componentEvent.stampFee);
+    if (componentEvent.otherDeductions.trim() !== '') update.otherDeductions = Number(componentEvent.otherDeductions);
+    return update;
+  }
+
   function addChange() {
     const basicPay = eventBasicPay.trim() === '' ? undefined : Number(eventBasicPay);
     const daRate = eventDaRate.trim() === '' ? undefined : Number(eventDaRate);
+    const salaryUpdates = buildComponentUpdate();
+    const hasSalaryUpdates = Object.keys(salaryUpdates).length > 0;
     const candidate: ArrearChange = {
       effectiveMonth: eventMonth,
       type: eventType,
       description: eventDescription.trim(),
       ...(basicPay === undefined ? {} : { basicPay }),
-      ...(daRate === undefined ? {} : { daRate })
+      ...(daRate === undefined ? {} : { daRate }),
+      ...(hasSalaryUpdates ? { salaryUpdates } : {})
     };
 
     if (!candidate.description) {
@@ -87,11 +124,21 @@
       formError = 'Enter a new basic pay and/or DA rate for this adjustment.';
       return;
     }
+    if (eventType === 'allowance-deduction' && !hasSalaryUpdates) {
+      formError = 'Enter at least one allowance or deduction value for this effective month.';
+      return;
+    }
 
     changes = [...changes, candidate];
     eventBasicPay = '';
     eventDaRate = '';
     eventDescription = '';
+    componentEvent = {
+      hraEligible: '', hraRate: '', hraMinimum: '', sbcaRate: '',
+      transportAllowance: '', otherEarnings: '', pensionMode: '',
+      manualPension: '', professionalTaxMode: '', manualProfessionalTax: '',
+      gis: '', stampFee: '', otherDeductions: ''
+    };
     formError = '';
   }
 
@@ -244,7 +291,7 @@
             <input type="number" min="0" step="1" bind:value={baseSalary.otherDeductions} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
           </label>
         </div>
-        <p class="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">CPS/CPF is recalculated as 10% of Basic Pay + DA under the existing salary engine. GPF and other manual pension contributions remain fixed unless you add a future enhancement for dated deduction changes.</p>
+        <p class="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">CPS/CPF is recalculated as 10% of Basic Pay + DA under the existing salary engine. Historical changes to GPF/manual pension, HRA, SBCA, Professional Tax and other entered components can be scheduled in the effective-dated changes section below.</p>
       </div>
     </section>
 
@@ -253,7 +300,7 @@
       <h2 class="mt-1 text-xl font-black">Add DA revisions, increments or promotion fixation</h2>
       <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">A change is applied from the selected month onward. Use a separate entry for each order/effective date.</p>
 
-      <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <label class="text-sm font-bold">Effective month
           <input type="month" bind:value={eventMonth} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
         </label>
@@ -263,19 +310,77 @@
             <option value="annual-increment">Annual increment</option>
             <option value="promotion">Promotion / upgradation</option>
             <option value="pay-fixation">Pay fixation order</option>
-            <option value="manual-adjustment">Manual adjustment</option>
+            <option value="manual-adjustment">Basic / DA adjustment</option>
+            <option value="allowance-deduction">Allowance / deduction revision</option>
           </select>
         </label>
-        <label class="text-sm font-bold">New basic pay (₹)
-          <input type="number" min="1" step="1" value={eventBasicPay} oninput={(event) => (eventBasicPay = (event.currentTarget as HTMLInputElement).value)} placeholder="Leave blank when unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
-        </label>
-        <label class="text-sm font-bold">New DA rate (%)
-          <input type="number" min="0" max="200" step="0.01" value={eventDaRate} oninput={(event) => (eventDaRate = (event.currentTarget as HTMLInputElement).value)} placeholder="Leave blank when unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
-        </label>
-        <label class="text-sm font-bold lg:col-span-1">Order / reference
+        <label class="text-sm font-bold">Order / payslip reference
           <input bind:value={eventDescription} maxlength="160" placeholder="Order number and date" class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
         </label>
       </div>
+
+      {#if eventType === 'allowance-deduction'}
+        <div class="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50/50 p-4 dark:border-emerald-900/50 dark:bg-emerald-950/20">
+          <h3 class="font-extrabold">Allowance and deduction changes</h3>
+          <p class="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">Leave a field unchanged to carry forward its previous value. Enter only items that change from this effective month.</p>
+          <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <label class="text-sm font-bold">HRA eligibility
+              <select bind:value={componentEvent.hraEligible} class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+                <option value="">Unchanged</option><option value="yes">Eligible</option><option value="no">Not eligible</option>
+              </select>
+            </label>
+            <label class="text-sm font-bold">HRA rate (%)
+              <input type="number" min="0" max="100" step="0.01" bind:value={componentEvent.hraRate} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
+            </label>
+            <label class="text-sm font-bold">HRA minimum (₹)
+              <input type="number" min="0" step="1" bind:value={componentEvent.hraMinimum} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
+            </label>
+            <label class="text-sm font-bold">SBCA rate (%)
+              <input type="number" min="0" max="100" step="0.01" bind:value={componentEvent.sbcaRate} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
+            </label>
+            <label class="text-sm font-bold">Transport allowance (₹)
+              <input type="number" min="0" step="1" bind:value={componentEvent.transportAllowance} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
+            </label>
+            <label class="text-sm font-bold">Other earnings (₹)
+              <input type="number" min="0" step="1" bind:value={componentEvent.otherEarnings} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
+            </label>
+            <label class="text-sm font-bold">Pension arrangement
+              <select bind:value={componentEvent.pensionMode} class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+                <option value="">Unchanged</option><option value="cps">CPS / CPF</option><option value="gpf">GPF</option><option value="manual">Manual pension</option><option value="none">No pension deduction</option>
+              </select>
+            </label>
+            <label class="text-sm font-bold">Manual pension / GPF (₹)
+              <input type="number" min="0" step="1" bind:value={componentEvent.manualPension} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
+            </label>
+            <label class="text-sm font-bold">Professional Tax treatment
+              <select bind:value={componentEvent.professionalTaxMode} class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+                <option value="">Unchanged</option><option value="auto">Indicative automatic slab</option><option value="manual">Manual payslip amount</option><option value="none">Not applicable / exempt</option>
+              </select>
+            </label>
+            <label class="text-sm font-bold">Manual Professional Tax (₹)
+              <input type="number" min="0" step="1" bind:value={componentEvent.manualProfessionalTax} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
+            </label>
+            <label class="text-sm font-bold">GIS (₹)
+              <input type="number" min="0" step="1" bind:value={componentEvent.gis} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
+            </label>
+            <label class="text-sm font-bold">Stamp / fixed fee (₹)
+              <input type="number" min="0" step="1" bind:value={componentEvent.stampFee} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
+            </label>
+            <label class="text-sm font-bold">Other monthly deductions (₹)
+              <input type="number" min="0" step="1" bind:value={componentEvent.otherDeductions} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
+            </label>
+          </div>
+        </div>
+      {:else}
+        <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <label class="text-sm font-bold">New basic pay (₹)
+            <input type="number" min="1" step="1" value={eventBasicPay} oninput={(event) => (eventBasicPay = (event.currentTarget as HTMLInputElement).value)} placeholder="Leave blank when unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
+          </label>
+          <label class="text-sm font-bold">New DA rate (%)
+            <input type="number" min="0" max="200" step="0.01" value={eventDaRate} oninput={(event) => (eventDaRate = (event.currentTarget as HTMLInputElement).value)} placeholder="Leave blank when unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
+          </label>
+        </div>
+      {/if}
       <button type="button" onclick={addChange} class="mt-4 rounded-xl bg-emerald-800 px-5 py-3 text-sm font-extrabold text-white hover:bg-emerald-700">Add effective-dated change</button>
       {#if changes.length}
         <div class="mt-5 overflow-x-auto">
@@ -338,10 +443,10 @@
 
       {#if result.rows.length}
         <div class="mt-5 overflow-x-auto">
-          <table class="w-full min-w-[1180px] text-left text-sm">
+          <table class="w-full min-w-[2100px] text-left text-sm">
             <thead>
               <tr class="border-b border-slate-200 text-[10px] uppercase tracking-wide text-slate-500 dark:border-slate-700">
-                <th class="py-3">Month</th><th>Basic pay</th><th>DA</th><th>Revised gross</th><th>Deductions</th><th>Revised take-home</th><th>Actual net paid (₹)</th><th>Recovery (₹)</th><th>Net difference</th>
+                <th class="py-3">Month</th><th>Basic pay</th><th>DA rate</th><th>DA</th><th>HRA</th><th>SBCA</th><th>Transport</th><th>Other earnings</th><th>Revised gross</th><th>CPS / GPF</th><th>Professional Tax</th><th>GIS</th><th>Stamp fee</th><th>Other deductions</th><th>Total deductions</th><th>Revised take-home</th><th>Actual net paid (₹)</th><th>Recovery (₹)</th><th>Net difference</th>
               </tr>
             </thead>
             <tbody>
@@ -350,7 +455,17 @@
                   <td class="py-3 font-bold">{row.month}</td>
                   <td>{fmt(row.basicPay)}</td>
                   <td>{row.daRate}%</td>
+                  <td>{fmt(row.da)}</td>
+                  <td>{fmt(row.hra)}</td>
+                  <td>{fmt(row.sbca)}</td>
+                  <td>{fmt(row.transportAllowance)}</td>
+                  <td>{fmt(row.otherEarnings)}</td>
                   <td>{fmt(row.grossEntitlement)}</td>
+                  <td>{fmt(row.employeePension)}</td>
+                  <td>{fmt(row.professionalTax)}</td>
+                  <td>{fmt(row.gis)}</td>
+                  <td>{fmt(row.stampFee)}</td>
+                  <td>{fmt(row.otherDeductions)}</td>
                   <td>{fmt(row.employeeDeductions)}</td>
                   <td class="font-bold">{fmt(row.revisedTakeHome)}</td>
                   <td><input type="number" min="0" step="1" value={actualPaid[row.month] ?? ''} oninput={(event) => updateActualPaid(row.month, event)} aria-label={'Actual net salary credited for ' + row.month} placeholder="Enter credited amount" class="w-36 rounded-lg border border-slate-300 bg-transparent p-2 text-sm dark:border-slate-700" /></td>
@@ -358,7 +473,7 @@
                   <td class="font-bold">{fmt(row.netArrears)}</td>
                 </tr>
                 {#if row.appliedChanges.length}
-                  <tr class="border-b border-slate-100 bg-emerald-50/60 dark:border-slate-800 dark:bg-emerald-950/20"><td colspan="9" class="px-3 py-2 text-xs text-emerald-900 dark:text-emerald-200">Applied from this month: {row.appliedChanges.join(' · ')}</td></tr>
+                  <tr class="border-b border-slate-100 bg-emerald-50/60 dark:border-slate-800 dark:bg-emerald-950/20"><td colspan="19" class="px-3 py-2 text-xs text-emerald-900 dark:text-emerald-200">Applied from this month: {row.appliedChanges.join(' · ')}</td></tr>
                 {/if}
               {/each}
             </tbody>
@@ -374,7 +489,7 @@
         <li><a class="font-semibold text-emerald-800 underline dark:text-emerald-400" href="https://dop.sikkim.gov.in/circular/6780.pdf" target="_blank" rel="noreferrer">Department of Personnel clarification on EOL and annual increment dates</a> — qualifying service and leave can affect an employee's actual increment date.</li>
         <li><a class="font-semibold text-emerald-800 underline dark:text-emerald-400" href="https://www.sikkim.gov.in/uploads/Gazette/333_20240813.pdf" target="_blank" rel="noreferrer">Sikkim Government Services (Revised Pay) Rules, 2018</a> — use the applicable order and service book for individual fixation.</li>
       </ul>
-      <p class="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">The model recalculates CPS/CPF from Basic Pay + DA using the current salary engine. Other manual deductions and allowances remain at their opening values for all months in this version. It does not calculate interest on arrears, tax impact, leave salary, DA on pre-revised pay, pension revisions or statutory rounding differences beyond the salary engine.</p>
+      <p class="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">Every dated component change carries forward from its effective month until superseded. The model still does not calculate interest on arrears, income-tax recomputation, leave salary, DA on pre-revised pay, statutory rounding differences beyond the salary engine, or partial-month proration.</p>
     </section>
   </div>
 </main>
