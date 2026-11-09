@@ -4,10 +4,9 @@
     createArrearsCsv,
     getArrearsMonthKeys,
     type ArrearChange,
-    type ArrearChangeType,
-    type SalaryInput
+    type ArrearChangeType
   } from '../../lib/arrears';
-  import { DEFAULT_SALARY_INPUT } from '../../lib/salary';
+  import { DEFAULT_SALARY_INPUT, type SalaryInput } from '../../lib/salary';
 
   let startMonth = $state('2026-01');
   let endMonth = $state('2026-11');
