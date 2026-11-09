@@ -79,7 +79,7 @@ describe('salary calculation', () => {
     pensionMode: 'cps' as const, manualPension: 0,
     professionalTaxMode: 'auto' as const, manualProfessionalTax: 0,
     gis: 0, stampFee: 0, incomeTaxTds: 0, otherDeductions: 0,
-    cpsRate: 10
+    cpsRate: 10, cpsEmployerRate: 10
   };
 
   it('does not calculate Professional Tax until the treatment is selected', () => {
@@ -141,7 +141,7 @@ describe('salary calculation', () => {
   it('uses a configurable CPS rate and keeps the matching contribution separate', () => {
     const result = calculateSalary({ ...base, cpsRate: 8 });
     expect(result.employeePension).toBe(7_168);
-    expect(result.employerCpsContribution).toBe(7_168);
+    expect(result.employerCpsContribution).toBe(8_960);
     expect(result.totalDeductions).toBe(7_368);
   });
 
