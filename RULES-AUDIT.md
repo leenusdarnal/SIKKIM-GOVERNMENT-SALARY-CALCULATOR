@@ -49,3 +49,12 @@ See [ALLOWANCE-DEDUCTION-AUDIT.md](ALLOWANCE-DEDUCTION-AUDIT.md) for the detaile
 - Added regression tests for the prescribed monthly rates, all 16 special-post rows, training rates and manual driver calculations.
 
 See [TEMPORARY-PAY-AUDIT.md](TEMPORARY-PAY-AUDIT.md).
+
+
+## Pay progression and service history — 9 November 2026
+- Added a separate pay-progression page with exact matrix-cell lookup and increment scenarios requiring explicit user confirmation of eligibility.
+- Added local chronological service-history entries for appointment, annual increment, promotion, financial upgradation, regularisation and manual correction.
+- Added validation that rejects nonexistent cells and out-of-order history entries.
+- Audited Notification No. 99/GEN/DOP dated 6 February 2020, the 2024 regularisation transition, the 3 March 2025 ACPS memorandum and the narrow 2021 Sikkim Houses increment restriction.
+- No generic direct-recruit initial fixation, promotion fixation, retrospective arrears or universal MACP calculation is automated. Rule 7's 2.57 factor is the 2016 transition, not a general current appointment formula.
+- See [PAY-PROGRESSION-AUDIT.md](PAY-PROGRESSION-AUDIT.md).
