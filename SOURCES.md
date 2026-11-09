@@ -88,3 +88,24 @@ When a new Government of Sikkim order is issued, update the rule data only after
 6. A worked salary example against a real redacted payslip or DDO calculation.
 
 Never overwrite the editable reference fields with an unverified news report or a Central Government rate.
+
+
+## 9. Temporary consolidated pay — current Department of Personnel notification
+
+**Notification No. M(164)/42/GEN/DOP dated 12 August 2026**, Department of Personnel, Government of Sikkim. It supersedes Notification No. M(64)/09/GEN/DOP dated 11 April 2018 and takes effect immediately.
+
+- Official PDF: https://dop.sikkim.gov.in/notificationdoc/M(164).pdf
+- Group C/D equivalent-grade-pay consolidated pay: ₹18,000 (₹3,800 / ₹4,200), ₹15,000 (₹3,400), ₹12,000 (₹3,000), ₹10,500 (₹2,600), and ₹9,000 (₹2,200) per month.
+- The notification separately lists 16 specific posts with individual monthly consolidated amounts. Those rows are transcribed into `src/lib/temporary-pay.ts` and tested.
+- Temporary drivers are paid on a daily-wage basis at the rate prescribed by the Labour Department. The notification does not state a daily amount; the calculator therefore requires a manual daily rate and payable days rather than inventing one.
+- The notification does not authorize adding regular pay-matrix DA, HRA, SBCA or pension contributions to consolidated pay. The temporary-pay tool displays the prescribed consolidated amount only; deductions and other service conditions remain outside this increment.
+
+## 10. Direct-recruit training allowance and regularisation transition — 25 July 2024
+
+**Notification No. J(1)/86-GEN/DOP (part)** amends Rule 26 of the Sikkim Government Service Rules, 1974. **Notification No. J(1)/87/GEN/DOP (part)** sets a specific transition for certain temporary employees regularised after completing 8 or 4 years of service as on 31 December 2023.
+
+- Training-rule amendment: https://dop.sikkim.gov.in/notificationdoc/J(1)86-GEN-DOP%20(Direct).pdf
+- Regularisation transition: https://dop.sikkim.gov.in/notificationdoc/J(1)87-GEN-DOP(Regularisation).pdf
+- First-year direct-recruit training allowance: Group D ₹10,000 within Sikkim / ₹18,000 outside; Group C ₹12,000 / ₹20,000; Group B ₹18,000 / ₹25,000.
+- For the specified regularised cohort, the 2024 transition states previous temporary consolidated pay for the first year from the regularisation effective date, Level 1/2/3 placement for the next four years, and pay regulation after five years under Notification No. 99/GEN/DOP dated 6 February 2020.
+- **Scope limitation:** This is not a general entitlement or a full pay-fixation engine. The 2020 regulation notification and subsequent 2025/2026 orders have not yet been reconciled into a complete eligibility algorithm. The app shows the 2024 provision as guidance only and does not automatically determine regularisation eligibility, level, cell or pay-fixation date.
