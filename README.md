@@ -11,7 +11,7 @@ A Sikkim-specific salary estimation application built with SvelteKit 3, Svelte 5
 - HRA and SBCA are not presumed payable: HRA starts disabled and SBCA starts at 0%.
 - Explicit pension-scheme selection; CPS/CPF employee contribution is calculated only when selected, with the State matching share shown separately.
 - GPF, manual pension, Professional Tax manual/estimate/exempt options and editable employee-specific deductions.
-- Pay progression and service history: exact matrix-cell scenario, explicit eligibility confirmation and chronological local record of appointment, increments, promotion, financial upgradation and regularisation events.
+- Pay progression and service history: exact matrix-cell scenario, explicit eligibility confirmation and a chronological service record saved in browser-local storage, with validated JSON backup/restore and CSV export.
 - GPF contribution planner: estimates monthly and annual subscription using the Sikkim GPF Rules' 6%–100% limits, with manual reference-pay input and explicit membership caveats.
 - Browser-only calculations. No employee identity, bank details or payroll credentials are requested.
 
@@ -20,10 +20,12 @@ A Sikkim-specific salary estimation application built with SvelteKit 3, Svelte 5
 - src/lib/data/pay-matrix.ts — 23 Government pay levels and 794 official cells.
 - src/lib/salary.ts — regular salary calculation engine.
 - src/lib/pay-progression.ts — pay-cell progression and history validation.
+- src/lib/pay-history-storage.ts — browser-local history persistence, versioned backup/restore and CSV export.
 - src/lib/temporary-pay.ts — temporary consolidated-pay and training allowance schedule.
 - src/lib/sources.ts — in-app source register.
 - SOURCES.md — source evidence and limitations.
 - PAY-PROGRESSION-AUDIT.md — progression scope, sources and limitations.
+- PAY-HISTORY-STORAGE-AUDIT.md — service-history storage, backup and data-handling notes.
 
 ## Run locally
 Requires Node.js 24+ and npm.
