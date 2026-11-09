@@ -38,6 +38,7 @@
     hraMinimum: '',
     sbcaRate: '',
     cpsRate: '',
+    cpsEmployerRate: '',
     transportAllowance: '',
     otherEarnings: '',
     pensionMode: '',
@@ -175,7 +176,7 @@
 
   function resetComponentEvent() {
     componentEvent = {
-      hraEligible: '', hraRate: '', hraMinimum: '', sbcaRate: '', cpsRate: '',
+      hraEligible: '', hraRate: '', hraMinimum: '', sbcaRate: '', cpsRate: '', cpsEmployerRate: '',
       transportAllowance: '', otherEarnings: '', pensionMode: '',
       manualPension: '', professionalTaxMode: '', manualProfessionalTax: '',
       incomeTaxTds: '', gis: '', stampFee: '', otherDeductions: ''
@@ -189,6 +190,7 @@
     if (componentEvent.hraMinimum.trim() !== '') update.hraMinimum = Number(componentEvent.hraMinimum);
     if (componentEvent.sbcaRate.trim() !== '') update.sbcaRate = Number(componentEvent.sbcaRate);
     if (componentEvent.cpsRate.trim() !== '') update.cpsRate = Number(componentEvent.cpsRate);
+    if (componentEvent.cpsEmployerRate.trim() !== '') update.cpsEmployerRate = Number(componentEvent.cpsEmployerRate);
     if (componentEvent.transportAllowance.trim() !== '') update.transportAllowance = Number(componentEvent.transportAllowance);
     if (componentEvent.otherEarnings.trim() !== '') update.otherEarnings = Number(componentEvent.otherEarnings);
     if (componentEvent.pensionMode !== '') update.pensionMode = componentEvent.pensionMode as SalaryInput['pensionMode'];
@@ -272,6 +274,7 @@
       hraMinimum: update.hraMinimum === undefined ? '' : String(update.hraMinimum),
       sbcaRate: update.sbcaRate === undefined ? '' : String(update.sbcaRate),
       cpsRate: update.cpsRate === undefined ? '' : String(update.cpsRate),
+      cpsEmployerRate: update.cpsEmployerRate === undefined ? '' : String(update.cpsEmployerRate),
       transportAllowance: update.transportAllowance === undefined ? '' : String(update.transportAllowance),
       otherEarnings: update.otherEarnings === undefined ? '' : String(update.otherEarnings),
       pensionMode: update.pensionMode ?? '',
@@ -292,7 +295,8 @@
       hraRate: 'HRA rate',
       hraMinimum: 'HRA minimum',
       sbcaRate: 'SBCA rate',
-      cpsRate: 'CPS rate',
+      cpsRate: 'CPS employee rate',
+      cpsEmployerRate: 'CPS State rate',
       transportAllowance: 'Transport',
       otherEarnings: 'Other earnings',
       pensionMode: 'Pension',
