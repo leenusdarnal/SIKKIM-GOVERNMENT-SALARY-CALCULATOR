@@ -266,7 +266,7 @@ export function calculateArrears(input: ArrearsInput): ArrearsResult {
   }
 
   const complete = rows.every((row) => row.actualTakeHome !== null);
-  const totals: ArrearsTotals = rows.reduce((sum, row) => ({
+  const totals: ArrearsTotals = rows.reduce<ArrearsTotals>((sum, row) => ({
     grossEntitlement: sum.grossEntitlement + row.grossEntitlement,
     employeeDeductions: sum.employeeDeductions + row.employeeDeductions,
     revisedTakeHome: sum.revisedTakeHome + row.revisedTakeHome,
