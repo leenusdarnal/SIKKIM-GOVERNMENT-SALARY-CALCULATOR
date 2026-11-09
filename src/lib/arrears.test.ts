@@ -98,6 +98,93 @@ describe('Sikkim salary arrears planner', () => {
     expect(invalid.errors.length).toBeGreaterThanOrEqual(5);
   });
 
+  it('applies dated HRA eligibility, HRA rate, SBCA rate and transport allowance', () => {
+    const result = calculateArrears(makeInput({
+      changes: [{
+        effectiveMonth: '2026-02',
+        type: 'allowance-deduction',
+        description: 'Posting allowance order effective February',
+        salaryUpdates: {
+          hraEligible: true,
+          hraRate: 12,
+          sbcaRate: 8,
+          transportAllowance: 1_000
+        }
+      }]
+    }));
+
+    expect(result.valid).toBe(true);
+    expect(result.rows[0].hra).toBe(0);
+    expect(result.rows[0].sbca).toBe(0);
+    expect(result.rows[1].hra).toBe(6_720);
+    expect(result.rows[1].sbca).toBe(4_480);
+    expect(result.rows[1].transportAllowance).toBe(1_000);
+    expect(result.rows[2].hra).toBe(6_720);
+  });
+
+  it('applies dated GPF, Professional Tax, GIS and other deduction changes', () => {
+    const result = calculateArrears(makeInput({
+      changes: [{
+        effectiveMonth: '2026-02',
+        type: 'allowance-deduction',
+        description: 'Revised deductions as per payslip',
+        salaryUpdates: {
+          pensionMode: 'gpf',
+          manualPension: 2_500,
+          professionalTaxMode: 'manual',
+          manualProfessionalTax: 175,
+          gis: 20,
+          stampFee: 10,
+          otherDeductions: 500
+        }
+      }]
+    }));
+
+    expect(result.valid).toBe(true);
+    expect(result.rows[0].employeePension).toBe(baseSalary.basicPay * 0.1 + Math.round(baseSalary.basicPay * baseSalary.daRate / 100) * 0.1);
+    expect(result.rows[1].employeePension).toBe(2_500);
+    expect(result.rows[1].professionalTax).toBe(175);
+    expect(result.rows[1].gis).toBe(20);
+    expect(result.rows[1].stampFee).toBe(10);
+    expect(result.rows[1].otherDeductions).toBe(500);
+    expect(result.rows[1].employeeDeductions).toBe(3_205);
+    expect(result.rows[1].revisedTakeHome).toBe(result.rows[1].grossEntitlement - 3_205);
+  });
+
+  it('carries forward earlier component changes until a later effective order supersedes them', () => {
+    const result = calculateArrears(makeInput({
+      changes: [
+        {
+          effectiveMonth: '2026-02',
+          type: 'allowance-deduction',
+          description: 'HRA eligibility order',
+          salaryUpdates: { hraEligible: true, hraRate: 12 }
+        },
+        {
+          effectiveMonth: '2026-03',
+          type: 'allowance-deduction',
+          description: 'HRA rate revision',
+          salaryUpdates: { hraRate: 15 }
+        }
+      ]
+    }));
+    expect(result.rows.map((row) => row.hra)).toEqual([0, 6_720, 8_400]);
+  });
+
+  it('rejects invalid dated allowance and deduction values', () => {
+    const result = calculateArrears(makeInput({
+      changes: [{
+        effectiveMonth: '2026-02',
+        type: 'allowance-deduction',
+        description: 'Invalid allowance revision',
+        salaryUpdates: { hraRate: 125, gis: -10 }
+      }]
+    }));
+    expect(result.valid).toBe(false);
+    expect(result.errors.some((message) => message.includes('hraRate must not exceed 100%'))).toBe(true);
+    expect(result.errors.some((message) => message.includes('gis must be a non-negative number'))).toBe(true);
+  });
+
   it('reports monthly overpayment as a negative balance instead of hiding it', () => {
     const result = calculateArrears(makeInput({
       monthlyRecords: [
@@ -118,5 +205,8 @@ describe('Sikkim salary arrears planner', () => {
     expect(csv.startsWith('\uFEFF')).toBe(true);
     expect(csv).toContain('"\'=DA circular, revised"');
     expect(csv).toContain('Net Difference (INR)');
+    expect(csv).toContain('HRA (INR)');
+    expect(csv).toContain('Professional Tax (INR)');
+    expect(csv).toContain('Total Employee Deductions (INR)');
   });
 });
