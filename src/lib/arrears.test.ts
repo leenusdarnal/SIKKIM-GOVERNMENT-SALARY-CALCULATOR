@@ -185,6 +185,82 @@ describe('Sikkim salary arrears planner', () => {
     expect(result.errors.some((message) => message.includes('gis must be a non-negative number'))).toBe(true);
   });
 
+  it('prorates the salary base using calendar payable days and a verified leave-salary factor', () => {
+    const result = calculateArrears(makeInput({
+      startMonth: '2026-01',
+      endMonth: '2026-02',
+      monthlyRecords: [
+        { month: '2026-01', actualTakeHome: 0, recovery: 0, payableDays: 15, salaryFactorPercent: 100 },
+        { month: '2026-02', actualTakeHome: 0, recovery: 0, payableDays: 28, salaryFactorPercent: 50 }
+      ]
+    }));
+    expect(result.valid).toBe(true);
+    expect(result.rows[0].daysInMonth).toBe(31);
+    expect(result.rows[0].basicPay).toBe(Math.round(56_000 * 15 / 31));
+    expect(result.rows[1].basicPay).toBe(28_000);
+    expect(result.rows[1].salaryFactor).toBe(0.5);
+    expect(result.rows[1].employeePension).toBe(Math.round((28_000 + Math.round(28_000 * 0.58)) * 0.1));
+  });
+
+  it('rejects payable days beyond calendar days and leave factors outside 0–100%', () => {
+    const result = calculateArrears(makeInput({
+      monthlyRecords: [
+        { month: '2026-01', actualTakeHome: 0, recovery: 0, payableDays: 32, salaryFactorPercent: 100 },
+        { month: '2026-02', actualTakeHome: 0, recovery: 0, payableDays: 28, salaryFactorPercent: 105 }
+      ]
+    }));
+    expect(result.valid).toBe(false);
+    expect(result.errors.some((message) => message.includes('payable days must be between zero'))).toBe(true);
+    expect(result.errors.some((message) => message.includes('salary factor must be between 0% and 100%'))).toBe(true);
+  });
+
+  it('calculates optional simple interest only on positive monthly arrears balances', () => {
+    const principal = calculateArrears(makeInput({
+      startMonth: '2026-01',
+      endMonth: '2026-01',
+      monthlyRecords: [{ month: '2026-01', actualTakeHome: 50_000, recovery: 0 }]
+    })).rows[0].netArrears ?? 0;
+    const result = calculateArrears(makeInput({
+      startMonth: '2026-01',
+      endMonth: '2026-01',
+      monthlyRecords: [{ month: '2026-01', actualTakeHome: 50_000, recovery: 0 }],
+      interestSettings: { annualRate: 12, settlementDate: '2026-02-28' }
+    }));
+    expect(result.valid).toBe(true);
+    expect(result.rows[0].interestDays).toBe(28);
+    expect(result.rows[0].interestAmount).toBe(Math.floor(principal * 12 * 28 / 36_500 + 0.5));
+    expect(result.totals.totalIncludingInterest).toBe((result.totals.netArrears ?? 0) + result.totals.interestAmount);
+  });
+
+  it('does not calculate interest on negative balances and validates settlement date', () => {
+    const negative = calculateArrears(makeInput({
+      startMonth: '2026-01',
+      endMonth: '2026-01',
+      monthlyRecords: [{ month: '2026-01', actualTakeHome: 100_000, recovery: 0 }],
+      interestSettings: { annualRate: 12, settlementDate: '2026-02-28' }
+    }));
+    expect(negative.rows[0].netArrears).toBeLessThan(0);
+    expect(negative.rows[0].interestAmount).toBe(0);
+    const invalid = calculateArrears(makeInput({
+      interestSettings: { annualRate: 12, settlementDate: '2026-01-15' }
+    }));
+    expect(invalid.valid).toBe(false);
+    expect(invalid.errors.some((message) => message.includes('on or after the final arrears month-end'))).toBe(true);
+  });
+
+  it('includes a separate income-tax TDS deduction in the arrears line items', () => {
+    const result = calculateArrears(makeInput({
+      baseSalary: { ...baseSalary, incomeTaxTds: 2_000 },
+      changes: [{
+        effectiveMonth: '2026-02',
+        type: 'allowance-deduction',
+        description: 'TDS installment revision on payslip',
+        salaryUpdates: { incomeTaxTds: 3_000 }
+      }]
+    }));
+    expect(result.rows.map((row) => row.incomeTaxTds)).toEqual([2_000, 3_000, 3_000]);
+  });
+
   it('reports monthly overpayment as a negative balance instead of hiding it', () => {
     const result = calculateArrears(makeInput({
       monthlyRecords: [
@@ -208,5 +284,8 @@ describe('Sikkim salary arrears planner', () => {
     expect(csv).toContain('HRA (INR)');
     expect(csv).toContain('Professional Tax (INR)');
     expect(csv).toContain('Total Employee Deductions (INR)');
+    expect(csv).toContain('Income Tax TDS (INR)');
+    expect(csv).toContain('Indicative Simple Interest (INR)');
+    expect(csv).toContain('Payable Days');
   });
 });
