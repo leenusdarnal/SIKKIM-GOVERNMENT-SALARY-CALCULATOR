@@ -3,7 +3,7 @@ export const SALARY_SOURCES = [
     title: 'Sikkim Government Services (Revised Pay) Rules, 2018',
     authority: 'Government of Sikkim, Department of Personnel',
     note: 'Notification No. 56/GEN/DOP dated 23 June 2018. The document includes the Rules and Schedule, Part A (Pay Matrix), applicable to covered State services/posts from 1 January 2016.',
-    url: 'https://www.sikkimfred.gov.in/FCD/DOCUMENTS15th_FC/SFTopicNote.pdf'
+    url: 'https://www.sikkim.gov.in/uploads/Gazette/333_20240813.pdf'
   },
   {
     title: 'Sikkim Government pay-matrix reference PDF (operational copy)',
@@ -66,9 +66,27 @@ export const SALARY_SOURCES = [
     url: 'https://dop.sikkim.gov.in/notificationdoc/J(1)87-GEN-DOP(Regularisation).pdf'
   },
   {
-    title: 'Direct recruitment training allowance — Notification No. J(1)/86/GEN/DOP',
+    title: 'Direct recruitment training allowance — Notification No. J(1)/86-GEN/DOP',
     authority: 'Government of Sikkim, Department of Personnel',
     note: 'Dated 25 July 2024. Amends Rule 26 of the Sikkim Government Service Rules, 1974 and sets first-year training allowance by Group B/C/D and training location.',
     url: 'https://dop.sikkim.gov.in/notificationdoc/J(1)86-GEN-DOP%20(Direct).pdf'
   },
+  {
+    title: 'Regularised employees pay-level restoration — Notification No. 99/GEN/DOP',
+    authority: 'Government of Sikkim, Department of Personnel',
+    note: 'Dated 6 February 2020. Eligible employees become eligible for the original pay level prescribed for the post after five years of service after regularisation, in accordance with OM No. 5339/GEN/DOP dated 11 February 2019.',
+    url: 'https://dop.sikkim.gov.in/notificationdoc/99%20GEN%2006.02.2020.pdf'
+  },
+  {
+    title: 'Assured Career Progression Scheme for specified regularised employees — OM No. 08–10/GEN/DOP',
+    authority: 'Government of Sikkim, Department of Personnel',
+    note: 'Dated 3 March 2025. Extends ACPS financial upgradation to employees regularised in Levels 1, 2 and 3 after ten years of service from regularisation/appointment, taking into account the restored pay level. Not a universal MACP rule.',
+    url: 'https://dop.sikkim.gov.in/circular/03GENDOP.pdf'
+  },
+  {
+    title: 'Sikkim Houses regular-time-scale increment restriction — OM No. 2799/GEN/DOP',
+    authority: 'Government of Sikkim, Department of Personnel',
+    note: 'Dated 2 July 2021. Narrowly applies to temporary employees granted regular time scale while posted at Sikkim Houses in New Delhi, Kolkata and Guwahati; the OM says they are not entitled to annual increments.',
+    url: 'https://dop.sikkim.gov.in/circular/2799%20GEN%2002.07.2021.pdf'
+  }
 ] as const;
