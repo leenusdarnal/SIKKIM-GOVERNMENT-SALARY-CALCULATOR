@@ -14,6 +14,17 @@ describe('Sikkim pay matrix', () => {
     expect(PAY_MATRIX[17][0]).toBe(56_000);
     expect(PAY_MATRIX[23][0]).toBe(124_700);
   });
+
+  it('matches the published first-cell values across all 23 Government pay levels', () => {
+    const officialStartingValues = [
+      15_200, 16_200, 19_300, 18_000, 19_400, 20_300, 21_700, 22_800,
+      25_400, 30_200, 33_700, 37_100, 37_600, 39_100, 46_300, 49_700,
+      56_000, 65_000, 71_100, 83_700, 105_400, 120_500, 124_700
+    ];
+    expect(Object.keys(PAY_MATRIX)).toHaveLength(officialStartingValues.length);
+    expect(Object.keys(PAY_MATRIX).map((level) => PAY_MATRIX[Number(level)][0]))
+      .toEqual(officialStartingValues);
+  });
 });
 
 describe('Sikkim Professional Tax slabs', () => {
