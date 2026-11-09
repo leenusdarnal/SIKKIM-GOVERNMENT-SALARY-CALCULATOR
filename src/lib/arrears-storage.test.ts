@@ -151,6 +151,18 @@ describe('arrears draft storage and import/export', () => {
     ]);
   });
 
+  it('rejects CSV payable days beyond month length and a leave factor above 100%', () => {
+    const months = getArrearsMonthKeys('2026-02', '2026-02');
+    expect(() => parseArrearsEntryCsv(
+      'month,actualTakeHome,recovery,payableDays,salaryFactorPercent\\n2026-02,50000,0,29,100',
+      months
+    )).toThrow(/payableDays exceeds the calendar days/);
+    expect(() => parseArrearsEntryCsv(
+      'month,actualTakeHome,recovery,payableDays,salaryFactorPercent\\n2026-02,50000,0,28,101',
+      months
+    )).toThrow(/salaryFactorPercent must not exceed 100/);
+  });
+
   it('rejects CSV rows with duplicate months, out-of-period months and negative numbers', () => {
     const months = getArrearsMonthKeys('2026-01', '2026-02');
     expect(() => parseArrearsEntryCsv(
