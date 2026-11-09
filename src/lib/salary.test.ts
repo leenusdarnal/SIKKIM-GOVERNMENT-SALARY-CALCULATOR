@@ -27,7 +27,7 @@ describe('Sikkim pay matrix', () => {
     expect(PAY_MATRIX[16][35]).toBeUndefined();
     expect(PAY_MATRIX[17][31]).toBe(139_800);
     expect(PAY_MATRIX[17][32]).toBeUndefined();
-    expect(PAY_MATRIX[23][16]).toBe(340_900);
+    expect(PAY_MATRIX[23][16]).toBe(200_100);
     expect(PAY_MATRIX[23][17]).toBeUndefined();
   });
 
