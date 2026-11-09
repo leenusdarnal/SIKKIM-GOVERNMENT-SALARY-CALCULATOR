@@ -1,13 +1,26 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import {
     calculateArrears,
     createArrearsCsv,
     getArrearsMonthKeys,
     type ArrearChange,
     type ArrearChangeType,
-    type ArrearSalaryUpdate
+    type ArrearSalaryUpdate,
+    type ArrearsInput
   } from '../../lib/arrears';
   import { DEFAULT_SALARY_INPUT, type SalaryInput } from '../../lib/salary';
+  import {
+    createArrearsEntryTemplateCsv,
+    createArrearsScenario,
+    loadArrearsScenario,
+    parseArrearsEntryCsv,
+    parseArrearsScenarioBackup,
+    restoreArrearsScenario,
+    saveArrearsScenario,
+    serializeArrearsScenario,
+    type ArrearsScenario
+  } from '../../lib/arrears-storage';
 
   let startMonth = $state('2026-01');
   let endMonth = $state('2026-11');
@@ -18,24 +31,34 @@
   let eventBasicPay = $state('');
   let eventDaRate = $state('');
   let eventDescription = $state('');
+  let editingChangeIndex = $state<number | null>(null);
   let componentEvent = $state({
     hraEligible: '',
     hraRate: '',
     hraMinimum: '',
     sbcaRate: '',
+    cpsRate: '',
     transportAllowance: '',
     otherEarnings: '',
     pensionMode: '',
     manualPension: '',
     professionalTaxMode: '',
     manualProfessionalTax: '',
+    incomeTaxTds: '',
     gis: '',
     stampFee: '',
     otherDeductions: ''
   });
   let actualPaid = $state<Record<string, string>>({});
   let recoveryAmounts = $state<Record<string, string>>({});
+  let payableDays = $state<Record<string, string>>({});
+  let salaryFactorPercents = $state<Record<string, string>>({});
+  let interestAnnualRate = $state('0');
+  let interestSettlementDate = $state('');
   let formError = $state('');
+  let draftStatus = $state('Waiting for local draft');
+  let fileStatus = $state('');
+  let draftReady = $state(false);
 
   const months = $derived(getArrearsMonthKeys(startMonth, endMonth));
   const monthlyRecords = $derived(months.map((month) => ({
@@ -47,15 +70,28 @@
     recovery:
       recoveryAmounts[month] === undefined || recoveryAmounts[month].trim() === ''
         ? 0
-        : Number(recoveryAmounts[month])
+        : Number(recoveryAmounts[month]),
+    payableDays:
+      payableDays[month] === undefined || payableDays[month].trim() === ''
+        ? null
+        : Number(payableDays[month]),
+    salaryFactorPercent:
+      salaryFactorPercents[month] === undefined || salaryFactorPercents[month].trim() === ''
+        ? 100
+        : Number(salaryFactorPercents[month])
   })));
-  const result = $derived(calculateArrears({
+  const arrearsInput = $derived<ArrearsInput>({
     startMonth,
     endMonth,
     baseSalary: { ...baseSalary },
     changes,
-    monthlyRecords
-  }));
+    monthlyRecords,
+    interestSettings: {
+      annualRate: interestAnnualRate.trim() === '' ? 0 : Number(interestAnnualRate),
+      settlementDate: interestSettlementDate
+    }
+  });
+  const result = $derived(calculateArrears(arrearsInput));
   const missingPaidMonths = $derived(result.rows.filter((row) => row.actualTakeHome === null).length);
   const fmt = (value: number | null | undefined) =>
     value === null || value === undefined || !Number.isFinite(value)
@@ -65,6 +101,57 @@
           currency: 'INR',
           maximumFractionDigits: 0
         }).format(Math.round(value));
+
+  onMount(() => {
+    try {
+      const saved = loadArrearsScenario(window.localStorage);
+      if (saved) {
+        applyScenario(saved);
+        draftStatus = 'Restored from this browser';
+      } else {
+        draftStatus = 'No saved scenario yet';
+      }
+    } catch {
+      draftStatus = 'Local storage is unavailable in this browser';
+    }
+    draftReady = true;
+  });
+
+  $effect(() => {
+    if (!draftReady) return;
+    try {
+      saveArrearsScenario(arrearsInput, window.localStorage);
+      draftStatus = 'Saved privately in this browser';
+    } catch {
+      draftStatus = 'Draft not saved — check browser storage availability';
+    }
+  });
+
+  function applyScenario(scenario: ArrearsScenario) {
+    startMonth = scenario.startMonth;
+    endMonth = scenario.endMonth;
+    baseSalary = { ...scenario.baseSalary };
+    changes = scenario.changes.map((change) => ({
+      ...change,
+      ...(change.salaryUpdates ? { salaryUpdates: { ...change.salaryUpdates } } : {})
+    }));
+    actualPaid = {};
+    recoveryAmounts = {};
+    payableDays = {};
+    salaryFactorPercents = {};
+    for (const record of scenario.monthlyRecords) {
+      actualPaid[record.month] = record.actualTakeHome === null ? '' : String(record.actualTakeHome);
+      recoveryAmounts[record.month] = String(record.recovery);
+      payableDays[record.month] = record.payableDays === null || record.payableDays === undefined
+        ? ''
+        : String(record.payableDays);
+      salaryFactorPercents[record.month] = record.salaryFactorPercent === undefined
+        ? '100'
+        : String(record.salaryFactorPercent);
+    }
+    interestAnnualRate = String(scenario.interestSettings?.annualRate ?? 0);
+    interestSettlementDate = scenario.interestSettings?.settlementDate ?? '';
+  }
 
   function updateActualPaid(month: string, event: Event) {
     const target = event.currentTarget as HTMLInputElement;
@@ -76,22 +163,53 @@
     recoveryAmounts = { ...recoveryAmounts, [month]: target.value };
   }
 
+  function updatePayableDays(month: string, event: Event) {
+    const target = event.currentTarget as HTMLInputElement;
+    payableDays = { ...payableDays, [month]: target.value };
+  }
+
+  function updateSalaryFactor(month: string, event: Event) {
+    const target = event.currentTarget as HTMLInputElement;
+    salaryFactorPercents = { ...salaryFactorPercents, [month]: target.value };
+  }
+
+  function resetComponentEvent() {
+    componentEvent = {
+      hraEligible: '', hraRate: '', hraMinimum: '', sbcaRate: '', cpsRate: '',
+      transportAllowance: '', otherEarnings: '', pensionMode: '',
+      manualPension: '', professionalTaxMode: '', manualProfessionalTax: '',
+      incomeTaxTds: '', gis: '', stampFee: '', otherDeductions: ''
+    };
+  }
+
   function buildComponentUpdate(): ArrearSalaryUpdate {
     const update: ArrearSalaryUpdate = {};
     if (componentEvent.hraEligible !== '') update.hraEligible = componentEvent.hraEligible === 'yes';
     if (componentEvent.hraRate.trim() !== '') update.hraRate = Number(componentEvent.hraRate);
     if (componentEvent.hraMinimum.trim() !== '') update.hraMinimum = Number(componentEvent.hraMinimum);
     if (componentEvent.sbcaRate.trim() !== '') update.sbcaRate = Number(componentEvent.sbcaRate);
+    if (componentEvent.cpsRate.trim() !== '') update.cpsRate = Number(componentEvent.cpsRate);
     if (componentEvent.transportAllowance.trim() !== '') update.transportAllowance = Number(componentEvent.transportAllowance);
     if (componentEvent.otherEarnings.trim() !== '') update.otherEarnings = Number(componentEvent.otherEarnings);
     if (componentEvent.pensionMode !== '') update.pensionMode = componentEvent.pensionMode as SalaryInput['pensionMode'];
     if (componentEvent.manualPension.trim() !== '') update.manualPension = Number(componentEvent.manualPension);
     if (componentEvent.professionalTaxMode !== '') update.professionalTaxMode = componentEvent.professionalTaxMode as SalaryInput['professionalTaxMode'];
     if (componentEvent.manualProfessionalTax.trim() !== '') update.manualProfessionalTax = Number(componentEvent.manualProfessionalTax);
+    if (componentEvent.incomeTaxTds.trim() !== '') update.incomeTaxTds = Number(componentEvent.incomeTaxTds);
     if (componentEvent.gis.trim() !== '') update.gis = Number(componentEvent.gis);
     if (componentEvent.stampFee.trim() !== '') update.stampFee = Number(componentEvent.stampFee);
     if (componentEvent.otherDeductions.trim() !== '') update.otherDeductions = Number(componentEvent.otherDeductions);
     return update;
+  }
+
+  function clearEventEditor() {
+    editingChangeIndex = null;
+    eventMonth = startMonth;
+    eventType = 'da-revision';
+    eventBasicPay = '';
+    eventDaRate = '';
+    eventDescription = '';
+    resetComponentEvent();
   }
 
   function addChange() {
@@ -109,7 +227,7 @@
     };
 
     if (!candidate.description) {
-      formError = 'Enter the Government order number, date or a clear reference for this change.';
+      formError = 'Enter the Government order number, date or a clear payslip reference.';
       return;
     }
     if (eventType === 'da-revision' && daRate === undefined) {
@@ -129,15 +247,41 @@
       return;
     }
 
-    changes = [...changes, candidate];
-    eventBasicPay = '';
-    eventDaRate = '';
-    eventDescription = '';
+    if (editingChangeIndex === null) {
+      changes = [...changes, candidate];
+    } else {
+      changes = changes.map((change, index) => index === editingChangeIndex ? candidate : change);
+    }
+    clearEventEditor();
+    formError = '';
+  }
+
+  function editChange(index: number) {
+    const change = changes[index];
+    if (!change) return;
+    editingChangeIndex = index;
+    eventMonth = change.effectiveMonth;
+    eventType = change.type;
+    eventBasicPay = change.basicPay === undefined ? '' : String(change.basicPay);
+    eventDaRate = change.daRate === undefined ? '' : String(change.daRate);
+    eventDescription = change.description;
+    const update = change.salaryUpdates ?? {};
     componentEvent = {
-      hraEligible: '', hraRate: '', hraMinimum: '', sbcaRate: '',
-      transportAllowance: '', otherEarnings: '', pensionMode: '',
-      manualPension: '', professionalTaxMode: '', manualProfessionalTax: '',
-      gis: '', stampFee: '', otherDeductions: ''
+      hraEligible: update.hraEligible === undefined ? '' : update.hraEligible ? 'yes' : 'no',
+      hraRate: update.hraRate === undefined ? '' : String(update.hraRate),
+      hraMinimum: update.hraMinimum === undefined ? '' : String(update.hraMinimum),
+      sbcaRate: update.sbcaRate === undefined ? '' : String(update.sbcaRate),
+      cpsRate: update.cpsRate === undefined ? '' : String(update.cpsRate),
+      transportAllowance: update.transportAllowance === undefined ? '' : String(update.transportAllowance),
+      otherEarnings: update.otherEarnings === undefined ? '' : String(update.otherEarnings),
+      pensionMode: update.pensionMode ?? '',
+      manualPension: update.manualPension === undefined ? '' : String(update.manualPension),
+      professionalTaxMode: update.professionalTaxMode ?? '',
+      manualProfessionalTax: update.manualProfessionalTax === undefined ? '' : String(update.manualProfessionalTax),
+      incomeTaxTds: update.incomeTaxTds === undefined ? '' : String(update.incomeTaxTds),
+      gis: update.gis === undefined ? '' : String(update.gis),
+      stampFee: update.stampFee === undefined ? '' : String(update.stampFee),
+      otherDeductions: update.otherDeductions === undefined ? '' : String(update.otherDeductions)
     };
     formError = '';
   }
@@ -148,12 +292,14 @@
       hraRate: 'HRA rate',
       hraMinimum: 'HRA minimum',
       sbcaRate: 'SBCA rate',
+      cpsRate: 'CPS rate',
       transportAllowance: 'Transport',
       otherEarnings: 'Other earnings',
       pensionMode: 'Pension',
       manualPension: 'GPF / manual pension',
       professionalTaxMode: 'Professional Tax mode',
       manualProfessionalTax: 'Professional Tax',
+      incomeTaxTds: 'Income Tax TDS',
       gis: 'GIS',
       stampFee: 'Stamp / fixed fee',
       otherDeductions: 'Other deductions'
@@ -168,30 +314,129 @@
 
   function removeChange(index: number) {
     changes = changes.filter((_, itemIndex) => itemIndex !== index);
+    if (editingChangeIndex === index) clearEventEditor();
+    else if (editingChangeIndex !== null && index < editingChangeIndex) editingChangeIndex -= 1;
+  }
+
+  function downloadText(filename: string, text: string, mimeType: string) {
+    const blob = new Blob([text], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
   }
 
   function exportCsv() {
     try {
-      const filename = 'sikkim-salary-arrears-' + startMonth + '-to-' + endMonth + '.csv';
-      const blob = new Blob([createArrearsCsv(result)], { type: 'text/csv;charset=utf-8' });
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      anchor.download = filename;
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      window.setTimeout(() => URL.revokeObjectURL(url), 0);
+      downloadText(
+        'sikkim-salary-arrears-' + startMonth + '-to-' + endMonth + '.csv',
+        createArrearsCsv(result),
+        'text/csv;charset=utf-8'
+      );
       formError = '';
     } catch (cause) {
       formError = cause instanceof Error ? cause.message : 'Unable to export the arrears statement.';
     }
   }
 
+  function exportJsonBackup() {
+    try {
+      const scenario = createArrearsScenario(arrearsInput);
+      downloadText(
+        'sikkim-salary-arrears-' + startMonth + '-to-' + endMonth + '.json',
+        serializeArrearsScenario(scenario),
+        'application/json;charset=utf-8'
+      );
+      fileStatus = 'JSON backup created.';
+    } catch (cause) {
+      fileStatus = cause instanceof Error ? cause.message : 'Unable to create the JSON backup.';
+    }
+  }
+
+  async function restoreJsonFile(event: Event) {
+    const target = event.currentTarget as HTMLInputElement;
+    const file = target.files?.[0];
+    target.value = '';
+    if (!file) return;
+    try {
+      const scenario = parseArrearsScenarioBackup(await file.text());
+      applyScenario(scenario);
+      try {
+        restoreArrearsScenario(await file.text(), window.localStorage);
+        draftStatus = 'Backup restored and saved locally';
+      } catch {
+        draftStatus = 'Backup restored in this session; browser storage is unavailable';
+      }
+      fileStatus = 'JSON scenario restored.';
+    } catch (cause) {
+      fileStatus = cause instanceof Error ? cause.message : 'Unable to restore this JSON backup.';
+    }
+  }
+
+  async function importCsvFile(event: Event) {
+    const target = event.currentTarget as HTMLInputElement;
+    const file = target.files?.[0];
+    target.value = '';
+    if (!file) return;
+    try {
+      const imported = parseArrearsEntryCsv(await file.text(), months);
+      for (const record of imported) {
+        actualPaid = {
+          ...actualPaid,
+          [record.month]: record.actualTakeHome === null ? '' : String(record.actualTakeHome)
+        };
+        recoveryAmounts = { ...recoveryAmounts, [record.month]: String(record.recovery) };
+        payableDays = { ...payableDays, [record.month]: record.payableDays === null || record.payableDays === undefined ? '' : String(record.payableDays) };
+        salaryFactorPercents = { ...salaryFactorPercents, [record.month]: String(record.salaryFactorPercent ?? 100) };
+      }
+      fileStatus = imported.length + ' month(s) imported from CSV.';
+    } catch (cause) {
+      fileStatus = cause instanceof Error ? cause.message : 'Unable to import this CSV.';
+    }
+  }
+
+  function downloadCsvTemplate() {
+    try {
+      downloadText(
+        'sikkim-arrears-monthly-entry-template.csv',
+        createArrearsEntryTemplateCsv(months),
+        'text/csv;charset=utf-8'
+      );
+      fileStatus = 'CSV entry template created.';
+    } catch (cause) {
+      fileStatus = cause instanceof Error ? cause.message : 'Unable to create the CSV template.';
+    }
+  }
+
+  function clearSavedScenario() {
+    try {
+      window.localStorage.removeItem('sikkim-salary-arrears-scenario-v1');
+      startMonth = '2026-01';
+      endMonth = '2026-11';
+      baseSalary = { ...DEFAULT_SALARY_INPUT, daRate: 0 };
+      changes = [];
+      actualPaid = {};
+      recoveryAmounts = {};
+      payableDays = {};
+      salaryFactorPercents = {};
+      interestAnnualRate = '0';
+      interestSettlementDate = '';
+      clearEventEditor();
+      fileStatus = 'Saved scenario cleared from this browser.';
+      draftStatus = 'No saved scenario';
+    } catch {
+      fileStatus = 'Unable to clear browser-local storage.';
+    }
+  }
+
   function printStatement() {
     window.print();
   }
-</script>
+</script></script>
 
 <svelte:head>
   <title>Salary Arrears Planner | Sikkim Government Salary Calculator</title>
