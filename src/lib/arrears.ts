@@ -112,7 +112,7 @@ const CHANGE_TYPES = new Set<ArrearChangeType>([
 ]);
 
 const NUMERIC_SALARY_FIELDS = [
-  'basicPay', 'daRate', 'hraRate', 'hraMinimum', 'sbcaRate', 'cpsRate',
+  'basicPay', 'daRate', 'hraRate', 'hraMinimum', 'sbcaRate', 'cpsRate', 'cpsEmployerRate',
   'transportAllowance', 'otherEarnings', 'manualPension',
   'manualProfessionalTax', 'gis', 'stampFee', 'incomeTaxTds', 'otherDeductions'
 ] as const;
@@ -164,7 +164,7 @@ function validateSalaryBasis(input: SalaryInput): string[] {
 }
 
 const ALLOWED_SALARY_UPDATE_KEYS = new Set([
-  'hraEligible', 'hraRate', 'hraMinimum', 'sbcaRate', 'cpsRate',
+  'hraEligible', 'hraRate', 'hraMinimum', 'sbcaRate', 'cpsRate', 'cpsEmployerRate',
   'transportAllowance', 'otherEarnings', 'pensionMode', 'manualPension',
   'professionalTaxMode', 'manualProfessionalTax', 'gis', 'stampFee', 'incomeTaxTds', 'otherDeductions'
 ]);
@@ -204,7 +204,7 @@ function validateSalaryUpdate(update: ArrearSalaryUpdate, index: number): string
       errors.push('Change ' + (index + 1) + ': ' + key + ' must be a non-negative number.');
       continue;
     }
-    if (['hraRate', 'sbcaRate', 'cpsRate'].includes(key) && value > 100) {
+    if (['hraRate', 'sbcaRate', 'cpsRate', 'cpsEmployerRate'].includes(key) && value > 100) {
       errors.push('Change ' + (index + 1) + ': ' + key + ' must not exceed 100%.');
     }
   }
