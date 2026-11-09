@@ -13,12 +13,15 @@
   let selectedCell = $state<number | ''>('');
   let form = $state<SalaryInput>({ ...DEFAULT_SALARY_INPUT });
   let appointmentDate = $state('');
+  let salaryMonth = $state('2026-11');
+  let calculationError = $state('');
   let hasCalculated = $state(false);
   let dark = $state(false);
   let matrixOpen = $state(false);
   let showSources = $state(false);
 
   const currentCells = $derived(selectedLevel !== '' ? PAY_MATRIX[selectedLevel] ?? [] : []);
+  const historicalDaNeedsManualRate = $derived(salaryMonth !== '' && salaryMonth < '2026-01');
   const selectedBasic = $derived(
     selectedLevel !== '' && selectedCell !== ''
       ? PAY_MATRIX[selectedLevel]?.[selectedCell - 1] ?? 0
@@ -48,9 +51,26 @@
   function calculate() {
     if (!selectedBasic) {
       hasCalculated = false;
+      calculationError = 'Choose a pay level and cell before calculating.';
       return;
     }
+    if (form.pensionMode === 'unselected') {
+      hasCalculated = false;
+      calculationError = 'Select the pension arrangement applicable to your service before calculating.';
+      return;
+    }
+    calculationError = '';
     hasCalculated = true;
+  }
+
+  function changeSalaryMonth() {
+    if (salaryMonth && salaryMonth < '2026-01') {
+      form.daRate = 0;
+    } else if (form.daRate === 0) {
+      form.daRate = 60;
+    }
+    hasCalculated = false;
+    calculationError = '';
   }
 
   function reset() {
@@ -58,6 +78,8 @@
     selectedCell = '';
     form = { ...DEFAULT_SALARY_INPUT };
     appointmentDate = '';
+    salaryMonth = '2026-11';
+    calculationError = '';
     hasCalculated = false;
     matrixOpen = false;
   }
@@ -239,16 +261,33 @@
                   </div>
                 </div>
 
+                <div class="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label for="salaryMonth" class="field-label">Salary month</label>
+                    <input id="salaryMonth" type="month" bind:value={salaryMonth} onchange={changeSalaryMonth} class="field-control" required />
+                    <p class="field-help">Choose the month you are estimating; rule rates may change by effective date.</p>
+                  </div>
+                  <div>
+                    <label for="appointmentDate" class="field-label">Date of appointment</label>
+                    <input id="appointmentDate" type="date" bind:value={appointmentDate} class="field-control" />
+                    <p class="field-help">Optional context for pension-scheme checks; it does not determine eligibility on its own.</p>
+                  </div>
+                </div>
+
                 <div>
                   <div class="mb-2 flex items-center justify-between gap-3">
                     <label for="daRate" class="field-label mb-0">Dearness Allowance (DA)</label>
-                    <span class="rounded-full bg-sky-50 px-2.5 py-1 text-[10px] font-extrabold text-sky-800 dark:bg-sky-950 dark:text-sky-200">60% reported rate</span>
+                    <span class="rounded-full bg-sky-50 px-2.5 py-1 text-[10px] font-extrabold text-sky-800 dark:bg-sky-950 dark:text-sky-200">{historicalDaNeedsManualRate ? 'Historical rate required' : '60% latest reference'}</span>
                   </div>
                   <div class="relative">
                     <input id="daRate" type="number" min="0" max="200" step="0.5" bind:value={form.daRate} class="field-control pr-12 text-right font-bold tabular-nums" />
                     <span class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">%</span>
                   </div>
-                  <p class="field-help">The 60% figure is publicly reported from 1 January 2026. Verify the signed Finance Department order and rate applicable to the salary month.</p>
+                  {#if historicalDaNeedsManualRate}
+                    <p class="field-help text-amber-700 dark:text-amber-300">The available rule register does not yet contain a complete historical DA table for this month. Enter the rate from the applicable Finance Department order or payslip.</p>
+                  {:else}
+                    <p class="field-help">60% is the latest revised-pay reference located, effective 1 January 2026. Check for any later order covering the selected month and verify the rate for your employee category.</p>
+                  {/if}
                 </div>
 
                 <div class="flex flex-col gap-2 border-t border-slate-100 pt-5 sm:flex-row dark:border-slate-800">
@@ -259,6 +298,9 @@
                   <button type="button" onclick={reset} class="button-secondary">Reset form</button>
                 </div>
                 <p class="text-xs text-slate-400" aria-live="polite">{selectedBasic ? ('Ready to calculate Level ' + selectedLevel + ', Cell ' + selectedCell + ' · ' + fmt(selectedBasic)) : 'Choose your pay level and cell to continue.'}</p>
+                {#if calculationError}
+                  <p class="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200" role="alert">{calculationError}</p>
+                {/if}
               </div>
             </div>
 
@@ -303,11 +345,6 @@
                     <label for="otherEarnings" class="field-label">Other monthly earnings (₹)</label>
                     <input id="otherEarnings" type="number" min="0" bind:value={form.otherEarnings} class="field-control" />
                   </div>
-                  <div>
-                    <label for="appointmentDate" class="field-label">Date of appointment</label>
-                    <input id="appointmentDate" type="date" bind:value={appointmentDate} class="field-control" />
-                    <p class="field-help">Optional. Used only to show a CPS eligibility reminder.</p>
-                  </div>
                 </div>
 
                 <div class="border-t border-slate-100 pt-5 dark:border-slate-800">
@@ -315,12 +352,14 @@
                   <div>
                     <label for="pensionMode" class="field-label">Pension deduction scheme</label>
                     <select id="pensionMode" bind:value={form.pensionMode} class="field-control">
-                      <option value="cps">Sikkim CPS — 10% employee contribution</option>
+                      <option value="unselected" disabled>Select applicable pension arrangement</option>
+                      <option value="cps">Sikkim CPS / CPF — 10% employee contribution (where covered)</option>
                       <option value="gpf">GPF — enter monthly amount</option>
                       <option value="manual">Other pension — manual amount</option>
                       <option value="none">No pension deduction</option>
                     </select>
                   </div>
+                  <p class="field-help">Choose the scheme supported by your appointment/service records or latest DDO confirmation. Do not infer CPS/CPF or OPS eligibility from appointment date alone.</p>
                   {#if form.pensionMode === 'gpf' || form.pensionMode === 'manual'}
                     <div class="mt-4">
                       <label for="manualPension" class="field-label">Monthly GPF / pension amount (₹)</label>
@@ -382,7 +421,7 @@
                   <span class="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-emerald-50">Illustrative</span>
                 </div>
                 <p class="mt-7 text-4xl font-black tracking-[-0.05em] text-white sm:text-5xl">{fmt(result.takeHome)}</p>
-                <p class="mt-2 text-xs font-medium text-emerald-50/70">Level {selectedLevel} · Cell {selectedCell} · Basic {fmt(result.basicPay)}</p>
+                <p class="mt-2 text-xs font-medium text-emerald-50/70">{salaryMonth} · Level {selectedLevel} · Cell {selectedCell} · Basic {fmt(result.basicPay)}</p>
                 <div class="mt-7 grid grid-cols-2 gap-3">
                   <div class="rounded-2xl border border-white/10 bg-white/10 p-4">
                     <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-50/65">Gross earnings</p>
