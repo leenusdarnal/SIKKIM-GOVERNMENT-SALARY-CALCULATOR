@@ -271,6 +271,24 @@ describe('Sikkim salary arrears planner', () => {
     expect(invalid.errors.some((message) => message.includes('on or after the final arrears month-end'))).toBe(true);
   });
 
+  it('reports State CPS matching separately without deducting it from employee take-home', () => {
+    const baseline = calculateArrears(makeInput());
+    const revised = calculateArrears(makeInput({
+      changes: [{
+        effectiveMonth: '2026-02',
+        type: 'allowance-deduction',
+        description: 'State CPS contribution revision',
+        salaryUpdates: { cpsEmployerRate: 12 }
+      }]
+    }));
+    expect(revised.valid).toBe(true);
+    expect(revised.rows[0].employerCpsContribution).toBe(8_848);
+    expect(revised.rows[1].employerCpsContribution).toBe(10_618);
+    expect(revised.rows[0].revisedTakeHome).toBe(baseline.rows[0].revisedTakeHome);
+    expect(revised.totals.employerCpsContribution).toBe(30_084);
+    expect(revised.totals.netArrears).toBe(baseline.totals.netArrears);
+  });
+
   it('includes a separate income-tax TDS deduction in the arrears line items', () => {
     const result = calculateArrears(makeInput({
       baseSalary: { ...baseSalary, incomeTaxTds: 2_000 },
