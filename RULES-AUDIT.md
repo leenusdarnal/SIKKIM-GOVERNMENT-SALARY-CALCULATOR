@@ -13,7 +13,7 @@ Branch: `feature/salary-rule-safeguards`
 ## Known limitations still open
 
 - The 920 pay-matrix values still need a full cell-by-cell comparison against the 2018 Government schedule, using a machine-readable transcription and review.
-- The DA history table before 1 January 2026 is not yet complete; historical months require manual DA entry.
+- The DA rate is verified in this implementation only for January–November 2026. Earlier historical months and future months require manual DA entry from the applicable order.
 - CPS/CPF versus OPS coverage needs to be represented using the applicable individual service order and current Department of Personnel guidance. Appointment date alone is not treated as conclusive.
 - HRA, SBCA, transport, compensatory / high-altitude allowance, GIS and stamp fee remain employee-specific; current universal entitlement rules have not been fully verified.
 - Professional Tax slab calculation needs a further legal review of the applicable assessment base and any current amendments.
