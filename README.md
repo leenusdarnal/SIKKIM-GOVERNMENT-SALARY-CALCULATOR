@@ -13,7 +13,7 @@ A Sikkim-specific salary estimation application built with SvelteKit 3, Svelte 5
 - GPF, manual pension, Professional Tax manual/estimate/exempt options and editable employee-specific deductions.
 - Pay progression and service history: exact matrix-cell scenario, explicit eligibility confirmation and a chronological service record saved in browser-local storage, with validated JSON backup/restore and CSV export. Individual entries can be edited or deleted, with search by date/event/pay details/reference and filters by event/date range.
 - GPF contribution planner: estimates monthly and annual subscription using the Sikkim GPF Rules' 6%–100% limits, with manual reference-pay input and explicit membership caveats.
-- Salary arrears planner: month-by-month revised take-home using opening salary components and effective-dated DA/basic-pay changes for increments, promotion or pay fixation; supports historical HRA eligibility/rate, SBCA, transport, other earnings, pension/GPF, Professional Tax, GIS and deduction changes. Compares itemized monthly salary against actual net credited salary, subtracts separately entered arrears recoveries and exports a detailed CSV statement.
+- Salary arrears planner: month-by-month revised take-home with effective-dated DA/basic-pay/allowance/deduction changes, editable event history, separate CPS employee and State rates, Income Tax TDS, payable-day and manual leave/pay factors, delayed payable dates for notional increments, and optional authorised simple-interest estimate. Includes browser-local draft saving, JSON backup/restore, monthly payslip CSV import/template, and detailed itemized CSV statement export; eligibility, tax and leave entitlement remain manual/order-verified.
 - Browser-only calculations. No employee identity, bank details or payroll credentials are requested.
 
 ## Project structure
@@ -24,12 +24,13 @@ A Sikkim-specific salary estimation application built with SvelteKit 3, Svelte 5
 - src/lib/pay-history-management.ts — validated edit/delete helpers and chronology-preserving updates.
 - src/lib/pay-history-storage.ts — browser-local history persistence, versioned backup/restore and CSV export.
 - src/lib/arrears.ts — effective-dated month-by-month arrears model and CSV statement export.
+- src/lib/arrears-storage.ts — versioned browser-local arrears drafts, JSON backup/restore and validated monthly payslip CSV import.
 - src/lib/temporary-pay.ts — temporary consolidated-pay and training allowance schedule.
 - src/lib/sources.ts — in-app source register.
 - SOURCES.md — source evidence and limitations.
 - PAY-PROGRESSION-AUDIT.md — progression scope, sources and limitations.
 - PAY-HISTORY-STORAGE-AUDIT.md — service-history storage, backup and data-handling notes. The same page also supports individual record management and filtering.
-- ARREARS-PLANNER-AUDIT.md — arrears formula, effective-dated inputs, assumptions and exclusions.
+- ARREARS-PLANNER-AUDIT.md — arrears calculation model, proration, pension/tax/interest treatment, data handling, official references and exclusions.
 
 ## Run locally
 Requires Node.js 24+ and npm.
