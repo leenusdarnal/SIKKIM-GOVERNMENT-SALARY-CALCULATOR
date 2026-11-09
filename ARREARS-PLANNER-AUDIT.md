@@ -12,10 +12,11 @@ It is an independent estimate utility, not a payroll, pay-fixation or sanctionin
 
 1. The user selects a monthly period of up to 60 consecutive months.
 2. The opening salary basis is entered for the first month: basic pay, DA rate, HRA eligibility/rate/minimum, SBCA rate, transport and other earnings, pension mode and deductions.
-3. Effective-dated changes can update DA rate and/or basic pay from a selected month forward. Annual increment, promotion and pay-fixation events require the user to enter the new basic pay fixed by the competent authority.
-4. For each month, the application calls the existing `calculateSalary` engine with the resulting basic pay and DA rate.
-5. The user enters actual net salary credited for each month from the payslip/bank record, plus any additional recovery to be adjusted from the arrears settlement.
-6. Monthly net difference is:
+3. Effective-dated changes can update DA rate, basic pay, HRA eligibility/rate/minimum, SBCA rate, transport and other earnings, pension mode/manual GPF, Professional Tax treatment/manual amount, GIS, stamp fee and other deductions. Annual increment, promotion and pay-fixation events require the user to enter the new basic pay fixed by the competent authority.
+4. Each dated update carries forward until a later entry changes that component. Multiple entries in the same month are applied in the order entered.
+5. For each month, the application calls the existing `calculateSalary` engine using the current effective-dated salary state. It records itemized earnings and employee deductions in the monthly statement.
+6. The user enters actual net salary credited for each month from the payslip/bank record, plus any additional recovery to be adjusted from the arrears settlement.
+7. Monthly net difference is:
 
    `Revised calculated take-home - Actual net credited - Additional recovery from arrears`
 
@@ -31,11 +32,12 @@ A final net total and CSV statement are withheld until actual credited pay has b
 
 ## Important assumptions and exclusions
 
-- The opening salary components remain constant until a dated basic-pay or DA change is entered.
-- HRA, SBCA, transport, other earnings, manual pension/GPF, manual Professional Tax, GIS, stamp fee and other deductions use the opening values for every month in this version. They are not independently versioned by date.
-- CPS/CPF is recalculated by the existing salary engine as 10% of Basic Pay + DA. Professional Tax automatic mode uses the existing calculator's indicative slabs; select manual mode and use payslip amounts where appropriate.
+- The opening salary components remain constant until a dated change for that component is entered. Dated allowance/deduction updates are user-entered historical values; the app does not derive them from location, cadre, pay level or an assumed universal order.
+- HRA eligibility, HRA rate/minimum, SBCA rate, transport, other earnings, manual pension/GPF, Professional Tax treatment/manual amount, GIS, stamp fee and other deductions can be changed independently from an effective month. Blank fields in the dated change form mean “keep the previous value”.
+- CPS/CPF is recalculated by the existing salary engine as 10% of Basic Pay + DA. A dated switch to GPF/manual pension uses the manually entered subscription amount. Professional Tax automatic mode uses the calculator's indicative slabs; select manual mode and use the amount shown on the applicable payslip/order where appropriate.
+- Each monthly row and CSV includes an itemized breakdown of DA, HRA, SBCA, transport, other earnings, employee pension/GPF, Professional Tax, GIS, stamp fee and other deductions.
 - Actual pay is compared at the net credited level. The planner does not independently reconstruct old gross salary or historical deduction schedules.
-- No interest on arrears, tax recomputation, DA on pre-revised pay, leave salary, partial-month proration, rounding variations between DDO systems or pension revision is calculated.
+- The historical component schedule is not a legal rules engine. Effective months and revised component amounts must be taken from the employee's actual orders, eligibility records and payslips. No interest on arrears, tax recomputation, DA on pre-revised pay, leave salary, partial-month proration, rounding variations between DDO systems or pension revision is calculated.
 - An additional recovery must not duplicate a deduction already included in the actual net credited salary.
 
 ## Source references

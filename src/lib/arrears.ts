@@ -5,7 +5,10 @@ export type ArrearChangeType =
   | 'annual-increment'
   | 'promotion'
   | 'pay-fixation'
-  | 'manual-adjustment';
+  | 'manual-adjustment'
+  | 'allowance-deduction';
+
+export type ArrearSalaryUpdate = Partial<Omit<SalaryInput, 'basicPay' | 'daRate'>>;
 
 export interface ArrearChange {
   effectiveMonth: string;
@@ -15,6 +18,8 @@ export interface ArrearChange {
   basicPay?: number;
   /** New DA percentage from this month onward; enter the rate in the applicable order. */
   daRate?: number;
+  /** Effective-dated changes to allowances and deductions, copied forward from this month. */
+  salaryUpdates?: ArrearSalaryUpdate;
 }
 
 export interface MonthlyPaidRecord {
@@ -37,7 +42,17 @@ export interface ArrearMonthRow {
   month: string;
   basicPay: number;
   daRate: number;
+  da: number;
+  hra: number;
+  sbca: number;
+  transportAllowance: number;
+  otherEarnings: number;
   grossEntitlement: number;
+  employeePension: number;
+  professionalTax: number;
+  gis: number;
+  stampFee: number;
+  otherDeductions: number;
   employeeDeductions: number;
   revisedTakeHome: number;
   actualTakeHome: number | null;
@@ -71,7 +86,8 @@ const CHANGE_TYPES = new Set<ArrearChangeType>([
   'annual-increment',
   'promotion',
   'pay-fixation',
-  'manual-adjustment'
+  'manual-adjustment',
+  'allowance-deduction'
 ]);
 
 const NUMERIC_SALARY_FIELDS = [
@@ -125,6 +141,55 @@ function validateSalaryBasis(input: SalaryInput): string[] {
   return errors;
 }
 
+const ALLOWED_SALARY_UPDATE_KEYS = new Set([
+  'hraEligible', 'hraRate', 'hraMinimum', 'sbcaRate',
+  'transportAllowance', 'otherEarnings', 'pensionMode', 'manualPension',
+  'professionalTaxMode', 'manualProfessionalTax', 'gis', 'stampFee', 'otherDeductions'
+]);
+
+function validateSalaryUpdate(update: ArrearSalaryUpdate, index: number): string[] {
+  const errors: string[] = [];
+  const entries = Object.entries(update);
+
+  if (!entries.length) {
+    errors.push('Change ' + (index + 1) + ': enter at least one allowance or deduction change.');
+    return errors;
+  }
+
+  for (const [key, value] of entries) {
+    if (!ALLOWED_SALARY_UPDATE_KEYS.has(key)) {
+      errors.push('Change ' + (index + 1) + ': unsupported salary component ' + key + '.');
+      continue;
+    }
+
+    if (key === 'hraEligible') {
+      if (typeof value !== 'boolean') errors.push('Change ' + (index + 1) + ': HRA eligibility must be selected.');
+      continue;
+    }
+    if (key === 'pensionMode') {
+      if (!['cps', 'gpf', 'manual', 'none'].includes(String(value))) {
+        errors.push('Change ' + (index + 1) + ': invalid pension arrangement.');
+      }
+      continue;
+    }
+    if (key === 'professionalTaxMode') {
+      if (!['auto', 'manual', 'none'].includes(String(value))) {
+        errors.push('Change ' + (index + 1) + ': invalid Professional Tax treatment.');
+      }
+      continue;
+    }
+    if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+      errors.push('Change ' + (index + 1) + ': ' + key + ' must be a non-negative number.');
+      continue;
+    }
+    if (['hraRate', 'sbcaRate'].includes(key) && value > 100) {
+      errors.push('Change ' + (index + 1) + ': ' + key + ' must not exceed 100%.');
+    }
+  }
+
+  return errors;
+}
+
 function validateChange(change: ArrearChange, index: number, months: string[]): string[] {
   const errors: string[] = [];
   if (!months.includes(change.effectiveMonth)) {
@@ -154,6 +219,15 @@ function validateChange(change: ArrearChange, index: number, months: string[]): 
   if (change.type === 'manual-adjustment' &&
       change.basicPay === undefined && change.daRate === undefined) {
     errors.push('Change ' + (index + 1) + ': enter a new basic pay and/or DA rate.');
+  }
+  if (change.type === 'allowance-deduction') {
+    if (change.salaryUpdates === undefined) {
+      errors.push('Change ' + (index + 1) + ': add at least one allowance or deduction value.');
+    } else {
+      errors.push(...validateSalaryUpdate(change.salaryUpdates, index));
+    }
+  } else if (change.salaryUpdates !== undefined) {
+    errors.push(...validateSalaryUpdate(change.salaryUpdates, index));
   }
   return errors;
 }
@@ -222,8 +296,7 @@ export function calculateArrears(input: ArrearsInput): ArrearsResult {
       a.originalIndex - b.originalIndex
     );
 
-  let basicPay = input.baseSalary.basicPay;
-  let daRate = input.baseSalary.daRate;
+  let salaryState: SalaryInput = { ...input.baseSalary };
   let nextChange = 0;
   const rows: ArrearMonthRow[] = [];
 
@@ -234,17 +307,16 @@ export function calculateArrears(input: ArrearsInput): ArrearsResult {
       orderedChanges[nextChange].change.effectiveMonth <= month
     ) {
       const change = orderedChanges[nextChange].change;
-      if (change.basicPay !== undefined) basicPay = change.basicPay;
-      if (change.daRate !== undefined) daRate = change.daRate;
+      if (change.basicPay !== undefined) salaryState.basicPay = change.basicPay;
+      if (change.daRate !== undefined) salaryState.daRate = change.daRate;
+      if (change.salaryUpdates !== undefined) {
+        salaryState = { ...salaryState, ...change.salaryUpdates };
+      }
       appliedChanges.push(change.description);
       nextChange += 1;
     }
 
-    const salary = calculateSalary({
-      ...input.baseSalary,
-      basicPay,
-      daRate
-    });
+    const salary = calculateSalary(salaryState);
     const paid = paidByMonth.get(month);
     const actualTakeHome = paid?.actualTakeHome ?? null;
     const recovery = paid?.recovery ?? 0;
@@ -253,7 +325,17 @@ export function calculateArrears(input: ArrearsInput): ArrearsResult {
       month,
       basicPay: salary.basicPay,
       daRate: salary.daRate,
+      da: salary.da,
+      hra: salary.hra,
+      sbca: salary.sbca,
+      transportAllowance: salary.transportAllowance,
+      otherEarnings: salary.otherEarnings,
       grossEntitlement: salary.gross,
+      employeePension: salary.employeePension,
+      professionalTax: salary.professionalTax,
+      gis: salary.gis,
+      stampFee: salary.stampFee,
+      otherDeductions: salary.otherDeductions,
       employeeDeductions: salary.totalDeductions,
       revisedTakeHome: salary.takeHome,
       actualTakeHome,
@@ -297,12 +379,22 @@ export function createArrearsCsv(result: ArrearsResult): string {
   }
 
   const rows = [
-    ['Month', 'Basic Pay (INR)', 'DA Rate (%)', 'Revised Gross (INR)', 'Employee Deductions (INR)', 'Revised Take-home (INR)', 'Actual Credited (INR)', 'Recovery from Arrears (INR)', 'Net Difference (INR)', 'Effective change / order reference'],
+    ['Month', 'Basic Pay (INR)', 'DA Rate (%)', 'DA (INR)', 'HRA (INR)', 'SBCA (INR)', 'Transport Allowance (INR)', 'Other Earnings (INR)', 'Revised Gross (INR)', 'Employee Pension / GPF (INR)', 'Professional Tax (INR)', 'GIS (INR)', 'Stamp / Fixed Fee (INR)', 'Other Deductions (INR)', 'Total Employee Deductions (INR)', 'Revised Take-home (INR)', 'Actual Credited (INR)', 'Recovery from Arrears (INR)', 'Net Difference (INR)', 'Effective change / order reference'],
     ...result.rows.map((row) => [
       row.month,
       row.basicPay,
       row.daRate,
+      row.da,
+      row.hra,
+      row.sbca,
+      row.transportAllowance,
+      row.otherEarnings,
       row.grossEntitlement,
+      row.employeePension,
+      row.professionalTax,
+      row.gis,
+      row.stampFee,
+      row.otherDeductions,
       row.employeeDeductions,
       row.revisedTakeHome,
       row.actualTakeHome ?? '',
