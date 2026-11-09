@@ -62,6 +62,56 @@ describe('arrears draft storage and import/export', () => {
     expect(validateArrearsScenario(invalid)).toBe(false);
   });
 
+  it('can preserve an incomplete draft before the employee selects a pension and PT scheme', () => {
+    const draft = createArrearsScenario({
+      startMonth: '2026-01',
+      endMonth: '2026-01',
+      baseSalary: { ...DEFAULT_SALARY_INPUT, basicPay: 0, daRate: 0 },
+      changes: [],
+      monthlyRecords: [{ month: '2026-01', actualTakeHome: null, recovery: 0 }],
+      interestSettings: { annualRate: 0, settlementDate: '' }
+    });
+    expect(validateArrearsScenario(draft)).toBe(true);
+    expect(parseArrearsScenarioBackup(serializeArrearsScenario(draft)).baseSalary.pensionMode).toBe('unselected');
+  });
+
+  it('rejects negative credited pay, invalid payable days, duplicate months and invalid leave factors in JSON', () => {
+    const negativePay = createArrearsScenario(input());
+    negativePay.monthlyRecords[0].actualTakeHome = -1;
+    expect(validateArrearsScenario(negativePay)).toBe(false);
+
+    const invalidDays = createArrearsScenario(input());
+    invalidDays.monthlyRecords[0].payableDays = 32;
+    expect(validateArrearsScenario(invalidDays)).toBe(false);
+
+    const invalidFactor = createArrearsScenario(input());
+    invalidFactor.monthlyRecords[0].salaryFactorPercent = 101;
+    expect(validateArrearsScenario(invalidFactor)).toBe(false);
+
+    const duplicates = createArrearsScenario(input());
+    duplicates.monthlyRecords[1].month = '2026-01';
+    expect(validateArrearsScenario(duplicates)).toBe(false);
+  });
+
+  it('validates the settlement date and effective-date component updates in JSON backups', () => {
+    const invalidDate = createArrearsScenario({
+      ...input(),
+      interestSettings: { annualRate: 10, settlementDate: '2026-03-01' }
+    });
+    expect(validateArrearsScenario(invalidDate)).toBe(false);
+
+    const invalidUpdate = createArrearsScenario({
+      ...input(),
+      changes: [{
+        effectiveMonth: '2026-02',
+        type: 'allowance-deduction',
+        description: 'Invalid CPS rate',
+        salaryUpdates: { cpsEmployerRate: 125 }
+      }]
+    });
+    expect(validateArrearsScenario(invalidUpdate)).toBe(false);
+  });
+
   it('saves, loads and restores the scenario locally', () => {
     const store = new MemoryStorage();
     saveArrearsScenario(input(), store);
