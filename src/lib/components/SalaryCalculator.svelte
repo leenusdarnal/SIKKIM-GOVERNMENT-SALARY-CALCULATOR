@@ -35,8 +35,6 @@
       currency: 'INR',
       maximumFractionDigits: 0
     }).format(Math.round(value));
-  const compactFmt = (value: number) =>
-    new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(Math.round(value));
 
   onMount(() => {
     dark = localStorage.getItem('sikkim-salary-theme') === 'dark';
@@ -465,7 +463,7 @@
                   <div class="rounded-xl bg-slate-50 p-3 dark:bg-slate-800/60"><span class="block text-[10px] font-bold text-slate-400">03</span><span class="mt-1 block text-xs font-extrabold">Deductions</span></div>
                 </div>
               </section>
-            }
+            {/if}
 
             <section class="surface-card p-5 sm:p-6">
               <h2 class="text-sm font-black">How this estimate is built</h2>
