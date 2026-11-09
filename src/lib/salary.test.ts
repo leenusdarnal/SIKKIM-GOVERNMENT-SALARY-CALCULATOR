@@ -152,10 +152,23 @@ describe('salary calculation', () => {
     expect(result.takeHome).toBe(89_390);
   });
 
-  it('rounds half a rupee upward and supports a manually entered pre-revised DA rate', () => {
-    const result = calculateSalary({ ...base, daRate: 262, pensionMode: 'none', professionalTaxMode: 'none' });
-    expect(result.da).toBe(146_720);
-    expect(result.daRate).toBe(262);
+  it('rounds half a rupee upward and keeps the revised-pay DA reference separate', () => {
+    const halfRupee = calculateSalary({
+      ...base,
+      basicPay: 1,
+      daRate: 50,
+      pensionMode: 'none',
+      professionalTaxMode: 'none'
+    });
+    expect(halfRupee.da).toBe(1);
+    const revisedPay = calculateSalary({
+      ...base,
+      daRate: 58,
+      pensionMode: 'none',
+      professionalTaxMode: 'none'
+    });
+    expect(revisedPay.da).toBe(32_480);
+    expect(revisedPay.daRate).toBe(58);
   });
 
   it('uses manual Professional Tax without applying an automatic slab', () => {
