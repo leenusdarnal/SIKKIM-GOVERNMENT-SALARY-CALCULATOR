@@ -11,7 +11,7 @@ A Sikkim-specific salary estimation application built with SvelteKit 3, Svelte 5
 - HRA and SBCA are not presumed payable: HRA starts disabled and SBCA starts at 0%.
 - Explicit pension-scheme selection; CPS/CPF employee contribution is calculated only when selected, with the State matching share shown separately.
 - GPF, manual pension, Professional Tax manual/estimate/exempt options and editable employee-specific deductions.
-- Pay progression and service history: exact matrix-cell scenario, explicit eligibility confirmation and chronological local record of appointment, increments, promotion, financial upgradation and regularisation events.
+- Pay progression and service history: exact matrix-cell scenario, explicit eligibility confirmation and chronological local record of appointment, increments, promotion, financial upgradation and regularisation events.\n- GPF contribution planner: estimates monthly and annual subscription using the Sikkim GPF Rules' 6%–100% limits, with manual reference-pay input and explicit membership caveats.
 - Browser-only calculations. No employee identity, bank details or payroll credentials are requested.
 
 ## Project structure
