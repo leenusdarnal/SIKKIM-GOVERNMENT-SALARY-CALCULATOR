@@ -84,6 +84,10 @@ export function validateArrearsScenario(value: unknown): value is ArrearsScenari
   if (!value.changes.every((change) =>
       typeof change.effectiveMonth === 'string' &&
       allowedMonths.has(change.effectiveMonth) &&
+      (change.payableFromMonth === undefined ||
+        (typeof change.payableFromMonth === 'string' &&
+          allowedMonths.has(change.payableFromMonth) &&
+          change.payableFromMonth >= change.effectiveMonth)) &&
       typeof change.type === 'string' &&
       typeof change.description === 'string' &&
       (change.salaryUpdates === undefined || isObject(change.salaryUpdates)))) return false;
