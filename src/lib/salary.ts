@@ -11,11 +11,13 @@ export interface SalaryInput {
   transportAllowance: number;
   otherEarnings: number;
   pensionMode: PensionMode;
+  cpsRate: number;
   manualPension: number;
   professionalTaxMode: ProfessionalTaxMode;
   manualProfessionalTax: number;
   gis: number;
   stampFee: number;
+  incomeTaxTds: number;
   otherDeductions: number;
 }
 
@@ -36,6 +38,7 @@ export interface SalaryResult {
   professionalTaxBand: string;
   gis: number;
   stampFee: number;
+  incomeTaxTds: number;
   otherDeductions: number;
   totalDeductions: number;
   takeHome: number;
@@ -60,7 +63,7 @@ export function getSikkimProfessionalTax(monthlySalary: number): {
 
 export function calculateSalary(input: SalaryInput): SalaryResult {
   const basicPay = safeAmount(input.basicPay);
-  const daRate = Math.min(200, safeAmount(input.daRate));
+  const daRate = Math.min(300, safeAmount(input.daRate));
   const da = roundRupee((basicPay * daRate) / 100);
   const hraRate = Math.min(100, safeAmount(input.hraRate));
   const sbcaRate = Math.min(100, safeAmount(input.sbcaRate));
@@ -72,6 +75,7 @@ export function calculateSalary(input: SalaryInput): SalaryResult {
   const otherEarnings = roundRupee(safeAmount(input.otherEarnings));
   const gross = basicPay + da + hra + sbca + transportAllowance + otherEarnings;
 
+  const cpsRate = Math.min(100, safeAmount(input.cpsRate));
   let employeePension = 0;
   let employerCpsContribution = 0;
   let pensionLabel = 'Pension scheme not selected — amount not calculated';
@@ -80,9 +84,9 @@ export function calculateSalary(input: SalaryInput): SalaryResult {
     case 'unselected':
       break;
     case 'cps':
-      employeePension = roundRupee(((basicPay + da) * 10) / 100);
+      employeePension = roundRupee(((basicPay + da) * cpsRate) / 100);
       employerCpsContribution = employeePension;
-      pensionLabel = 'Sikkim CPS employee contribution (10% of Basic + DA)';
+      pensionLabel = 'Sikkim CPS employee contribution (' + cpsRate + '% of Basic + DA)';
       break;
     case 'gpf':
       employeePension = roundRupee(safeAmount(input.manualPension));
@@ -104,9 +108,10 @@ export function calculateSalary(input: SalaryInput): SalaryResult {
 
   const gis = roundRupee(safeAmount(input.gis));
   const stampFee = roundRupee(safeAmount(input.stampFee));
+  const incomeTaxTds = roundRupee(safeAmount(input.incomeTaxTds));
   const otherDeductions = roundRupee(safeAmount(input.otherDeductions));
   const totalDeductions =
-    employeePension + professionalTax + gis + stampFee + otherDeductions;
+    employeePension + professionalTax + gis + stampFee + incomeTaxTds + otherDeductions;
 
   return {
     basicPay, daRate, da, hra, sbca, transportAllowance, otherEarnings, gross,
@@ -120,7 +125,7 @@ export function calculateSalary(input: SalaryInput): SalaryResult {
         : input.professionalTaxMode === 'manual'
           ? 'Manual override'
           : 'Not applicable',
-    gis, stampFee, otherDeductions, totalDeductions,
+    gis, stampFee, incomeTaxTds, otherDeductions, totalDeductions,
     takeHome: gross - totalDeductions
   };
 }
@@ -135,10 +140,12 @@ export const DEFAULT_SALARY_INPUT: SalaryInput = {
   transportAllowance: 0,
   otherEarnings: 0,
   pensionMode: 'unselected',
+  cpsRate: 10,
   manualPension: 0,
   professionalTaxMode: 'unselected',
   manualProfessionalTax: 0,
   gis: 0,
   stampFee: 0,
+  incomeTaxTds: 0,
   otherDeductions: 0
 };
