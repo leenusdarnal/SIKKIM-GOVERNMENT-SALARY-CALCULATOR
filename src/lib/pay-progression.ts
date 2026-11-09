@@ -35,7 +35,7 @@ export function validatePayHistory(entries: PayHistoryEntry[]) {
   let previousDate = '';
   for (const [index, entry] of entries.entries()) {
     const pay = getPayAtCell(entry.level, entry.cell);
-    if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(entry.effectiveDate) || Number.isNaN(Date.parse(entry.effectiveDate))) {
+    if (entry.effectiveDate.length !== 10 || entry.effectiveDate[4] !== '-' || entry.effectiveDate[7] !== '-' || Number.isNaN(Date.parse(entry.effectiveDate)) || new Date(entry.effectiveDate + 'T00:00:00Z').toISOString().slice(0, 10) !== entry.effectiveDate) {
       errors.push('Entry ' + (index + 1) + ': enter a valid effective date.');
       continue;
     }
