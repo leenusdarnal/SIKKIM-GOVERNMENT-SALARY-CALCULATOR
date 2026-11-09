@@ -289,6 +289,12 @@ export function parseArrearsEntryCsv(csv: string, allowedMonths: string[]): Mont
     const recovery = numberAt(indices[2], 'recovery', 0) ?? 0;
     const payableDays = numberAt(indices[3], 'payableDays', null);
     const salaryFactorPercent = numberAt(indices[4], 'salaryFactorPercent', 100) ?? 100;
+    if (payableDays !== null && payableDays > daysInMonth(month)) {
+      throw new Error('CSV row ' + (lineIndex + 2) + ': payableDays exceeds the calendar days in ' + month + '.');
+    }
+    if (salaryFactorPercent > 100) {
+      throw new Error('CSV row ' + (lineIndex + 2) + ': salaryFactorPercent must not exceed 100.');
+    }
     result.push({ month, actualTakeHome, recovery, payableDays, salaryFactorPercent });
   }
 
