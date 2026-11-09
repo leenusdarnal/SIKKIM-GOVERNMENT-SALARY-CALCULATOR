@@ -356,7 +356,7 @@
                       <option value="cps">Sikkim CPS / CPF — 10% employee contribution (where covered)</option>
                       <option value="gpf">GPF — enter monthly amount</option>
                       <option value="manual">Other pension — manual amount</option>
-                      <option value="none">No pension deduction</option>
+                      <option value="none">OPS / no employee contribution (only where applicable)</option>
                     </select>
                   </div>
                   <p class="field-help">Choose the scheme supported by your appointment/service records or latest DDO confirmation. Do not infer CPS/CPF or OPS eligibility from appointment date alone.</p>
