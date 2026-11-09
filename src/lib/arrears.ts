@@ -81,7 +81,7 @@ const NUMERIC_SALARY_FIELDS = [
 ] as const;
 
 function monthIndex(value: string): number | null {
-  if (!/^\\d{4}-(0[1-9]|1[0-2])$/.test(value)) return null;
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(value)) return null;
   const [year, month] = value.split('-').map(Number);
   if (year < 1900 || year > 2200) return null;
   return year * 12 + month - 1;
