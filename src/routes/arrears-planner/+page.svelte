@@ -383,6 +383,7 @@
     try {
       const json = await file.text();
       const scenario = parseArrearsScenarioBackup(json);
+      draftPersistenceEnabled = true;
       applyScenario(scenario);
       try {
         restoreArrearsScenario(json, window.localStorage);
