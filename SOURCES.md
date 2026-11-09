@@ -45,7 +45,7 @@ The Commercial Taxes Division, Government of Sikkim, lists **Professional Rate-o
 
 - CAG, Audit of Transactions, Sikkim Civil Report 2008, Chapter IV, page 121: https://www.cag.gov.in/uploads/old_reports/state/Sikkim/2008/Civil/Civil_Sikkim_2008/civil_chap_4.pdf
 
-The slab boundaries implemented here follow that Sikkim-specific CAG audit cross-check. The UI allows manual override or not-applicable selection for exemptions or later payroll orders.
+The slab boundaries implemented here follow that Sikkim-specific CAG audit cross-check. The automatic mode in the calculator applies these indicative slabs to gross monthly earnings (Basic + DA + entered allowances). The precise statutory assessment base, exclusions, exemptions and subsequent amendments have not been conclusively verified for every employee category. Accordingly, Professional Tax is no longer calculated by default: the user must explicitly select a manual payslip amount, the optional automatic estimate, or not-applicable where exempt.
 
 ## 5. HRA and SBCA — historical departmental reference only
 
@@ -57,7 +57,17 @@ A Government of Sikkim proactive disclosure by the Directorate of Economics, Sta
 
 - CAG, Sikkim Civil Report 2008, Chapter IV, page 121 (historical HRA audit reference): https://www.cag.gov.in/uploads/old_reports/state/Sikkim/2008/Civil/Civil_Sikkim_2008/civil_chap_4.pdf
 
-## 6. GIS, stamp/fixed fee, transport and other allowances/deductions
+## 6. Historical allowance order — not a universal current entitlement
+
+Government of Sikkim, Department of Personnel, **Notification No. 85/GEN/DOP dated 25 August 2018**, published in Gazette No. 462 (18 April 2019):
+
+- Official Gazette PDF: https://www.sikkim.gov.in/uploads/Gazette/462_20190418.pdf
+- The order records location/category-dependent allowances, including HRA, SBCA, compensatory allowance, high-altitude allowance and transport allowance. Its baseline took effect from 1 September 2018.
+- The order is retained as a historical reference. This review did not establish that every rate and eligibility condition remains current in November 2026 or that each category applies to every State employee.
+
+**Calculator treatment:** HRA starts disabled; the 12% HRA and 8% SBCA figures are labelled departmental references, not universal entitlements; SBCA starts at 0%; HRA minimum starts at ₹0. Transport, compensatory / high-altitude and other posting-specific allowances remain manual. No employee is assigned an allowance solely because a location or pay level is selected.
+
+## 7. GIS, stamp/fixed fee, transport and other allowances/deductions
 
 No current universal State-wide GIS deduction amount, salary stamp fee, or uniform level-based transport allowance was verified from a primary source during this implementation.
 
@@ -67,7 +77,7 @@ No current universal State-wide GIS deduction amount, salary stamp fee, or unifo
 - Other recurring allowances and deductions, including TDS/income tax and loan recoveries, are optional manual entries.
 - No central-government allowance rate is applied automatically to Sikkim State employees.
 
-## 7. Maintenance protocol
+## 8. Maintenance protocol
 
 When a new Government of Sikkim order is issued, update the rule data only after checking:
 1. Issuing department and notification/circular number.
