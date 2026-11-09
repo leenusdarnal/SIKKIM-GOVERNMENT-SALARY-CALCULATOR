@@ -115,7 +115,7 @@ describe('Sikkim salary arrears planner', () => {
       changes: [{ effectiveMonth: '2026-02', type: 'da-revision', daRate: 60, description: '=DA circular, revised' }]
     }));
     const csv = createArrearsCsv(result);
-    expect(csv.startsWith('\\uFEFF')).toBe(true);
+    expect(csv.startsWith('\uFEFF')).toBe(true);
     expect(csv).toContain('"\'=DA circular, revised"');
     expect(csv).toContain('Net Difference (INR)');
   });
