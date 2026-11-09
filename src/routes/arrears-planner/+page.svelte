@@ -764,33 +764,38 @@
           </ul>
         </div>
       {:else}
-        <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <div class="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800"><p class="text-xs text-slate-500">Revised take-home total</p><p class="mt-1 text-xl font-black">{fmt(result.totals.revisedTakeHome)}</p></div>
           <div class="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800"><p class="text-xs text-slate-500">Actual credited total</p><p class="mt-1 text-xl font-black">{result.complete ? fmt(result.totals.actualTakeHome) : 'Pending'}</p></div>
           <div class="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800"><p class="text-xs text-slate-500">Additional recoveries</p><p class="mt-1 text-xl font-black">{fmt(result.totals.recoveries)}</p></div>
-          <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900 dark:bg-emerald-950/30"><p class="text-xs text-emerald-800 dark:text-emerald-300">{result.complete ? 'Net arrears / balance' : 'Net arrears estimate'}</p><p class="mt-1 text-xl font-black text-emerald-950 dark:text-emerald-100">{result.complete ? fmt(result.totals.netArrears) : 'Incomplete'}</p></div>
+          <div class="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800"><p class="text-xs text-slate-500">Net arrears before interest</p><p class="mt-1 text-xl font-black">{result.complete ? fmt(result.totals.netArrears) : 'Pending'}</p></div>
+          <div class="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800"><p class="text-xs text-slate-500">Indicative interest</p><p class="mt-1 text-xl font-black">{fmt(result.totals.interestAmount)}</p></div>
+          <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900 dark:bg-emerald-950/30"><p class="text-xs text-emerald-800 dark:text-emerald-300">Total including interest</p><p class="mt-1 text-xl font-black text-emerald-950 dark:text-emerald-100">{result.complete ? fmt(result.totals.totalIncludingInterest) : 'Incomplete'}</p></div>
         </div>
         {#if !result.complete}
           <p class="mt-3 text-sm font-semibold text-amber-800 dark:text-amber-300">{missingPaidMonths} month(s) still need the actual net salary credited before a final arrears total or CSV statement can be produced.</p>
         {:else}
           <div class="mt-3 rounded-xl border border-slate-200 p-3 text-xs leading-5 text-slate-600 dark:border-slate-700 dark:text-slate-300">
-            Positive arrears: <strong>{fmt(result.totals.positiveArrears)}</strong> · Negative balance / possible overpayment: <strong>{fmt(Math.abs(result.totals.negativeBalance))}</strong>. A negative net result is shown rather than silently reduced to zero.
+            Positive monthly arrears: <strong>{fmt(result.totals.positiveArrears)}</strong> · Negative balance / possible overpayment: <strong>{fmt(Math.abs(result.totals.negativeBalance))}</strong>. Interest is a separate estimate and not a statement of entitlement.
           </div>
         {/if}
       {/if}
 
       {#if result.rows.length}
         <div class="mt-5 overflow-x-auto">
-          <table class="w-full min-w-[2100px] text-left text-sm">
+          <table class="w-full min-w-[2700px] text-left text-sm">
             <thead>
               <tr class="border-b border-slate-200 text-[10px] uppercase tracking-wide text-slate-500 dark:border-slate-700">
-                <th class="py-3">Month</th><th>Basic pay</th><th>DA rate</th><th>DA</th><th>HRA</th><th>SBCA</th><th>Transport</th><th>Other earnings</th><th>Revised gross</th><th>CPS / GPF</th><th>Professional Tax</th><th>GIS</th><th>Stamp fee</th><th>Other deductions</th><th>Total deductions</th><th>Revised take-home</th><th>Actual net paid (₹)</th><th>Recovery (₹)</th><th>Net difference</th>
+                <th class="py-3">Month</th><th>Calendar days</th><th>Payable days</th><th>Pay factor (%)</th><th>Basic pay</th><th>DA rate</th><th>DA</th><th>HRA</th><th>SBCA</th><th>Transport</th><th>Other earnings</th><th>Revised gross</th><th>CPS / GPF</th><th>Professional Tax</th><th>Income Tax TDS</th><th>GIS</th><th>Stamp fee</th><th>Other deductions</th><th>Total deductions</th><th>Revised take-home</th><th>Actual net paid (₹)</th><th>Recovery (₹)</th><th>Net difference</th><th>Interest days</th><th>Interest (₹)</th>
               </tr>
             </thead>
             <tbody>
               {#each result.rows as row (row.month)}
                 <tr class="border-b border-slate-100 align-middle dark:border-slate-800">
                   <td class="py-3 font-bold">{row.month}</td>
+                  <td>{row.daysInMonth}</td>
+                  <td><input type="number" min="0" max={row.daysInMonth} step="0.5" value={payableDays[row.month] ?? ''} oninput={(event) => updatePayableDays(row.month, event)} aria-label={'Payable days for ' + row.month} placeholder="Full month" class="w-24 rounded-lg border border-slate-300 bg-transparent p-2 text-sm dark:border-slate-700" /></td>
+                  <td><input type="number" min="0" max="100" step="0.01" value={salaryFactorPercents[row.month] ?? '100'} oninput={(event) => updateSalaryFactor(row.month, event)} aria-label={'Leave or pay factor for ' + row.month} class="w-24 rounded-lg border border-slate-300 bg-transparent p-2 text-sm dark:border-slate-700" /></td>
                   <td>{fmt(row.basicPay)}</td>
                   <td>{row.daRate}%</td>
                   <td>{fmt(row.da)}</td>
@@ -801,6 +806,7 @@
                   <td>{fmt(row.grossEntitlement)}</td>
                   <td>{fmt(row.employeePension)}</td>
                   <td>{fmt(row.professionalTax)}</td>
+                  <td>{fmt(row.incomeTaxTds)}</td>
                   <td>{fmt(row.gis)}</td>
                   <td>{fmt(row.stampFee)}</td>
                   <td>{fmt(row.otherDeductions)}</td>
@@ -809,9 +815,11 @@
                   <td><input type="number" min="0" step="1" value={actualPaid[row.month] ?? ''} oninput={(event) => updateActualPaid(row.month, event)} aria-label={'Actual net salary credited for ' + row.month} placeholder="Enter credited amount" class="w-36 rounded-lg border border-slate-300 bg-transparent p-2 text-sm dark:border-slate-700" /></td>
                   <td><input type="number" min="0" step="1" value={recoveryAmounts[row.month] ?? '0'} oninput={(event) => updateRecovery(row.month, event)} aria-label={'Additional recovery for ' + row.month} class="w-28 rounded-lg border border-slate-300 bg-transparent p-2 text-sm dark:border-slate-700" /></td>
                   <td class="font-bold">{fmt(row.netArrears)}</td>
+                  <td>{row.interestDays}</td>
+                  <td>{fmt(row.interestAmount)}</td>
                 </tr>
                 {#if row.appliedChanges.length}
-                  <tr class="border-b border-slate-100 bg-emerald-50/60 dark:border-slate-800 dark:bg-emerald-950/20"><td colspan="19" class="px-3 py-2 text-xs text-emerald-900 dark:text-emerald-200">Applied from this month: {row.appliedChanges.join(' · ')}</td></tr>
+                  <tr class="border-b border-slate-100 bg-emerald-50/60 dark:border-slate-800 dark:bg-emerald-950/20"><td colspan="25" class="px-3 py-2 text-xs text-emerald-900 dark:text-emerald-200">Applied from this month: {row.appliedChanges.join(' · ')}</td></tr>
                 {/if}
               {/each}
             </tbody>
