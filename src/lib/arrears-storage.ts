@@ -33,7 +33,7 @@ function isSalaryInput(value: unknown): value is SalaryInput {
     'gis', 'stampFee', 'incomeTaxTds', 'otherDeductions'
   ];
   return required.every((key) => typeof value[key] === 'number' && Number.isFinite(value[key]) && Number(value[key]) >= 0) &&
-    Number(value.daRate) <= 300 &&
+    Number(value.daRate) <= 200 &&
     Number(value.cpsRate) <= 100 &&
     Number(value.cpsEmployerRate) <= 100 &&
     Number(value.hraRate) <= 100 &&
