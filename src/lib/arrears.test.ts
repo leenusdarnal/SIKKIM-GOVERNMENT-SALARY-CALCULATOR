@@ -98,6 +98,14 @@ describe('Sikkim salary arrears planner', () => {
     expect(invalid.errors.length).toBeGreaterThanOrEqual(5);
   });
 
+  it('rejects a State CPS contribution rate above 100%', () => {
+    const result = calculateArrears(makeInput({
+      baseSalary: { ...baseSalary, cpsEmployerRate: 101 }
+    }));
+    expect(result.valid).toBe(false);
+    expect(result.errors.some((message) => message.includes('State contribution rate'))).toBe(true);
+  });
+
   it('applies dated HRA eligibility, HRA rate, SBCA rate and transport allowance', () => {
     const result = calculateArrears(makeInput({
       changes: [{
@@ -264,6 +272,7 @@ describe('Sikkim salary arrears planner', () => {
     }));
     expect(negative.rows[0].netArrears).toBeLessThan(0);
     expect(negative.rows[0].interestAmount).toBe(0);
+    expect(negative.rows[0].interestDays).toBe(0);
     const invalid = calculateArrears(makeInput({
       interestSettings: { annualRate: 12, settlementDate: '2026-01-15' }
     }));
