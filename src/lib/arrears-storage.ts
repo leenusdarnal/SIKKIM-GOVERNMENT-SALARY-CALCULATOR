@@ -43,13 +43,52 @@ function isSalaryInput(value: unknown): value is SalaryInput {
     ['unselected', 'auto', 'manual', 'none'].includes(String(value.professionalTaxMode));
 }
 
+function daysInMonth(month: string): number {
+  const [year, monthNumber] = month.split('-').map(Number);
+  return new Date(Date.UTC(year, monthNumber, 0)).getUTCDate();
+}
+
 function isMonthlyRecord(value: unknown): value is MonthlyPaidRecord {
+  if (!isObject(value) || typeof value.month !== 'string') return false;
+  return (value.actualTakeHome === null ||
+      (typeof value.actualTakeHome === 'number' && Number.isFinite(value.actualTakeHome) && value.actualTakeHome >= 0)) &&
+    typeof value.recovery === 'number' && Number.isFinite(value.recovery) && value.recovery >= 0 &&
+    (value.payableDays === undefined || value.payableDays === null ||
+      (typeof value.payableDays === 'number' && Number.isFinite(value.payableDays) &&
+        value.payableDays >= 0 && value.payableDays <= daysInMonth(value.month))) &&
+    (value.salaryFactorPercent === undefined ||
+      (typeof value.salaryFactorPercent === 'number' && Number.isFinite(value.salaryFactorPercent) &&
+        value.salaryFactorPercent >= 0 && value.salaryFactorPercent <= 100));
+}
+
+function isSalaryUpdate(value: unknown): boolean {
   if (!isObject(value)) return false;
-  return typeof value.month === 'string' &&
-    (value.actualTakeHome === null || (typeof value.actualTakeHome === 'number' && Number.isFinite(value.actualTakeHome))) &&
-    typeof value.recovery === 'number' && Number.isFinite(value.recovery) &&
-    (value.payableDays === undefined || value.payableDays === null || (typeof value.payableDays === 'number' && Number.isFinite(value.payableDays))) &&
-    (value.salaryFactorPercent === undefined || (typeof value.salaryFactorPercent === 'number' && Number.isFinite(value.salaryFactorPercent)));
+  const numeric = [
+    'hraRate', 'hraMinimum', 'sbcaRate', 'cpsRate', 'cpsEmployerRate',
+    'transportAllowance', 'otherEarnings', 'manualPension',
+    'manualProfessionalTax', 'incomeTaxTds', 'gis', 'stampFee', 'otherDeductions'
+  ];
+  const allowed = new Set([...numeric, 'hraEligible', 'pensionMode', 'professionalTaxMode']);
+  for (const [key, entry] of Object.entries(value)) {
+    if (!allowed.has(key)) return false;
+    if (numeric.includes(key)) {
+      if (typeof entry !== 'number' || !Number.isFinite(entry) || entry < 0) return false;
+      if (['hraRate', 'sbcaRate', 'cpsRate', 'cpsEmployerRate'].includes(key) && entry > 100) return false;
+    } else if (key === 'hraEligible') {
+      if (typeof entry !== 'boolean') return false;
+    } else if (key === 'pensionMode') {
+      if (!['unselected', 'cps', 'gpf', 'manual', 'none'].includes(String(entry))) return false;
+    } else if (key === 'professionalTaxMode') {
+      if (!['unselected', 'auto', 'manual', 'none'].includes(String(entry))) return false;
+    }
+  }
+  return true;
+}
+
+function isValidDate(value: string): boolean {
+  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return false;
+  const parsed = new Date(value + 'T00:00:00.000Z');
+  return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
 }
 
 export function createArrearsScenario(input: ArrearsInput, savedAt = new Date().toISOString()): ArrearsScenario {
@@ -73,10 +112,16 @@ export function validateArrearsScenario(value: unknown): value is ArrearsScenari
   if (typeof value.savedAt !== 'string' || !Number.isFinite(Date.parse(value.savedAt))) return false;
   if (typeof value.startMonth !== 'string' || typeof value.endMonth !== 'string') return false;
   if (!isSalaryInput(value.baseSalary) || !Array.isArray(value.changes) || !Array.isArray(value.monthlyRecords)) return false;
+  const changeTypes = ['da-revision', 'annual-increment', 'promotion', 'pay-fixation', 'manual-adjustment', 'allowance-deduction'];
   if (!value.changes.every((change) => isObject(change) &&
       typeof change.effectiveMonth === 'string' &&
-      typeof change.type === 'string' &&
-      typeof change.description === 'string')) return false;
+      changeTypes.includes(String(change.type)) &&
+      typeof change.description === 'string' &&
+      change.description.trim().length > 0 &&
+      (change.basicPay === undefined || (typeof change.basicPay === 'number' && Number.isFinite(change.basicPay) && change.basicPay > 0)) &&
+      (change.daRate === undefined || (typeof change.daRate === 'number' && Number.isFinite(change.daRate) && change.daRate >= 0 && change.daRate <= 300)) &&
+      (change.payableFromMonth === undefined || typeof change.payableFromMonth === 'string') &&
+      (change.salaryUpdates === undefined || isSalaryUpdate(change.salaryUpdates)))) return false;
   if (!value.monthlyRecords.every(isMonthlyRecord)) return false;
 
   const allowedMonths = new Set(getArrearsMonthKeys(value.startMonth, value.endMonth));
@@ -95,7 +140,21 @@ export function validateArrearsScenario(value: unknown): value is ArrearsScenari
   const settings = value.interestSettings;
   if (settings !== undefined && (!isObject(settings) ||
       typeof settings.annualRate !== 'number' ||
+      !Number.isFinite(settings.annualRate) ||
+      settings.annualRate < 0 ||
+      settings.annualRate > 50 ||
       typeof settings.settlementDate !== 'string')) return false;
+
+  if (settings && settings.annualRate > 0) {
+    if (!isValidDate(settings.settlementDate)) return false;
+    const lastMonth = value.endMonth;
+    const monthEnd = new Date(Date.UTC(
+      Number(lastMonth.slice(0, 4)),
+      Number(lastMonth.slice(5, 7)),
+      0
+    )).toISOString().slice(0, 10);
+    if (settings.settlementDate < monthEnd) return false;
+  }
 
   return true;
 }
