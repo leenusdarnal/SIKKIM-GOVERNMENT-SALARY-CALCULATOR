@@ -459,14 +459,42 @@
       <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-300">Reconstruct revised monthly take-home pay after a DA order, annual increment, promotion or pay-fixation order, compare it with the amount actually credited, and account for additional recoveries.</p>
     </header>
 
+    <section class="no-print rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 class="font-extrabold">Scenario backup and monthly payslip import</h2>
+          <p class="mt-1 text-xs text-slate-500 dark:text-slate-400" aria-live="polite">{draftStatus}. Data stays in this browser unless you export a file.</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" onclick={exportJsonBackup} class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold dark:border-slate-700">Download JSON backup</button>
+          <button type="button" onclick={downloadCsvTemplate} class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold dark:border-slate-700">Download CSV template</button>
+          <button type="button" onclick={clearSavedScenario} class="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-700 dark:border-red-900 dark:text-red-300">Clear scenario</button>
+        </div>
+      </div>
+      <div class="mt-3 grid gap-3 sm:grid-cols-2">
+        <label class="rounded-xl border border-dashed border-slate-300 p-3 text-xs font-bold dark:border-slate-700">Restore JSON scenario
+          <input type="file" accept=".json,application/json" onchange={restoreJsonFile} class="mt-2 block w-full text-xs font-normal" />
+        </label>
+        <label class="rounded-xl border border-dashed border-slate-300 p-3 text-xs font-bold dark:border-slate-700">Import monthly actual salary / recovery CSV
+          <input type="file" accept=".csv,text/csv" onchange={importCsvFile} class="mt-2 block w-full text-xs font-normal" />
+        </label>
+      </div>
+      {#if fileStatus}
+        <p role="status" class="mt-3 text-xs font-semibold text-emerald-800 dark:text-emerald-300">{fileStatus}</p>
+      {/if}
+      <p class="mt-3 text-[11px] leading-5 text-slate-500 dark:text-slate-400">Local draft is browser-specific and not encrypted. JSON backups contain salary inputs and actual credited pay; store them securely and do not use a shared browser for confidential records. The CSV import accepts the template's columns and does not upload employee data.</p>
+    </section>
+
     <section class="rounded-2xl border border-amber-300 bg-amber-50 p-5 text-sm leading-6 text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
       <h2 class="font-extrabold">Read before calculating</h2>
       <ul class="mt-2 list-disc space-y-1 pl-5">
-        <li>This is an estimate, not an official pay-fixation or arrears sanction. Enter only DA rates and revised basic pay supported by the applicable signed Government order and the employee's fixation statement.</li>
-        <li>The opening basic pay and DA rate are the revised entitlement basis for the first month in the selected period. Each dated change applies from that month onward.</li>
-        <li>For increments, promotions and pay fixation, the tool does not decide eligibility or calculate the new basic pay automatically. Enter the basic pay fixed by the competent authority.</li>
-        <li>Enter the net take-home amount actually credited for each month. Recovery entered below is an additional recovery from this arrears settlement; do not enter an amount already deducted from the credited salary a second time.</li>
-        <li>Periods are limited to 60 months. The planner uses the salary engine's current component rules; it does not reconstruct past rule changes automatically.</li>
+        <li>This is an estimate, not an official pay-fixation or arrears sanction. Enter basic pay, DA and allowance/deduction changes from the employee's applicable signed Government orders and payslips.</li>
+        <li>Each effective-dated change applies from the selected month onward. Increment, promotion, ACPS and pay fixation eligibility are not decided automatically; enter the pay actually fixed by the competent authority.</li>
+        <li>Payable days and leave/pay factor are manual inputs. They do not decide leave eligibility or leave salary. Use the applicable leave order and DDO calculation; the factor proportionally adjusts Basic Pay, DA, HRA, SBCA and other entered earnings.</li>
+        <li>Income Tax TDS is entered from the employee's tax computation or payslip. This planner does not estimate annual income-tax liability or select a tax regime.</li>
+        <li>Interest is optional and defaults to zero. Enter a rate only where an order, court decision or competent authority authorises interest; the tool gives a simple-interest estimate on positive monthly net differences only.</li>
+        <li>Enter actual net take-home credited for each month. Additional recovery is deducted from the arrears settlement; do not duplicate an amount already deducted in payroll.</li>
+        <li>Periods are limited to 60 months. The 2018 revised-pay calculator does not convert pre-revised basic pay or automate pre-revised fixation. Manually entered DA rates up to 300% are available for a separately verified basis.</li>
       </ul>
     </section>
 
@@ -496,7 +524,7 @@
             <input type="number" min="1" step="1" bind:value={baseSalary.basicPay} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
           </label>
           <label class="text-sm font-bold">DA rate (%)
-            <input type="number" min="0" max="200" step="0.01" bind:value={baseSalary.daRate} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
+            <input type="number" min="0" max="300" step="0.01" bind:value={baseSalary.daRate} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
           </label>
           <label class="text-sm font-bold">HRA rate (%)
             <input type="number" min="0" max="100" step="0.01" bind:value={baseSalary.hraRate} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
@@ -532,6 +560,11 @@
               <option value="none">No employee pension deduction</option>
             </select>
           </label>
+          {#if baseSalary.pensionMode === 'cps'}
+            <label class="text-sm font-bold">CPS / CPF employee rate (%)
+              <input type="number" min="0" max="100" step="0.01" bind:value={baseSalary.cpsRate} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
+            </label>
+          {/if}
           <label class="text-sm font-bold">Professional Tax treatment
             <select bind:value={baseSalary.professionalTaxMode} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700">
               <option value="unselected">Select treatment</option>
@@ -550,6 +583,9 @@
               <input type="number" min="0" step="1" bind:value={baseSalary.manualProfessionalTax} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
             </label>
           {/if}
+          <label class="text-sm font-bold">Income Tax TDS (₹)
+            <input type="number" min="0" step="1" bind:value={baseSalary.incomeTaxTds} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
+          </label>
           <label class="text-sm font-bold">GIS (₹)
             <input type="number" min="0" step="1" bind:value={baseSalary.gis} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
           </label>
@@ -560,7 +596,7 @@
             <input type="number" min="0" step="1" bind:value={baseSalary.otherDeductions} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
           </label>
         </div>
-        <p class="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">CPS/CPF is recalculated as 10% of Basic Pay + DA under the existing salary engine. Historical changes to GPF/manual pension, HRA, SBCA, Professional Tax and other entered components can be scheduled in the effective-dated changes section below.</p>
+        <p class="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">CPS/CPF uses the configured rate (10% standard reference) on Basic Pay + DA; GPF/manual pension and other deductions are manually entered. Income Tax TDS is separate from Sikkim Professional Tax and is not recalculated annually by this tool.</p>
       </div>
     </section>
 
