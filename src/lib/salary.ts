@@ -1,5 +1,5 @@
 export type PensionMode = 'unselected' | 'cps' | 'gpf' | 'manual' | 'none';
-export type ProfessionalTaxMode = 'auto' | 'manual' | 'none';
+export type ProfessionalTaxMode = 'unselected' | 'auto' | 'manual' | 'none';
 
 export interface SalaryInput {
   basicPay: number;
@@ -62,10 +62,12 @@ export function calculateSalary(input: SalaryInput): SalaryResult {
   const basicPay = safeAmount(input.basicPay);
   const daRate = Math.min(200, safeAmount(input.daRate));
   const da = roundRupee((basicPay * daRate) / 100);
+  const hraRate = Math.min(100, safeAmount(input.hraRate));
+  const sbcaRate = Math.min(100, safeAmount(input.sbcaRate));
   const hra = input.hraEligible
-    ? Math.max(safeAmount(input.hraMinimum), roundRupee((basicPay * safeAmount(input.hraRate)) / 100))
+    ? Math.max(safeAmount(input.hraMinimum), roundRupee((basicPay * hraRate) / 100))
     : 0;
-  const sbca = roundRupee((basicPay * safeAmount(input.sbcaRate)) / 100);
+  const sbca = roundRupee((basicPay * sbcaRate) / 100);
   const transportAllowance = roundRupee(safeAmount(input.transportAllowance));
   const otherEarnings = roundRupee(safeAmount(input.otherEarnings));
   const gross = basicPay + da + hra + sbca + transportAllowance + otherEarnings;
@@ -94,7 +96,7 @@ export function calculateSalary(input: SalaryInput): SalaryResult {
 
   const automaticTax = getSikkimProfessionalTax(gross);
   const professionalTax =
-    input.professionalTaxMode === 'none'
+    input.professionalTaxMode === 'none' || input.professionalTaxMode === 'unselected'
       ? 0
       : input.professionalTaxMode === 'manual'
         ? roundRupee(safeAmount(input.manualProfessionalTax))
@@ -111,7 +113,9 @@ export function calculateSalary(input: SalaryInput): SalaryResult {
     pensionMode: input.pensionMode, pensionLabel, employeePension,
     employerCpsContribution, professionalTax,
     professionalTaxBand:
-      input.professionalTaxMode === 'auto'
+      input.professionalTaxMode === 'unselected'
+        ? 'Not selected — amount not calculated'
+        : input.professionalTaxMode === 'auto'
         ? automaticTax.band
         : input.professionalTaxMode === 'manual'
           ? 'Manual override'
@@ -132,7 +136,7 @@ export const DEFAULT_SALARY_INPUT: SalaryInput = {
   otherEarnings: 0,
   pensionMode: 'unselected',
   manualPension: 0,
-  professionalTaxMode: 'auto',
+  professionalTaxMode: 'unselected',
   manualProfessionalTax: 0,
   gis: 0,
   stampFee: 0,

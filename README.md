@@ -82,3 +82,8 @@ See [SOURCES.md](SOURCES.md) for notification references, links and caveats. Imp
 ## License
 
 No license file is currently provided. Obtain permission from the repository owner before reuse or redistribution.
+
+
+### Allowance and deduction safeguards
+
+HRA, SBCA, transport and other posting-specific allowances are not assumed to be universal entitlements. Professional Tax requires an explicit selection; the automatic gross-pay slab is an optional estimate, while manual payslip entry is the recommended path pending confirmation of the statutory assessment base and individual exemptions. See [SOURCES.md](SOURCES.md) and [ALLOWANCE-DEDUCTION-AUDIT.md](ALLOWANCE-DEDUCTION-AUDIT.md).

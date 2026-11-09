@@ -18,6 +18,12 @@ export const SALARY_SOURCES = [
     url: 'https://www.sikkimfred.gov.in/FCD/Documents/Vol%20III.pdf'
   },
   {
+    title: 'Government of Sikkim allowance notification — historical baseline',
+    authority: 'Government of Sikkim, Department of Personnel',
+    note: 'Notification No. 85/GEN/DOP dated 25 August 2018, Gazette No. 462. The order is retained as a historical allowance reference only; current amendments and employee/posting-specific eligibility have not been established for all categories. No allowance from this order is applied automatically.',
+    url: 'https://www.sikkim.gov.in/uploads/Gazette/462_20190418.pdf'
+  },
+  {
     title: 'Sikkim Professional Rate-of-tax schedule',
     authority: 'Commercial Taxes Division, Government of Sikkim',
     note: 'Official salary-earner schedule; the rate boundaries are cross-checked with the Sikkim CAG audit.',
