@@ -334,6 +334,7 @@ describe('Sikkim salary arrears planner', () => {
     expect(csv).toContain('HRA (INR)');
     expect(csv).toContain('Professional Tax (INR)');
     expect(csv).toContain('Total Employee Deductions (INR)');
+    expect(csv).toContain('State CPS Matching Contribution (INR; not deducted)');
     expect(csv).toContain('Income Tax TDS (INR)');
     expect(csv).toContain('Indicative Simple Interest (INR)');
     expect(csv).toContain('Payable Days');
