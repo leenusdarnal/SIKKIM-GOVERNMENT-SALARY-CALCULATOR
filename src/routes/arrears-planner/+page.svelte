@@ -729,9 +729,24 @@
     </section>
 
     <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
+      <p class="text-xs font-extrabold uppercase tracking-[0.15em] text-emerald-800 dark:text-emerald-400">03 · Optional interest calculation</p>
+      <h2 class="mt-1 text-xl font-black">Interest on arrears (where authorised)</h2>
+      <p class="mt-1 max-w-3xl text-sm leading-6 text-slate-500 dark:text-slate-400">Interest is switched off by default. Enter a rate and settlement date only when an applicable Government order, court decision or competent authority permits interest. The estimate uses simple interest on positive monthly net differences from each month-end to the settlement date; it does not decide legal entitlement.</p>
+      <div class="mt-4 grid gap-4 sm:grid-cols-2">
+        <label class="text-sm font-bold">Authorised annual interest rate (%)
+          <input type="number" min="0" max="50" step="0.01" bind:value={interestAnnualRate} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
+          <span class="mt-1 block text-xs font-normal text-slate-500">Keep at 0 to disable interest.</span>
+        </label>
+        <label class="text-sm font-bold">Expected / actual settlement date
+          <input type="date" bind:value={interestSettlementDate} disabled={Number(interestAnnualRate) <= 0} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 disabled:opacity-50 dark:border-slate-700" />
+        </label>
+      </div>
+    </section>
+
+    <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p class="text-xs font-extrabold uppercase tracking-[0.15em] text-emerald-800 dark:text-emerald-400">03 · Monthly comparison</p>
+          <p class="text-xs font-extrabold uppercase tracking-[0.15em] text-emerald-800 dark:text-emerald-400">04 · Monthly comparison</p>
           <h2 class="mt-1 text-xl font-black">Enter actual salary credited</h2>
           <p class="mt-1 max-w-3xl text-sm leading-6 text-slate-500 dark:text-slate-400">The revised take-home is calculated for each month. Fill in the net amount actually credited and any additional recovery to be deducted from this arrears settlement.</p>
         </div>
