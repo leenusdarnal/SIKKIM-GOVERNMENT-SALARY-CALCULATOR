@@ -602,7 +602,7 @@
 
     <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
       <p class="text-xs font-extrabold uppercase tracking-[0.15em] text-emerald-800 dark:text-emerald-400">02 · Effective-dated changes</p>
-      <h2 class="mt-1 text-xl font-black">Add DA revisions, increments or promotion fixation</h2>
+      <h2 class="mt-1 text-xl font-black">Add dated salary, allowance and deduction changes</h2>
       <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">A change is applied from the selected month onward. Use a separate entry for each order/effective date.</p>
 
       <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -654,6 +654,9 @@
                 <option value="">Unchanged</option><option value="cps">CPS / CPF</option><option value="gpf">GPF</option><option value="manual">Manual pension</option><option value="none">No pension deduction</option>
               </select>
             </label>
+            <label class="text-sm font-bold">CPS / CPF rate (%)
+              <input type="number" min="0" max="100" step="0.01" value={componentEvent.cpsRate} oninput={(event) => (componentEvent.cpsRate = (event.currentTarget as HTMLInputElement).value)} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
+            </label>
             <label class="text-sm font-bold">Manual pension / GPF (₹)
               <input type="number" min="0" step="1" value={componentEvent.manualPension} oninput={(event) => (componentEvent.manualPension = (event.currentTarget as HTMLInputElement).value)} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
             </label>
@@ -664,6 +667,9 @@
             </label>
             <label class="text-sm font-bold">Manual Professional Tax (₹)
               <input type="number" min="0" step="1" value={componentEvent.manualProfessionalTax} oninput={(event) => (componentEvent.manualProfessionalTax = (event.currentTarget as HTMLInputElement).value)} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
+            </label>
+            <label class="text-sm font-bold">Income Tax TDS (₹)
+              <input type="number" min="0" step="1" value={componentEvent.incomeTaxTds} oninput={(event) => (componentEvent.incomeTaxTds = (event.currentTarget as HTMLInputElement).value)} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
             </label>
             <label class="text-sm font-bold">GIS (₹)
               <input type="number" min="0" step="1" value={componentEvent.gis} oninput={(event) => (componentEvent.gis = (event.currentTarget as HTMLInputElement).value)} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
@@ -682,11 +688,19 @@
             <input type="number" min="1" step="1" value={eventBasicPay} oninput={(event) => (eventBasicPay = (event.currentTarget as HTMLInputElement).value)} placeholder="Leave blank when unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
           </label>
           <label class="text-sm font-bold">New DA rate (%)
-            <input type="number" min="0" max="200" step="0.01" value={eventDaRate} oninput={(event) => (eventDaRate = (event.currentTarget as HTMLInputElement).value)} placeholder="Leave blank when unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
+            <input type="number" min="0" max="300" step="0.01" value={eventDaRate} oninput={(event) => (eventDaRate = (event.currentTarget as HTMLInputElement).value)} placeholder="Leave blank when unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
           </label>
         </div>
       {/if}
-      <button type="button" onclick={addChange} class="mt-4 rounded-xl bg-emerald-800 px-5 py-3 text-sm font-extrabold text-white hover:bg-emerald-700">Add effective-dated change</button>
+      <div class="mt-4 flex flex-wrap gap-2">
+        <button type="button" onclick={addChange} class="rounded-xl bg-emerald-800 px-5 py-3 text-sm font-extrabold text-white hover:bg-emerald-700">{editingChangeIndex === null ? 'Add effective-dated change' : 'Save edited change'}</button>
+        {#if editingChangeIndex !== null}
+          <button type="button" onclick={clearEventEditor} class="rounded-xl border border-slate-300 px-4 py-3 text-sm font-bold dark:border-slate-700">Cancel edit</button>
+        {/if}
+      </div>
+      {#if formError}
+        <p role="alert" class="mt-3 text-sm font-semibold text-red-700 dark:text-red-300">{formError}</p>
+      {/if}
       {#if changes.length}
         <div class="mt-5 overflow-x-auto">
           <table class="w-full min-w-[1050px] text-left text-sm">
@@ -700,7 +714,10 @@
                   <td>{change.daRate === undefined ? '—' : change.daRate + '%'}</td>
                   <td class="max-w-[280px] whitespace-normal text-xs">{componentChangeSummary(change)}</td>
                   <td>{change.description}</td>
-                  <td class="text-right"><button type="button" onclick={() => removeChange(index)} class="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-950/40">Remove</button></td>
+                  <td class="whitespace-nowrap text-right">
+                    <button type="button" onclick={() => editChange(index)} class="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-bold dark:border-slate-700">Edit</button>
+                    <button type="button" onclick={() => removeChange(index)} class="ml-1 rounded-lg border border-red-200 px-2.5 py-1.5 text-xs font-bold text-red-700 dark:border-red-900 dark:text-red-300">Remove</button>
+                  </td>
                 </tr>
               {/each}
             </tbody>
