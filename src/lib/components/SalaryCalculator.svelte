@@ -446,10 +446,17 @@
                   </div>
                   <p class="field-help">Choose the scheme supported by your appointment/service records or latest DDO confirmation. Do not infer CPS/CPF or OPS eligibility from appointment date alone.</p>
                   {#if form.pensionMode === 'cps'}
-                    <div class="mt-4">
-                      <label for="cpsRate" class="field-label">Employee CPS / CPF contribution rate (%)</label>
-                      <input id="cpsRate" type="number" min="0" max="100" step="0.01" bind:value={form.cpsRate} class="field-control" />
-                      <p class="field-help">The standard reference is 10%. Change this only when an applicable order or DDO record confirms a different rate.</p>
+                    <div class="mt-4 grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label for="cpsRate" class="field-label">Employee CPS / CPF rate (%)</label>
+                        <input id="cpsRate" type="number" min="0" max="100" step="0.01" bind:value={form.cpsRate} class="field-control" />
+                        <p class="field-help">Standard reference: 10%. Confirm against applicable rules/orders.</p>
+                      </div>
+                      <div>
+                        <label for="cpsEmployerRate" class="field-label">State matching contribution rate (%)</label>
+                        <input id="cpsEmployerRate" type="number" min="0" max="100" step="0.01" bind:value={form.cpsEmployerRate} class="field-control" />
+                        <p class="field-help">Displayed separately; not deducted from employee take-home.</p>
+                      </div>
                     </div>
                   {:else if form.pensionMode === 'gpf' || form.pensionMode === 'manual'}
                     <div class="mt-4">
