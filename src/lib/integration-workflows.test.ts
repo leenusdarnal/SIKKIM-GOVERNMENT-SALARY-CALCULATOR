@@ -26,89 +26,6 @@ const salaryInput = (overrides: Partial<SalaryInput> = {}): SalaryInput => ({
   professionalTaxLevelBand: 'level-15-and-above',
   gis: 10,
   ...overrides
-
-  it('carries GPF validation consistently from payslip into the arrears calculation', () => {
-    const input = salaryInput({
-      pensionMode: 'gpf',
-      gpfMembershipConfirmed: true,
-      gpfReferencePay: 56_000,
-      manualPension: 3_360
-    });
-    const payslip = buildPayslipModel('2026-04', employee, input);
-    const salary = calculateSalary(input);
-
-    expect(payslip.valid).toBe(true);
-    expect(salary.employeePension).toBe(3_360);
-    expect(salary.employerCpsContribution).toBe(0);
-    expect(salary.totalDeductions).toBe(
-      salary.employeePension + salary.professionalTax + salary.gis +
-      salary.stampFee + salary.otherDeductions
-    );
-
-    const arrears = calculateArrears(baseArrearsInput({
-      baseSalary: input,
-      monthlyRecords: [
-        { month: '2026-01', actualTakeHome: salary.takeHome, recovery: 0 },
-        { month: '2026-02', actualTakeHome: salary.takeHome, recovery: 0 },
-        { month: '2026-03', actualTakeHome: salary.takeHome, recovery: 0 }
-      ]
-    }));
-    expect(arrears.valid).toBe(true);
-    expect(arrears.rows.every((row) => row.employeePension === 3_360)).toBe(true);
-    expect(arrears.rows.every((row) => row.employerCpsContribution === 0)).toBe(true);
-    expect(arrears.totals.netArrears).toBe(0);
-  });
-
-  it('passes a matrix-based pay-placement result into the effective-dated arrears workflow', () => {
-    const currentMatrixPay = getPayAtCell(17, 1);
-    expect(currentMatrixPay).not.toBeNull();
-
-    const placement = findNextMatrixCellAtOrAbove(17, (currentMatrixPay ?? 0) + 1);
-    expect(placement.valid).toBe(true);
-    expect(placement.matrixBasicPay).toBeGreaterThan(currentMatrixPay ?? 0);
-
-    const result = calculateArrears(baseArrearsInput({
-      baseSalary: salaryInput({ basicPay: currentMatrixPay ?? 56_000 }),
-      changes: [{
-        effectiveMonth: '2026-02',
-        type: 'pay-fixation',
-        basicPay: placement.matrixBasicPay ?? 0,
-        description: 'Test fixture: matrix cell placement confirmed for the scenario'
-      }]
-    }));
-
-    expect(result.valid).toBe(true);
-    expect(result.rows.map((row) => row.basicPay)).toEqual([
-      currentMatrixPay,
-      placement.matrixBasicPay,
-      placement.matrixBasicPay
-    ]);
-  });
-
-  it('feeds explicitly configured salary figures into the retirement estimator without assuming rule values', () => {
-    const salary = calculateSalary(salaryInput());
-    const estimate = calculateRetirementEstimate({
-      ...DEFAULT_RETIREMENT_INPUT,
-      pensionableEmoluments: salary.basicPay,
-      pensionRatePercent: 50,
-      commutationPercent: 30,
-      commutationMultiplierMonths: 100,
-      gratuityEmoluments: salary.basicPay,
-      gratuityServiceUnits: 20,
-      gratuityMultiplier: 1,
-      gratuityDivisor: 2,
-      gratuityCeiling: 500_000,
-      leaveSalaryMonthly: salary.basicPay,
-      eligibleLeaveDays: 30,
-      leaveEncashmentDivisor: 30
-    });
-
-    expect(estimate.valid).toBe(true);
-    expect(estimate.monthlyPension).toBe(28_000);
-    expect(estimate.residualMonthlyPension).toBe(19_600);
-    expect(estimate.gratuity).toBe(500_000);
-    expect(estimate.leaveEncashment).toBe(56_000);
-  });
 });
 
 const employee = {
@@ -318,5 +235,88 @@ describe('cross-module salary workflow integration', () => {
       arrears.rows[0].employeePension + arrears.rows[0].employerCpsContribution
     );
     expect(arrears.rows[0].netArrears).toBe(0);
+  });
+
+  it('carries GPF validation consistently from payslip into the arrears calculation', () => {
+    const input = salaryInput({
+      pensionMode: 'gpf',
+      gpfMembershipConfirmed: true,
+      gpfReferencePay: 56_000,
+      manualPension: 3_360
+    });
+    const payslip = buildPayslipModel('2026-04', employee, input);
+    const salary = calculateSalary(input);
+
+    expect(payslip.valid).toBe(true);
+    expect(salary.employeePension).toBe(3_360);
+    expect(salary.employerCpsContribution).toBe(0);
+    expect(salary.totalDeductions).toBe(
+      salary.employeePension + salary.professionalTax + salary.gis +
+      salary.stampFee + salary.otherDeductions
+    );
+
+    const arrears = calculateArrears(baseArrearsInput({
+      baseSalary: input,
+      monthlyRecords: [
+        { month: '2026-01', actualTakeHome: salary.takeHome, recovery: 0 },
+        { month: '2026-02', actualTakeHome: salary.takeHome, recovery: 0 },
+        { month: '2026-03', actualTakeHome: salary.takeHome, recovery: 0 }
+      ]
+    }));
+    expect(arrears.valid).toBe(true);
+    expect(arrears.rows.every((row) => row.employeePension === 3_360)).toBe(true);
+    expect(arrears.rows.every((row) => row.employerCpsContribution === 0)).toBe(true);
+    expect(arrears.totals.netArrears).toBe(0);
+  });
+
+  it('passes a matrix-based pay-placement result into the effective-dated arrears workflow', () => {
+    const currentMatrixPay = getPayAtCell(17, 1);
+    expect(currentMatrixPay).not.toBeNull();
+
+    const placement = findNextMatrixCellAtOrAbove(17, (currentMatrixPay ?? 0) + 1);
+    expect(placement.valid).toBe(true);
+    expect(placement.matrixBasicPay).toBeGreaterThan(currentMatrixPay ?? 0);
+
+    const result = calculateArrears(baseArrearsInput({
+      baseSalary: salaryInput({ basicPay: currentMatrixPay ?? 56_000 }),
+      changes: [{
+        effectiveMonth: '2026-02',
+        type: 'pay-fixation',
+        basicPay: placement.matrixBasicPay ?? 0,
+        description: 'Test fixture: matrix cell placement confirmed for the scenario'
+      }]
+    }));
+
+    expect(result.valid).toBe(true);
+    expect(result.rows.map((row) => row.basicPay)).toEqual([
+      currentMatrixPay,
+      placement.matrixBasicPay,
+      placement.matrixBasicPay
+    ]);
+  });
+
+  it('feeds explicitly configured salary figures into the retirement estimator without assuming rule values', () => {
+    const salary = calculateSalary(salaryInput());
+    const estimate = calculateRetirementEstimate({
+      ...DEFAULT_RETIREMENT_INPUT,
+      pensionableEmoluments: salary.basicPay,
+      pensionRatePercent: 50,
+      commutationPercent: 30,
+      commutationMultiplierMonths: 100,
+      gratuityEmoluments: salary.basicPay,
+      gratuityServiceUnits: 20,
+      gratuityMultiplier: 1,
+      gratuityDivisor: 2,
+      gratuityCeiling: 500_000,
+      leaveSalaryMonthly: salary.basicPay,
+      eligibleLeaveDays: 30,
+      leaveEncashmentDivisor: 30
+    });
+
+    expect(estimate.valid).toBe(true);
+    expect(estimate.monthlyPension).toBe(28_000);
+    expect(estimate.residualMonthlyPension).toBe(19_600);
+    expect(estimate.gratuity).toBe(500_000);
+    expect(estimate.leaveEncashment).toBe(56_000);
   });
 });
