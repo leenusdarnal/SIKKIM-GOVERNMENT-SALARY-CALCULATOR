@@ -15,7 +15,9 @@
 - Transport allowance is a fixed INR amount; DA, HRA and SBCA are percentages.
 - Integrated the schedule resolver into the arrears calculation model. The caller explicitly selects which components are schedule-controlled; each month resolves the effective rate and carries its source reference into the row's applied-change audit trail.
 - The arrears calculation is blocked for the selected historical period if any month lacks a verified rate, the schedule is invalid, or a component is selected more than once.
-- The existing arrears UI has not yet been extended to author and persist the full schedule. This integration is available through the typed arrears input model; UI and draft-persistence integration are a separate follow-on task.
+- Added a responsive arrears-planner editor to add, edit and delete entries, select schedule-controlled components, record source references and applicability notes, and mark employee applicability as verified.
+- Unverified entries may be retained in a draft, but the calculation engine will not apply them. Selected components must have verified coverage for every arrears month.
+- Historical schedule entries and selected components are included in browser autosave and versioned JSON backup/restore. Existing version-1 drafts without these optional fields remain compatible.
 
 ## Validation
 Run npm run check, npm test and npm run build in CI. Production deployment remains deferred until all planned implementation and final QA stages are complete.
