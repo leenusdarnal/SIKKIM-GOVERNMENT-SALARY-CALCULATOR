@@ -867,6 +867,19 @@
           <div class="border-t border-slate-500 pt-2"><strong>DDO / Accounts verification</strong><p class="mt-1">Verified with relevant service, order and payroll records.</p><p class="mt-8">Name / designation: ___________</p><p class="mt-2">Signature / seal: ______________</p><p class="mt-2">Date: ________________________</p></div>
         </div>
       </section>
+    {:else}
+      <section class="print-statement rounded-2xl border border-amber-300 bg-white p-6 text-slate-950">
+        <header class="border-b-2 border-slate-800 pb-4 text-center">
+          <p class="text-xs font-bold uppercase tracking-widest">Sikkim Government · Employee salary calculation</p>
+          <h2 class="mt-2 text-2xl font-black">Salary / Arrears Statement — Withheld</h2>
+          <p class="mt-1 text-xs">Draft status · Not ready for calculation or submission</p>
+        </header>
+        <div class="mt-5 rounded-xl border border-amber-400 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
+          <strong>No printable arrears statement is available.</strong>
+          <p class="mt-2">Complete the salary and historical-rate validation, enter actual credited take-home pay for every month in the selected period, and resolve all validation issues before generating the official-looking draft statement.</p>
+          <p class="mt-2">The audit CSV remains available for reviewing incomplete or blocked scenarios. This notice is not a pay certificate, arrears calculation, sanction or payment authority.</p>
+        </div>
+      </section>
     {/if}
 
     <section class="rounded-2xl border border-slate-200 bg-white p-5 text-sm leading-6 dark:border-slate-800 dark:bg-slate-900">
