@@ -22,6 +22,14 @@ It is an independent estimate utility, not a payroll, pay-fixation or sanctionin
 
 A final net total and CSV statement are withheld until actual credited pay has been entered for every month. Negative monthly/overall balances are retained and displayed as possible overpayment or recoverable balance; they are not silently clamped to zero.
 
+## Draft safety and data exchange
+
+- A versioned JSON scenario backup contains the opening salary basis, effective-dated changes, monthly credited-pay entries and recoveries. Import is validated before it replaces the current form.
+- A valid working scenario is automatically saved to browser-local storage. It remains on that browser profile only; it is not encrypted, synced or backed up to a Government server.
+- Monthly credited-pay and recovery entries can be imported using the supplied CSV template. Duplicate months, out-of-period rows, negative amounts and malformed files are rejected.
+- Effective-dated changes can be edited or removed before recalculation. Editing preserves the other entries and re-runs the full validation.
+- Keep a separate JSON backup when working on a shared device or before clearing browser data. Do not include employee identity or bank account information in order/reference notes.
+
 ## Change rules
 
 - Changes take effect for the whole effective month and every later month in the selected period.
@@ -37,7 +45,7 @@ A final net total and CSV statement are withheld until actual credited pay has b
 - CPS/CPF is recalculated by the existing salary engine as 10% of Basic Pay + DA. A dated switch to GPF/manual pension uses the manually entered subscription amount. Professional Tax automatic mode uses the calculator's indicative slabs; select manual mode and use the amount shown on the applicable payslip/order where appropriate.
 - Each monthly row and CSV includes an itemized breakdown of DA, HRA, SBCA, transport, other earnings, employee pension/GPF, Professional Tax, GIS, stamp fee and other deductions.
 - Actual pay is compared at the net credited level. The planner does not independently reconstruct old gross salary or historical deduction schedules.
-- The historical component schedule is not a legal rules engine. Effective months and revised component amounts must be taken from the employee's actual orders, eligibility records and payslips. No interest on arrears, tax recomputation, DA on pre-revised pay, leave salary, partial-month proration, rounding variations between DDO systems or pension revision is calculated.
+- The historical component schedule is not a legal rules engine. Effective months and revised component amounts must be taken from the employee's actual orders, eligibility records and payslips. No interest on arrears, income-tax recomputation, DA on pre-revised pay, leave salary, partial-month proration, rounding variations between DDO systems or pension revision is calculated.
 - An additional recovery must not duplicate a deduction already included in the actual net credited salary.
 
 ## Source references
