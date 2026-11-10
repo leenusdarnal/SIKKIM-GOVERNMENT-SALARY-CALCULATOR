@@ -85,3 +85,14 @@ The 10% Basic Pay + DA employee / equal State contribution is the Finance Depart
 
 ### Limitation
 This is a calculation safeguard, not an official GPF account verification or payroll authorization. Confirm the current amended rule text, applicable reference emoluments, subscription election and any permitted subscription change with the Accounts / DDO section before using the output for payroll.
+
+
+## Retirement estimator boundary QA — 10 November 2026
+
+- Pension estimation now requires both a positive pensionable-emoluments base and positive pension percentage when the pension section is used.
+- Commutation is either wholly unused or requires both a positive percentage and approved multiplier, plus a valid positive pension estimate.
+- Gratuity and leave encashment now require complete input sets when either section is used; partial formula inputs are rejected.
+- Invalid/incomplete inputs suppress all monetary result fields instead of leaving partial amounts visible beside validation errors.
+- Derived calculations must fit within the safe whole-rupee numeric range. Overflow/unsafe results are rejected.
+- Tests cover percentage boundaries, residual pension, gratuity ceilings, leave divisors, rounding, missing formula values, negative/non-finite values and overflow.
+- No scheme eligibility, formula, service unit, ceiling or leave entitlement has been preloaded or inferred.
