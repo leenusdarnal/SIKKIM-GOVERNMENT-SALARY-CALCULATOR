@@ -183,6 +183,7 @@ describe('Sikkim salary arrears planner', () => {
     expect(result.valid).toBe(true);
     expect(result.rows[0].employeePension).toBe(baseSalary.basicPay * 0.1 + Math.round(baseSalary.basicPay * baseSalary.daRate / 100) * 0.1);
     expect(result.rows[1].employeePension).toBe(2_500);
+    expect(result.rows[1].employerCpsContribution).toBe(0);
     expect(result.rows[1].professionalTax).toBe(175);
     expect(result.rows[1].gis).toBe(20);
     expect(result.rows[1].stampFee).toBe(10);
