@@ -35,6 +35,17 @@ function makeInput(overrides: Partial<ArrearsInput> = {}): ArrearsInput {
 }
 
 describe('Professional Tax pay-level safeguards in arrears', () => {
+
+  it('blocks arrears calculations when salary bases exceed the safe amount range', () => {
+    const result = calculateArrears({
+      ...input(),
+      baseSalary: { ...input().baseSalary, basicPay: Number.MAX_VALUE }
+    });
+    expect(result.valid).toBe(false);
+    expect(result.rows).toHaveLength(0);
+    expect(result.errors.join(' ')).toContain('supported calculation range');
+  });
+
   it('blocks automatic Professional Tax when the pay-level band is missing', () => {
     const result = calculateArrears(makeInput({ baseSalary: { ...baseSalary, professionalTaxLevelBand: 'unselected' } }));
     expect(result.valid).toBe(false);
