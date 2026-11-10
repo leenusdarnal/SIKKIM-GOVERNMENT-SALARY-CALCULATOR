@@ -1,23 +1,37 @@
 import { expect, test } from '@playwright/test';
 
 test.describe('Sikkim salary calculator browser workflows', () => {
-  test('the main calculator computes a Level 17 salary with the correct Sikkim PT band', async ({ page }) => {
+  test('the main calculator starts simple and reveals optional salary tools after the first result', async ({ page }) => {
     await page.goto('/');
     await page.locator('[data-client-ready="true"]').first().waitFor();
+
+    await expect(page.locator('#salaryMonth')).toHaveCount(0);
+    await expect(page.locator('details summary').filter({ hasText: 'Allowances & deductions' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: /Generate a salary slip/ })).toHaveCount(0);
 
     await page.locator('#level').selectOption('17');
     await expect(page.locator('#cell')).toBeEnabled();
     await page.locator('#cell').selectOption('1');
-    await page.locator('#daRate').fill('60');
+
+    await page.getByRole('button', { name: 'Calculate Salary' }).click();
+
+    const result = page.locator('.result-card');
+    await expect(result).toBeVisible();
+    await expect(result).toContainText('Estimated monthly gross salary');
+    await expect(result).toContainText('₹89,600');
+    await expect(result).not.toContainText('Estimated take-home pay');
+
+    await expect(page.locator('details summary').filter({ hasText: 'Allowances & deductions' })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Generate a salary slip/ })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Calculate salary arrears/ })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Plan GPF contributions/ })).toBeVisible();
 
     await page.locator('details summary').filter({ hasText: 'Allowances & deductions' }).click();
     await page.locator('#pensionMode').selectOption('none');
     await page.locator('#ptMode').selectOption('auto');
+    await page.getByRole('button', { name: 'Apply details and calculate take-home pay' }).click();
 
-    await page.getByRole('button', { name: 'Calculate monthly salary' }).click();
-
-    const result = page.locator('.result-card');
-    await expect(result).toBeVisible();
+    await expect(result).toContainText('Estimated take-home pay');
     await expect(result).toContainText('₹89,400');
     await expect(result).toContainText('₹89,600');
     await expect(page.getByText('Professional Tax (Project reference estimate — Level 15 and above — ₹200)', { exact: false })).toBeVisible();
