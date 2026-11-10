@@ -6,6 +6,7 @@ import {
   getArrearsMonthKeys,
   type ArrearsInput
 } from './arrears';
+import type { HistoricalRateEntry } from './historical-rates';
 
 const baseSalary: SalaryInput = {
   ...DEFAULT_SALARY_INPUT,
@@ -209,4 +210,51 @@ describe('Sikkim salary arrears planner', () => {
     expect(csv).toContain('Professional Tax (INR)');
     expect(csv).toContain('Total Employee Deductions (INR)');
   });
+  it('uses verified historical DA rates month by month in arrears calculations', () => {
+    const historicalRateSchedule: HistoricalRateEntry[] = [
+      { component: 'daRate', effectiveFrom: '2026-01', effectiveTo: '2026-02', value: 58, unit: 'percent', sourceReference: 'Verified DA Order A', verified: true },
+      { component: 'daRate', effectiveFrom: '2026-03', value: 60, unit: 'percent', sourceReference: 'Verified DA Order B', verified: true }
+    ];
+    const result = calculateArrears(makeInput({
+      historicalRateSchedule,
+      historicalRateComponents: ['daRate']
+    }));
+    expect(result.valid).toBe(true);
+    expect(result.rows.map((row) => row.daRate)).toEqual([58, 58, 60]);
+    expect(result.rows[2].appliedChanges).toContain('Historical daRate: 60% (Verified DA Order B)');
+  });
+
+  it('blocks arrears calculation when a selected historical rate is missing', () => {
+    const result = calculateArrears(makeInput({
+      historicalRateSchedule: [
+        { component: 'daRate', effectiveFrom: '2026-01', effectiveTo: '2026-02', value: 58, unit: 'percent', sourceReference: 'Verified DA Order A', verified: true }
+      ],
+      historicalRateComponents: ['daRate']
+    }));
+    expect(result.valid).toBe(false);
+    expect(result.rows).toHaveLength(0);
+    expect(result.errors.some((message) => message.includes('2026-03: missing verified historical rate(s): daRate'))).toBe(true);
+  });
+
+  it('requires the schedule and selected component list together', () => {
+    const result = calculateArrears(makeInput({
+      historicalRateComponents: ['daRate']
+    }));
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain('Provide both a historical rate schedule and its selected components.');
+  });
+
+  it('rejects duplicate historical component selections and overlapping source periods', () => {
+    const result = calculateArrears(makeInput({
+      historicalRateSchedule: [
+        { component: 'daRate', effectiveFrom: '2026-01', value: 58, unit: 'percent', sourceReference: 'Order A', verified: true },
+        { component: 'daRate', effectiveFrom: '2026-02', value: 60, unit: 'percent', sourceReference: 'Order B', verified: true }
+      ],
+      historicalRateComponents: ['daRate', 'daRate']
+    }));
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain('Historical rate components must not contain duplicates.');
+    expect(result.errors.some((message) => message.includes('Overlapping effective periods'))).toBe(true);
+  });
+
 });
