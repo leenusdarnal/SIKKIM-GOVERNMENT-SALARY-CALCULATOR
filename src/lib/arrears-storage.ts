@@ -26,9 +26,9 @@ function isObject(value: unknown): value is Record<string, unknown> {
 }
 
 const NUMERIC_SALARY_FIELDS = [
-  'basicPay', 'daRate', 'hraRate', 'hraMinimum', 'sbcaRate', 'cpsRate',
+  'basicPay', 'daRate', 'hraRate', 'hraMinimum', 'sbcaRate',
   'transportAllowance', 'otherEarnings', 'manualPension', 'manualProfessionalTax',
-  'gis', 'stampFee', 'incomeTaxTds', 'otherDeductions'
+  'gis', 'stampFee', 'otherDeductions'
 ] as const;
 
 function isSalaryInput(value: unknown): value is SalaryInput {
@@ -169,7 +169,7 @@ export function restoreArrearsScenario(json: string, storage: StorageLike): Arre
 }
 
 function csvCell(value: string): string {
-  return '"' + value.replace(/"/g, '""') + '"';
+  return /[",\r\n]/.test(value) ? '"' + value.replace(/"/g, '""') + '"' : value;
 }
 
 export function createArrearsEntryTemplateCsv(months: string[]): string {
