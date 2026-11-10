@@ -422,7 +422,7 @@
   <meta name="description" content="Prepare a month-by-month Sikkim Government salary arrears estimate using verified basic pay, DA changes, increments, promotion fixation, actual credited salary and recoveries." />
 </svelte:head>
 
-<main class="min-h-screen bg-[#f4f6f3] px-4 py-8 text-slate-900 dark:bg-[#0b1411] dark:text-slate-100 sm:px-8">
+<main data-client-ready={storageReady ? 'true' : 'false'} class="min-h-screen bg-[#f4f6f3] px-4 py-8 text-slate-900 dark:bg-[#0b1411] dark:text-slate-100 sm:px-8">
   <div class="mx-auto max-w-7xl space-y-6">
     <div class="no-print flex flex-wrap items-center justify-between gap-3">
       <a href="/" class="text-sm font-bold text-emerald-800 hover:underline dark:text-emerald-400">← Back to salary calculator</a>
