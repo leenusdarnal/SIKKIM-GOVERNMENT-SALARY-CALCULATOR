@@ -92,7 +92,7 @@ function isHistoricalRateEntry(value: unknown): value is HistoricalRateEntry {
   if (!isObject(value)) return false;
   const components = ['daRate', 'hraRate', 'sbcaRate', 'transportAllowance'];
   const component = String(value.component);
-  const validMonth = (v: unknown) => typeof v === 'string' && /^\\d{4}-(0[1-9]|1[0-2])$/.test(v);
+  const validMonth = (v: unknown) => typeof v === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(v);
   const expectedUnit = component === 'transportAllowance' ? 'inr' : 'percent';
   const maximum = component === 'daRate' ? 200 : component === 'transportAllowance' ? Number.MAX_SAFE_INTEGER : 100;
   return components.includes(component) && validMonth(value.effectiveFrom) &&
