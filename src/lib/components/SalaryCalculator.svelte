@@ -437,7 +437,7 @@
                   <p class="mb-3 text-xs font-extrabold uppercase tracking-[0.15em] text-slate-500">Pension and provident fund</p>
                   <div>
                     <label for="pensionMode" class="field-label">Pension deduction scheme</label>
-                    <select id="pensionMode" value={form.pensionMode} onchange={(event) => { form.pensionMode = (event.currentTarget as HTMLSelectElement).value as SalaryInput['pensionMode']; form.cpsMembershipConfirmed = false; form.gpfMembershipConfirmed = false; hasCalculated = false; }} class="field-control">
+                    <select id="pensionMode" value={form.pensionMode} onchange={(event) => { form.pensionMode = (event.currentTarget as HTMLSelectElement).value as SalaryInput['pensionMode']; form.cpsMembershipConfirmed = false; form.gpfMembershipConfirmed = false; advancedApplied = false; advancedError = ''; }} class="field-control">
                       <option value="unselected" disabled>Select applicable pension arrangement</option>
                       <option value="cps">Sikkim CPS / CPF — 10% employee contribution (where covered)</option>
                       <option value="gpf">GPF — enter monthly amount</option>
@@ -448,7 +448,7 @@
                   <p class="field-help">Choose the arrangement shown in the employee’s applicable pension option, service records and DDO / Accounts confirmation. Do not infer CPS/CPF or OPS eligibility from appointment date alone.</p>
                   {#if form.pensionMode === 'cps'}
                     <label class="mt-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
-                      <input type="checkbox" checked={form.cpsMembershipConfirmed === true} onchange={(event) => { form.cpsMembershipConfirmed = (event.currentTarget as HTMLInputElement).checked; hasCalculated = false; }} class="mt-1 size-4 shrink-0" />
+                      <input type="checkbox" checked={form.cpsMembershipConfirmed === true} onchange={(event) => { form.cpsMembershipConfirmed = (event.currentTarget as HTMLInputElement).checked; advancedApplied = false; advancedError = ''; }} class="mt-1 size-4 shrink-0" />
                       <span>I have verified this employee’s CPS / CPF membership and the applicable contribution basis against the signed pension option / order, service record and DDO / Accounts confirmation.</span>
                     </label>
                     <p class="field-help">The 9 February 2024 DOP notification announced restoration of OPS for employees appointed on or after 1 April 2006 and said detailed reversion modalities would follow. Confirm the employee’s actual option / implementation status; appointment date alone is not sufficient. <a class="underline" href="https://dop.sikkim.gov.in/notificationdoc/23.pdf" target="_blank" rel="noreferrer">Notification No. 23/GEN/DOP</a>.</p>
@@ -467,7 +467,7 @@
                       </div>
                     </div>
                     <label class="mt-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
-                      <input type="checkbox" checked={form.gpfMembershipConfirmed === true} onchange={(event) => { form.gpfMembershipConfirmed = (event.currentTarget as HTMLInputElement).checked; hasCalculated = false; }} class="mt-1 size-4 shrink-0" />
+                      <input type="checkbox" checked={form.gpfMembershipConfirmed === true} onchange={(event) => { form.gpfMembershipConfirmed = (event.currentTarget as HTMLInputElement).checked; advancedApplied = false; advancedError = ''; }} class="mt-1 size-4 shrink-0" />
                       <span>I have verified the employee’s GPF account / membership and authority to subscribe against the service record and DDO / Accounts confirmation.</span>
                     </label>
                     <p class="field-help">GPF is an employee subscription only. No employer matching contribution is added.</p>
