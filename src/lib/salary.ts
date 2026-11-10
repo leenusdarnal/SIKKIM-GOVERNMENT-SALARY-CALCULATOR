@@ -79,8 +79,8 @@ const safeAmount = (amount: number): number =>
   Number.isFinite(amount) && amount > 0 ? amount : 0;
 
 export function getSikkimProfessionalTax(levelBand: ProfessionalTaxLevelBand): { amount: number; band: string } {
-  if (levelBand === 'below-level-15') return { amount: 150, band: 'Below Level 15 — ₹150' };
-  if (levelBand === 'level-15-and-above') return { amount: 200, band: 'Level 15 and above — ₹200' };
+  if (levelBand === 'below-level-15') return { amount: 150, band: 'Project reference estimate — below Level 15 — ₹150' };
+  if (levelBand === 'level-15-and-above') return { amount: 200, band: 'Project reference estimate — Level 15 and above — ₹200' };
   return { amount: 0, band: 'Pay-level band not selected — amount not calculated' };
 }
 
