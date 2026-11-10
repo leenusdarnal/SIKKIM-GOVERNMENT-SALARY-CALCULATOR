@@ -24,3 +24,12 @@ Review date: 9 November 2026
 - Promotion fixation and retrospective arrears are not automated in this phase; the 2018 Rules contain separate option-dependent procedures, and retrospective calculations require historical DA/allowance/deduction orders.
 
 This page is a recordkeeping and scenario aid, not an official pay-fixation authority.
+
+
+## Authority-led pay-matrix placement cross-check — 10 November 2026
+
+- Added a separate matrix placement worksheet. The user selects a target pay level and enters the fixation basic pay already confirmed by a signed order, Accounts section or DDO.
+- The helper locates the exact published cell or the first published cell at or above the entered amount. It reports the difference and rejects values above the last printed cell; no extrapolation is performed.
+- The worksheet does not calculate or assume any fitment factor, promotional increment, financial-upgradation entitlement, option, eligibility condition or effective date.
+- A next-higher cell is explicitly a comparison result, not an approved fixation. The controlling record remains the applicable signed order and DDO calculation.
+- Regression tests cover exact matches, next-higher cells, invalid levels, non-positive / non-finite amounts and the final-cell boundary.
