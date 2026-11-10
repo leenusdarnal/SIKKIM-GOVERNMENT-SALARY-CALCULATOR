@@ -1,4 +1,4 @@
-import { calculateSalary, type SalaryInput } from './salary';
+import { calculateSalary, validateGpfSubscription, type SalaryInput } from './salary';
 import { resolveHistoricalRates, validateHistoricalRateSchedule, type HistoricalRateComponent, type HistoricalRateEntry } from './historical-rates';
 
 export type ArrearChangeType =
@@ -136,6 +136,9 @@ function validateSalaryBasis(input: SalaryInput): string[] {
   if (input.cpsMembershipConfirmed !== undefined && typeof input.cpsMembershipConfirmed !== 'boolean') {
     errors.push('CPS membership confirmation must be a boolean value.');
   }
+  if (input.gpfMembershipConfirmed !== undefined && typeof input.gpfMembershipConfirmed !== 'boolean') {
+    errors.push('GPF membership confirmation must be a boolean value.');
+  }
   if (!(input.basicPay > 0)) errors.push('Enter a basic pay greater than zero.');
   if (input.daRate > 200) errors.push('DA rate must be between 0% and 200%.');
   if (input.hraRate > 100 || input.sbcaRate > 100) {
@@ -150,6 +153,9 @@ function validateSalaryBasis(input: SalaryInput): string[] {
   if (input.pensionMode === 'cps' && input.cpsMembershipConfirmed !== true) {
     errors.push('Confirm CPS membership and the applicable contribution basis in the opening salary record before calculating arrears.');
   }
+  if (input.pensionMode === 'gpf') {
+    errors.push(...validateGpfSubscription(input.gpfReferencePay, input.manualPension, input.gpfMembershipConfirmed));
+  }
   if (!['auto', 'manual', 'none'].includes(input.professionalTaxMode)) {
     errors.push('Select a Professional Tax treatment before calculating arrears.');
   }
@@ -162,7 +168,7 @@ function validateSalaryBasis(input: SalaryInput): string[] {
 
 const ALLOWED_SALARY_UPDATE_KEYS = new Set([
   'hraEligible', 'hraRate', 'hraMinimum', 'sbcaRate',
-  'transportAllowance', 'otherEarnings', 'pensionMode', 'cpsMembershipConfirmed', 'manualPension',
+  'transportAllowance', 'otherEarnings', 'pensionMode', 'cpsMembershipConfirmed', 'gpfMembershipConfirmed', 'gpfReferencePay', 'manualPension',
   'professionalTaxMode', 'professionalTaxLevelBand', 'manualProfessionalTax', 'gis', 'stampFee', 'otherDeductions'
 ]);
 
@@ -191,8 +197,8 @@ function validateSalaryUpdate(update: ArrearSalaryUpdate, index: number): string
       }
       continue;
     }
-    if (key === 'cpsMembershipConfirmed') {
-      if (value !== true) errors.push('Change ' + (index + 1) + ': CPS membership and contribution basis can only be marked confirmed after verification.');
+    if (key === 'cpsMembershipConfirmed' || key === 'gpfMembershipConfirmed') {
+      if (value !== true) errors.push('Change ' + (index + 1) + ': pension-fund membership can only be marked confirmed after verification.');
       continue;
     }
     if (key === 'professionalTaxLevelBand') {
@@ -249,6 +255,14 @@ function validateChange(change: ArrearChange, index: number, months: string[]): 
   }
   if (change.salaryUpdates?.pensionMode === 'cps' && change.salaryUpdates.cpsMembershipConfirmed !== true) {
     errors.push('Change ' + (index + 1) + ': confirm CPS membership and contribution basis in the effective-dated change before applying CPS.');
+  }
+  if (change.salaryUpdates?.pensionMode === 'gpf') {
+    const gpfErrors = validateGpfSubscription(
+      change.salaryUpdates.gpfReferencePay ?? 0,
+      change.salaryUpdates.manualPension ?? 0,
+      change.salaryUpdates.gpfMembershipConfirmed
+    );
+    errors.push(...gpfErrors.map((message) => 'Change ' + (index + 1) + ': ' + message));
   }
   if (change.type === 'allowance-deduction') {
     if (change.salaryUpdates === undefined) {
