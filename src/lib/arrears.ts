@@ -271,13 +271,16 @@ export function calculateArrears(input: ArrearsInput): ArrearsResult {
   if (new Set(selectedHistoricalComponents).size !== selectedHistoricalComponents.length) {
     errors.push('Historical rate components must not contain duplicates.');
   }
+  const selectedHistoricalSchedule = (input.historicalRateSchedule ?? []).filter((entry) =>
+    selectedHistoricalComponents.includes(entry.component)
+  );
   if (input.historicalRateSchedule !== undefined) {
-    errors.push(...validateHistoricalRateSchedule(input.historicalRateSchedule));
+    errors.push(...validateHistoricalRateSchedule(selectedHistoricalSchedule));
   }
   const historicalByMonth = new Map<string, ReturnType<typeof resolveHistoricalRates>>();
   if (input.historicalRateSchedule !== undefined && input.historicalRateComponents !== undefined) {
     for (const month of months) {
-      const resolution = resolveHistoricalRates(month, input.historicalRateSchedule, selectedHistoricalComponents);
+      const resolution = resolveHistoricalRates(month, selectedHistoricalSchedule, selectedHistoricalComponents);
       if (resolution.errors.length) errors.push(...resolution.errors.map((message) => month + ': ' + message));
       if (!resolution.complete) {
         errors.push(month + ': missing verified historical rate(s): ' + resolution.missing.join(', ') + '.');
