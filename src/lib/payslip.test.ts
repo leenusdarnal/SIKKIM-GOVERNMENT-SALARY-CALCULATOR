@@ -1,6 +1,6 @@
 import {describe,expect,it} from 'vitest';
 import {addOrReplacePayslipMonth,buildPayslipModel,createPayslipCsv} from './payslip';
-import {DEFAULT_SALARY_INPUT} from './salary';
+import {calculateSalary,DEFAULT_SALARY_INPUT} from './salary';
 const input={...DEFAULT_SALARY_INPUT,basicPay:50000,daRate:0,hraRate:0,professionalTaxMode:'none' as const,pensionMode:'none' as const};
 const employee={name:'Test Employee',employeeId:'T-01',designation:'Assistant',department:'Test Dept',office:'HQ',district:'Gangtok',payLevel:'Level 10',cell:'Cell 1'};
 describe('monthly payslip',()=>{
@@ -20,6 +20,19 @@ describe('monthly payslip',()=>{
   expect(buildPayslipModel('2026-13',employee,input).valid).toBe(false);
   expect(buildPayslipModel('2026-11',employee,input,[{month:'2026-10',gross:-1,deductions:0,net:0}]).valid).toBe(false);
   expect(buildPayslipModel('2026-11',employee,input,[{month:'2026-10',gross:1,deductions:0,net:1},{month:'2026-10',gross:1,deductions:0,net:1}]).valid).toBe(false);
+ });
+ it('blocks CPS payslip calculations until membership and contribution basis are confirmed',()=>{
+  const unconfirmed=buildPayslipModel('2026-11',employee,{...input,pensionMode:'cps',cpsMembershipConfirmed:false});
+  expect(unconfirmed.valid).toBe(false);
+  expect(unconfirmed.errors.join(' ')).toContain('Confirm the employee CPS membership');
+  const confirmedInput={...input,pensionMode:'cps' as const,cpsMembershipConfirmed:true};
+  const confirmed=buildPayslipModel('2026-11',employee,confirmedInput);
+  const salary=calculateSalary(confirmedInput);
+  expect(confirmed.valid).toBe(true);
+  expect(confirmed.salary.employeePension).toBe(salary.employeePension);
+  expect(confirmed.salary.employerCpsContribution).toBe(salary.employeePension);
+  expect(confirmed.salary.totalDeductions).toBe(confirmed.salary.employeePension);
+  expect(confirmed.salary.takeHome).toBe(confirmed.salary.gross-confirmed.salary.employeePension);
  });
  it('requires a Sikkim pay-level band for automatic Professional Tax',()=>{
   const m=buildPayslipModel('2026-11',employee,{...input,professionalTaxMode:'auto',professionalTaxLevelBand:'unselected'});
