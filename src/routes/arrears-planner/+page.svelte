@@ -723,6 +723,7 @@
           <div class="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800"><p class="text-xs text-slate-500">Revised take-home total</p><p class="mt-1 text-xl font-black">{fmt(result.totals.revisedTakeHome)}</p></div>
           <div class="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800"><p class="text-xs text-slate-500">Actual credited total</p><p class="mt-1 text-xl font-black">{result.complete ? fmt(result.totals.actualTakeHome) : 'Pending'}</p></div>
           <div class="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800"><p class="text-xs text-slate-500">Additional recoveries</p><p class="mt-1 text-xl font-black">{fmt(result.totals.recoveries)}</p></div>
+          <div class="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800"><p class="text-xs text-slate-500">Employer / State CPS share (separate)</p><p class="mt-1 text-xl font-black">{fmt(result.totals.employerCpsContribution)}</p></div>
           <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900 dark:bg-emerald-950/30"><p class="text-xs text-emerald-800 dark:text-emerald-300">{result.complete ? 'Net arrears / balance' : 'Net arrears estimate'}</p><p class="mt-1 text-xl font-black text-emerald-950 dark:text-emerald-100">{result.complete ? fmt(result.totals.netArrears) : 'Incomplete'}</p></div>
         </div>
         {#if !result.complete}
@@ -739,7 +740,7 @@
           <table class="w-full min-w-[2100px] text-left text-sm">
             <thead>
               <tr class="border-b border-slate-200 text-[10px] uppercase tracking-wide text-slate-500 dark:border-slate-700">
-                <th class="py-3">Month</th><th>Basic pay</th><th>DA rate</th><th>DA</th><th>HRA</th><th>SBCA</th><th>Transport</th><th>Other earnings</th><th>Revised gross</th><th>CPS / GPF</th><th>Professional Tax</th><th>GIS</th><th>Stamp fee</th><th>Other deductions</th><th>Total deductions</th><th>Revised take-home</th><th>Actual net paid (₹)</th><th>Recovery (₹)</th><th>Net difference</th>
+                <th class="py-3">Month</th><th>Basic pay</th><th>DA rate</th><th>DA</th><th>HRA</th><th>SBCA</th><th>Transport</th><th>Other earnings</th><th>Revised gross</th><th>Employee CPS / GPF</th><th>Employer CPS share (separate)</th><th>Professional Tax</th><th>GIS</th><th>Stamp fee</th><th>Other deductions</th><th>Total deductions</th><th>Revised take-home</th><th>Actual net paid (₹)</th><th>Recovery (₹)</th><th>Net difference</th>
               </tr>
             </thead>
             <tbody>
@@ -755,6 +756,7 @@
                   <td>{fmt(row.otherEarnings)}</td>
                   <td>{fmt(row.grossEntitlement)}</td>
                   <td>{fmt(row.employeePension)}</td>
+                  <td>{fmt(row.employerCpsContribution)}</td>
                   <td>{fmt(row.professionalTax)}</td>
                   <td>{fmt(row.gis)}</td>
                   <td>{fmt(row.stampFee)}</td>
@@ -806,11 +808,11 @@
           <p><strong>Pay level:</strong> {statementMetadata.payLevel || 'Not provided'}</p><p><strong>Cell / stage:</strong> {statementMetadata.cell || 'Not provided'}</p>
         </div>
         <div class="mt-5 overflow-x-auto"><table class="w-full min-w-[900px] border-collapse text-xs">
-          <thead><tr class="border-y border-slate-400 text-left"><th class="py-2">Month</th><th>Basic</th><th>DA</th><th>HRA</th><th>SBCA</th><th>Transport</th><th>Other</th><th>Gross</th><th>Deductions</th><th>Revised net</th><th>Actual paid</th><th>Recovery</th><th>Difference</th></tr></thead>
-          <tbody>{#each printableStatement.rows as row}<tr class="border-b border-slate-200"><td class="py-2">{row.month}</td><td>{fmt(row.basicPay)}</td><td>{fmt(row.da)}</td><td>{fmt(row.hra)}</td><td>{fmt(row.sbca)}</td><td>{fmt(row.transportAllowance)}</td><td>{fmt(row.otherEarnings)}</td><td>{fmt(row.grossEntitlement)}</td><td>{fmt(row.employeeDeductions)}</td><td>{fmt(row.revisedTakeHome)}</td><td>{fmt(row.actualTakeHome)}</td><td>{fmt(row.recovery)}</td><td>{fmt(row.netArrears)}</td></tr>{/each}</tbody>
+          <thead><tr class="border-y border-slate-400 text-left"><th class="py-2">Month</th><th>Basic</th><th>DA</th><th>HRA</th><th>SBCA</th><th>Transport</th><th>Other</th><th>Gross</th><th>Employee deductions</th><th>Employer CPS share (separate)</th><th>Revised net</th><th>Actual paid</th><th>Recovery</th><th>Difference</th></tr></thead>
+          <tbody>{#each printableStatement.rows as row}<tr class="border-b border-slate-200"><td class="py-2">{row.month}</td><td>{fmt(row.basicPay)}</td><td>{fmt(row.da)}</td><td>{fmt(row.hra)}</td><td>{fmt(row.sbca)}</td><td>{fmt(row.transportAllowance)}</td><td>{fmt(row.otherEarnings)}</td><td>{fmt(row.grossEntitlement)}</td><td>{fmt(row.employeeDeductions)}</td><td>{fmt(row.employerCpsContribution)}</td><td>{fmt(row.revisedTakeHome)}</td><td>{fmt(row.actualTakeHome)}</td><td>{fmt(row.recovery)}</td><td>{fmt(row.netArrears)}</td></tr>{/each}</tbody>
         </table></div>
         <div class="mt-5 grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
-          <p><strong>Revised gross</strong><br />{fmt(printableStatement.totals.grossEntitlement)}</p><p><strong>Deductions</strong><br />{fmt(printableStatement.totals.employeeDeductions)}</p>
+          <p><strong>Revised gross</strong><br />{fmt(printableStatement.totals.grossEntitlement)}</p><p><strong>Employee deductions</strong><br />{fmt(printableStatement.totals.employeeDeductions)}</p><p><strong>Employer / State CPS share (separate)</strong><br />{fmt(printableStatement.totals.employerCpsContribution)}</p>
           <p><strong>Revised take-home</strong><br />{fmt(printableStatement.totals.revisedTakeHome)}</p><p><strong>Actual credited</strong><br />{fmt(printableStatement.totals.actualTakeHome)}</p>
           <p><strong>Additional recoveries</strong><br />{fmt(printableStatement.totals.recoveries)}</p><p><strong>Positive arrears</strong><br />{fmt(printableStatement.totals.positiveArrears)}</p>
           <p><strong>Negative balance</strong><br />{fmt(Math.abs(printableStatement.totals.negativeBalance))}</p><p><strong>Net arrears / balance</strong><br /><strong>{fmt(printableStatement.totals.netArrears)}</strong></p>
