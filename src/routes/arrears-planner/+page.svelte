@@ -11,6 +11,7 @@
     type ArrearsInput
   } from '../../lib/arrears';
   import { DEFAULT_SALARY_INPUT, type SalaryInput } from '../../lib/salary';
+  import { buildArrearsStatement, type ArrearsStatementMetadata } from '../../lib/arrears-statement';
   import HistoricalRateEditor from '../../lib/HistoricalRateEditor.svelte';
   import type { HistoricalRateComponent, HistoricalRateEntry } from '../../lib/historical-rates';
   import {
@@ -57,6 +58,8 @@
   let storageReady = $state(false);
   let storageBlocked = $state(false);
   let storageStatus = $state('Loading saved draft…');
+  // Session-only metadata: deliberately excluded from autosaved drafts and backups.
+  let statementMetadata = $state<ArrearsStatementMetadata>({ employeeName: '', employeeId: '', designation: '', department: '', office: '', district: '', payLevel: '', cell: '' });
 
   function currentInput(): ArrearsInput {
     return {
@@ -232,6 +235,7 @@
     } : {})
   }));
   const missingPaidMonths = $derived(result.rows.filter((row) => row.actualTakeHome === null).length);
+  const printableStatement = $derived(buildArrearsStatement(result, statementMetadata));
   const historicalCoverage = $derived(months.flatMap((month) =>
     historicalRateComponents.map((component) => {
       const matches = historicalRateSchedule.filter((entry) =>
@@ -670,7 +674,7 @@
           <p class="mt-1 max-w-3xl text-sm leading-6 text-slate-500 dark:text-slate-400">The revised take-home is calculated for each month. Fill in the net amount actually credited and any additional recovery to be deducted from this arrears settlement.</p>
         </div>
         <div class="no-print flex flex-wrap gap-2">
-          <button type="button" onclick={printStatement} class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold dark:border-slate-700">Print statement</button>
+          <button type="button" onclick={printStatement} disabled={!printableStatement} class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold disabled:opacity-40 dark:border-slate-700">Print salary / arrears statement</button>
           <button type="button" onclick={exportAuditCsv} class="rounded-lg border border-emerald-800 px-3 py-2 text-xs font-bold text-emerald-900 dark:border-emerald-500 dark:text-emerald-300">Download audit report</button>
           <button type="button" onclick={exportCsv} disabled={!result.valid || !result.complete} class="rounded-lg bg-emerald-800 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40">Download CSV</button>
         </div>
@@ -740,6 +744,55 @@
       {/if}
     </section>
 
+    <section class="no-print rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
+      <p class="text-xs font-extrabold uppercase tracking-[0.15em] text-emerald-800 dark:text-emerald-400">04 · Printable statement</p>
+      <h2 class="mt-1 text-xl font-black">Employee and office details</h2>
+      <p class="mt-1 text-sm text-slate-500">Optional metadata is session-only and is not stored in your arrears draft.</p>
+      <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <label class="text-sm font-bold">Employee name<input bind:value={statementMetadata.employeeName} class="mt-1 w-full rounded-xl border p-3 dark:border-slate-700 dark:bg-transparent" /></label>
+        <label class="text-sm font-bold">Employee ID (optional)<input bind:value={statementMetadata.employeeId} class="mt-1 w-full rounded-xl border p-3 dark:border-slate-700 dark:bg-transparent" /></label>
+        <label class="text-sm font-bold">Designation<input bind:value={statementMetadata.designation} class="mt-1 w-full rounded-xl border p-3 dark:border-slate-700 dark:bg-transparent" /></label>
+        <label class="text-sm font-bold">Department<input bind:value={statementMetadata.department} class="mt-1 w-full rounded-xl border p-3 dark:border-slate-700 dark:bg-transparent" /></label>
+        <label class="text-sm font-bold">Office / establishment<input bind:value={statementMetadata.office} class="mt-1 w-full rounded-xl border p-3 dark:border-slate-700 dark:bg-transparent" /></label>
+        <label class="text-sm font-bold">District<input bind:value={statementMetadata.district} class="mt-1 w-full rounded-xl border p-3 dark:border-slate-700 dark:bg-transparent" /></label>
+        <label class="text-sm font-bold">Pay level<input bind:value={statementMetadata.payLevel} placeholder="As per pay matrix" class="mt-1 w-full rounded-xl border p-3 dark:border-slate-700 dark:bg-transparent" /></label>
+        <label class="text-sm font-bold">Cell / stage<input bind:value={statementMetadata.cell} placeholder="As per pay matrix" class="mt-1 w-full rounded-xl border p-3 dark:border-slate-700 dark:bg-transparent" /></label>
+      </div>
+      <p class="mt-3 text-xs text-slate-500">Use the browser Print dialog and select Save as PDF. A statement is available only after validation succeeds and actual credited pay is entered for every month.</p>
+      {#if !printableStatement}<p class="mt-2 text-sm font-semibold text-amber-800">Complete validation and monthly actual-pay entries to enable the statement. The audit CSV remains available for incomplete scenarios.</p>{:else}<p class="mt-2 text-sm font-semibold text-emerald-800">Ready for print preview. Verify all figures and source orders before submission.</p>{/if}
+    </section>
+    {#if printableStatement}
+      <section class="print-statement rounded-2xl border border-slate-300 bg-white p-6 text-slate-950">
+        <header class="border-b-2 border-slate-800 pb-4 text-center">
+          <p class="text-xs font-bold uppercase tracking-widest">Sikkim Government · Employee salary calculation</p>
+          <h2 class="mt-2 text-2xl font-black">Salary / Arrears Calculation Statement</h2>
+          <p class="mt-1 text-xs">Draft for verification · {startMonth} to {endMonth}</p>
+        </header>
+        <div class="mt-4 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+          <p><strong>Employee:</strong> {statementMetadata.employeeName || 'Not provided'}</p><p><strong>Employee ID:</strong> {statementMetadata.employeeId || 'Not provided'}</p>
+          <p><strong>Designation:</strong> {statementMetadata.designation || 'Not provided'}</p><p><strong>Department:</strong> {statementMetadata.department || 'Not provided'}</p>
+          <p><strong>Office:</strong> {statementMetadata.office || 'Not provided'}</p><p><strong>District:</strong> {statementMetadata.district || 'Not provided'}</p>
+          <p><strong>Pay level:</strong> {statementMetadata.payLevel || 'Not provided'}</p><p><strong>Cell / stage:</strong> {statementMetadata.cell || 'Not provided'}</p>
+        </div>
+        <div class="mt-5 overflow-x-auto"><table class="w-full min-w-[900px] border-collapse text-xs">
+          <thead><tr class="border-y border-slate-400 text-left"><th class="py-2">Month</th><th>Basic</th><th>DA</th><th>HRA</th><th>SBCA</th><th>Transport</th><th>Other</th><th>Gross</th><th>Deductions</th><th>Revised net</th><th>Actual paid</th><th>Recovery</th><th>Difference</th></tr></thead>
+          <tbody>{#each printableStatement.rows as row}<tr class="border-b border-slate-200"><td class="py-2">{row.month}</td><td>{fmt(row.basicPay)}</td><td>{fmt(row.da)}</td><td>{fmt(row.hra)}</td><td>{fmt(row.sbca)}</td><td>{fmt(row.transportAllowance)}</td><td>{fmt(row.otherEarnings)}</td><td>{fmt(row.grossEntitlement)}</td><td>{fmt(row.employeeDeductions)}</td><td>{fmt(row.revisedTakeHome)}</td><td>{fmt(row.actualTakeHome)}</td><td>{fmt(row.recovery)}</td><td>{fmt(row.netArrears)}</td></tr>{/each}</tbody>
+        </table></div>
+        <div class="mt-5 grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
+          <p><strong>Revised gross</strong><br />{fmt(printableStatement.totals.grossEntitlement)}</p><p><strong>Deductions</strong><br />{fmt(printableStatement.totals.employeeDeductions)}</p>
+          <p><strong>Revised take-home</strong><br />{fmt(printableStatement.totals.revisedTakeHome)}</p><p><strong>Actual credited</strong><br />{fmt(printableStatement.totals.actualTakeHome)}</p>
+          <p><strong>Additional recoveries</strong><br />{fmt(printableStatement.totals.recoveries)}</p><p><strong>Positive arrears</strong><br />{fmt(printableStatement.totals.positiveArrears)}</p>
+          <p><strong>Negative balance</strong><br />{fmt(Math.abs(printableStatement.totals.negativeBalance))}</p><p><strong>Net arrears / balance</strong><br /><strong>{fmt(printableStatement.totals.netArrears)}</strong></p>
+        </div>
+        <div class="mt-4 border-t pt-3 text-xs"><strong>Applied changes / order references</strong><ul class="mt-1 list-disc pl-5">{#each printableStatement.appliedChanges as ref}<li>{ref}</li>{:else}<li>No effective-dated change reference entered.</li>{/each}</ul></div>
+        <p class="mt-4 border border-amber-500 bg-amber-50 p-3 text-xs font-semibold">This is a draft calculation from user-entered inputs, not an official pay certificate, pay-fixation approval or arrears sanction. Verify service records, applicable orders, eligibility, payslips, deductions and rounding with DDO / Accounts before payment or submission.</p>
+        <div class="mt-8 grid grid-cols-2 gap-10 text-xs">
+          <div class="border-t border-slate-500 pt-2"><strong>Employee declaration</strong><p class="mt-1">I have checked the details and supporting records entered above.</p><p class="mt-8">Signature: ____________________</p><p class="mt-2">Date: ________________________</p></div>
+          <div class="border-t border-slate-500 pt-2"><strong>DDO / Accounts verification</strong><p class="mt-1">Verified with relevant service, order and payroll records.</p><p class="mt-8">Name / designation: ___________</p><p class="mt-2">Signature / seal: ______________</p><p class="mt-2">Date: ________________________</p></div>
+        </div>
+      </section>
+    {/if}
+
     <section class="rounded-2xl border border-slate-200 bg-white p-5 text-sm leading-6 dark:border-slate-800 dark:bg-slate-900">
       <h2 class="font-extrabold">Government references and limitations</h2>
       <ul class="mt-2 list-disc space-y-1 pl-5 text-slate-600 dark:text-slate-300">
@@ -751,3 +804,16 @@
     </section>
   </div>
 </main>
+<style>
+@media print {
+  @page { size: A4 landscape; margin: 12mm; }
+  :global(body) { background: #fff !important; color: #000 !important; }
+  .no-print { display: none !important; }
+  main { min-height: 0 !important; padding: 0 !important; background: #fff !important; color: #000 !important; }
+  main > div { max-width: none !important; }
+  .print-statement { border: 0 !important; box-shadow: none !important; padding: 0 !important; break-inside: avoid; }
+  .print-statement table { min-width: 0 !important; width: 100% !important; font-size: 7pt !important; }
+  .print-statement th, .print-statement td { padding: 2px 3px !important; }
+  .print-statement p, .print-statement li { color: #000 !important; }
+}
+</style>
