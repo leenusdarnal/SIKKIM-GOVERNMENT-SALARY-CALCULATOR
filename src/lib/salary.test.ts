@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calculateSalary, DEFAULT_SALARY_INPUT, getSikkimProfessionalTax } from './salary';
+import { calculateSalary, DEFAULT_SALARY_INPUT, getSikkimProfessionalTax, validateGpfSubscription } from './salary';
 import { PAY_LEVELS, PAY_MATRIX, PAY_MATRIX_CELL_COUNTS, PAY_MATRIX_TOTAL_CELLS } from './data/pay-matrix';
 
 describe('Sikkim pay matrix', () => {
@@ -160,9 +160,25 @@ describe('salary calculation', () => {
     expect(result.professionalTaxBand).toBe('Manual override');
   });
 
-  it('uses manual GPF without creating an employer CPS match', () => {
-    const result = calculateSalary({ ...base, pensionMode: 'gpf', manualPension: 2_000 });
+  it('uses a confirmed GPF amount within the reference-pay range without creating an employer match', () => {
+    const result = calculateSalary({ ...base, pensionMode: 'gpf', gpfMembershipConfirmed: true, gpfReferencePay: 30_000, manualPension: 2_000 });
     expect(result.employeePension).toBe(2_000);
     expect(result.employerCpsContribution).toBe(0);
+    expect(result.totalDeductions).toBe(2_000 + result.professionalTax);
+  });
+
+  it('does not calculate GPF when membership is unconfirmed or amount is outside the rule range', () => {
+    expect(calculateSalary({ ...base, pensionMode: 'gpf', gpfMembershipConfirmed: false, gpfReferencePay: 30_000, manualPension: 2_000 }).employeePension).toBe(0);
+    expect(calculateSalary({ ...base, pensionMode: 'gpf', gpfMembershipConfirmed: true, gpfReferencePay: 30_000, manualPension: 1_799 }).employeePension).toBe(0);
+    expect(calculateSalary({ ...base, pensionMode: 'gpf', gpfMembershipConfirmed: true, gpfReferencePay: 30_000, manualPension: 30_001 }).employeePension).toBe(0);
+  });
+
+  it('validates GPF boundaries and requires membership and reference pay', () => {
+    expect(validateGpfSubscription(30_000, 1_800, true)).toEqual([]);
+    expect(validateGpfSubscription(30_000, 30_000, true)).toEqual([]);
+    expect(validateGpfSubscription(30_000, 1_799, true).join(' ')).toContain('6%–100%');
+    expect(validateGpfSubscription(30_000, 30_001, true).join(' ')).toContain('6%–100%');
+    expect(validateGpfSubscription(0, 2_000, true).join(' ')).toContain('reference pay');
+    expect(validateGpfSubscription(30_000, 2_000, false).join(' ')).toContain('GPF account');
   });
 });
