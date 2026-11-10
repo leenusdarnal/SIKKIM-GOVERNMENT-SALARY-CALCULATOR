@@ -37,10 +37,21 @@ export function buildPayslipModel(month: string, employee: PayslipEmployee, sala
   }
   const unique = new Set(history.map(r=>r.month));
   if (unique.size !== history.length) errors.push('Annual history contains duplicate months.');
+  const numericFields: (keyof SalaryInput)[] = ['basicPay','daRate','hraRate','hraMinimum','sbcaRate','transportAllowance','otherEarnings','manualPension','manualProfessionalTax','gis','stampFee','otherDeductions'];
+  for (const field of numericFields) {
+    const value = salaryInput[field];
+    if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) errors.push('Salary input ' + field + ' must be a valid non-negative amount.');
+  }
+  if (!(salaryInput.basicPay > 0)) errors.push('Enter a basic pay greater than zero.');
+  if (salaryInput.daRate > 200) errors.push('DA rate must not exceed 200%.');
+  if (salaryInput.hraRate > 100 || salaryInput.sbcaRate > 100) errors.push('HRA and SBCA rates must not exceed 100%.');
+  if (typeof salaryInput.hraEligible !== 'boolean') errors.push('Select whether the employee is eligible for HRA.');
+  if (!['cps','gpf','manual','none'].includes(salaryInput.pensionMode)) errors.push('Select the applicable pension / GPF treatment.');
+  if (!['auto','manual','none'].includes(salaryInput.professionalTaxMode)) errors.push('Select a Professional Tax treatment.');
   if (salaryInput.professionalTaxMode === 'auto' && !['below-level-15','level-15-and-above'].includes(salaryInput.professionalTaxLevelBand)) errors.push('Select the employee pay-level band for Sikkim Professional Tax.');
   const salary = calculateSalary(salaryInput);
   const year = Number(month.slice(0,4));
-  const yearRecords = history.filter(r=>r.month.startsWith(String(year)+'-') && r.month !== month).concat({
+  const yearRecords = history.filter(r=>r.month.startsWith(String(year)+'-') && r.month < month).concat({
     month, gross:salary.gross, deductions:salary.totalDeductions, net:salary.takeHome
   }).sort((a,b)=>a.month.localeCompare(b.month));
   const previousMonth = history.filter(r=>r.month < month).sort((a,b)=>b.month.localeCompare(a.month))[0] ?? null;
@@ -84,6 +95,6 @@ export function createPayslipCsv(model: PayslipModel): string {
     ['Net take-home',model.salary.takeHome],['Employer CPS contribution (informational)',model.salary.employerCpsContribution],
     ['Annual gross to date',model.annual.gross],['Annual deductions to date',model.annual.deductions],['Annual net to date',model.annual.net]
   ];
-  const cell=(v:string|number)=>'"'+String(v).replace(/"/g,'""')+'"';
+  const cell=(v:string|number)=>{ let value=String(v); if (/^[\\u0000-\\u0020]*[=+@-]/.test(value)) value="'"+value; return '"'+value.replace(/"/g,'""')+'"'; };
   return '\uFEFF'+rows.map(row=>row.map(cell).join(',')).join(String.fromCharCode(13,10))+String.fromCharCode(13,10);
 }
