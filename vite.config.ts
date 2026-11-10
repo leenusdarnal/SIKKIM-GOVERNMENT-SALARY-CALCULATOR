@@ -12,7 +12,13 @@ const adapter = isGitHubPages
 export default defineConfig({
   plugins: [
     tailwindcss(),
-    sveltekit({ adapter })
+    sveltekit({
+      adapter,
+      paths: {
+        base: isGitHubPages ? '/SIKKIM-GOVERNMENT-SALARY-CALCULATOR' : ''
+      },
+      ...(isGitHubPages ? { prerender: { entries: ['*'] } } : {})
+    })
   ],
   test: {
     environment: 'node',
