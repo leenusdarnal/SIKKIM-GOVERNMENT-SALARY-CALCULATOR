@@ -429,10 +429,10 @@
                     <select id="ptMode" bind:value={form.professionalTaxMode} class="field-control">
                       <option value="unselected" disabled>Select Professional Tax treatment</option>
                       <option value="manual">Manual amount from payslip (recommended)</option>
-                      <option value="auto">Automatic — based on selected pay level</option>
+                      <option value="auto">Reference estimate — based on selected pay level</option>
                       <option value="none">Not applicable / exempt</option>
                     </select>
-                    <p class="field-help">Automatic mode uses the selected pay level: ₹150 below Level 15 and ₹200 for Level 15 and above, as per the Sikkim-specific rule supplied for this calculator. Confirm applicability and any exemption with DDO / Accounts.</p>
+                    <p class="field-help">This is an optional project reference estimate using ₹150 below Level 15 and ₹200 at Level 15 and above. The current official salary/wage schedule lists income-based ranges, and its published boundary wording needs clarification. Do not treat this estimate as a verified statutory rule; use the manual amount from the employee’s current payslip / DDO unless the pay-level rule is confirmed for that employee.</p>
                   </div>
                   {#if form.professionalTaxMode === 'manual'}
                     <div class="mt-4">
@@ -567,7 +567,7 @@
                 <div class="flex gap-3"><span class="number-dot">2</span><p class="text-xs leading-5 text-slate-600 dark:text-slate-400"><strong class="text-slate-900 dark:text-slate-200">HRA and SBCA</strong> use editable reference rates; HRA can be switched off.</p></div>
                 <div class="flex gap-3"><span class="number-dot">3</span><p class="text-xs leading-5 text-slate-600 dark:text-slate-400"><strong class="text-slate-900 dark:text-slate-200">CPS</strong> is calculated only after individual membership and the applicable contribution basis are confirmed; the State share is shown separately.</p></div>
                 <div class="flex gap-3"><span class="number-dot">4</span><p class="text-xs leading-5 text-slate-600 dark:text-slate-400"><strong class="text-slate-900 dark:text-slate-200">GPF</strong> requires confirmed account membership, the Accounts-confirmed reference pay for the subscription year, and a monthly subscription within the 6%–100% range.</p></div>
-                <div class="flex gap-3"><span class="number-dot">5</span><p class="text-xs leading-5 text-slate-600 dark:text-slate-400"><strong class="text-slate-900 dark:text-slate-200">Professional Tax</strong> uses the Sikkim pay-level bands: ₹150 below Level 15 and ₹200 for Level 15 and above.</p></div>
+                <div class="flex gap-3"><span class="number-dot">5</span><p class="text-xs leading-5 text-slate-600 dark:text-slate-400"><strong class="text-slate-900 dark:text-slate-200">Professional Tax</strong> offers a project reference estimate of ₹150 / ₹200 by pay level, but the user should prefer a manually verified payslip amount unless the current rule is confirmed with DDO / Accounts.</p></div>
               </div>
             </section>
           </section>
