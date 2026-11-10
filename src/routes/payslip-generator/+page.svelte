@@ -1,4 +1,5 @@
 <script lang="ts">
+ import { onMount } from 'svelte';
  import {DEFAULT_SALARY_INPUT,type SalaryInput} from '../../lib/salary';
  import {addOrReplacePayslipMonth,buildPayslipModel,createPayslipCsv,type PayslipEmployee,type PayslipMonthRecord} from '../../lib/payslip';
  let month=$state('2026-11');
@@ -6,6 +7,8 @@
  let input=$state<SalaryInput>({...DEFAULT_SALARY_INPUT,daRate:0,hraRate:0,sbcaRate:0,professionalTaxMode:'unselected',pensionMode:'unselected'});
  let history=$state<PayslipMonthRecord[]>([]);
  let notice=$state('');
+ let clientReady=$state(false);
+ onMount(()=>{clientReady=true;});
  const model=$derived(buildPayslipModel(month,employee,input,history));
  const fmt=(v:number)=>new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:0}).format(v);
  const update=(key:keyof SalaryInput,value:number|boolean|string)=>input={...input,[key]:value,...(key==='pensionMode'?{cpsMembershipConfirmed:false,gpfMembershipConfirmed:false}:{})};
@@ -15,7 +18,7 @@
  const amounts=[['basicPay','Basic pay (₹)'],['daRate','DA rate (%)'],['hraRate','HRA rate (%)'],['hraMinimum','HRA minimum (₹)'],['sbcaRate','SBCA rate (%)'],['transportAllowance','Transport allowance (₹)'],['otherEarnings','Other earnings (₹)'],['manualPension','Employee pension / other pension (₹)'], ['manualProfessionalTax','Professional Tax override (₹)'],['gis','GIS (₹)'],['stampFee','Stamp / fixed fee (₹)'],['otherDeductions','Other deductions (₹)']] as const;
 </script>
 <svelte:head><title>Monthly Salary Slip | Sikkim Government Salary Calculator</title><meta name="description" content="Prepare an indicative monthly salary slip, annual summary and month comparison for Sikkim Government employees."/></svelte:head>
-<main class="min-h-screen bg-[#f4f6f3] px-4 py-8 text-slate-900 dark:bg-[#0b1411] dark:text-slate-100 sm:px-8">
+<main data-client-ready={clientReady ? 'true' : 'false'} class="min-h-screen bg-[#f4f6f3] px-4 py-8 text-slate-900 dark:bg-[#0b1411] dark:text-slate-100 sm:px-8">
  <div class="mx-auto max-w-6xl space-y-6">
   <a href="/" class="text-sm font-bold text-emerald-800 hover:underline dark:text-emerald-400">← Back to salary calculator</a>
   <header><p class="text-xs font-extrabold uppercase tracking-[0.2em] text-emerald-800 dark:text-emerald-400">Sikkim Government employee utility</p><h1 class="mt-2 text-3xl font-black tracking-tight">Monthly salary slip generator</h1><p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-300">Prepare a month-wise salary statement using the existing Sikkim salary calculation engine. Enter employee-specific rates, eligibility and deductions as confirmed by the applicable orders and payroll records.</p></header>
