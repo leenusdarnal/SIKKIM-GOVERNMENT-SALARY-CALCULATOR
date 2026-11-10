@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { PAY_LEVELS, PAY_MATRIX, PAY_MATRIX_TOTAL_CELLS } from '../data/pay-matrix';
+  import { PAY_LEVELS, PAY_MATRIX } from '../data/pay-matrix';
   import {
     calculateSalary,
     DEFAULT_SALARY_INPUT,
@@ -13,10 +13,11 @@
   let selectedLevel = $state<number | ''>('');
   let selectedCell = $state<number | ''>('');
   let form = $state<SalaryInput>({ ...DEFAULT_SALARY_INPUT });
-  let appointmentDate = $state('');
   let salaryMonth = $state('2026-11');
   let calculationError = $state('');
+  let advancedError = $state('');
   let hasCalculated = $state(false);
+  let advancedApplied = $state(false);
   let clientReady = $state(false);
   let dark = $state(false);
   let matrixOpen = $state(false);
@@ -32,7 +33,20 @@
   );
   const result = $derived<SalaryResult | null>(
     hasCalculated && selectedBasic > 0
-      ? calculateSalary({ ...form, basicPay: selectedBasic })
+      ? calculateSalary(
+          advancedApplied
+            ? { ...form, basicPay: selectedBasic }
+            : {
+                ...DEFAULT_SALARY_INPUT,
+                basicPay: selectedBasic,
+                daRate: Number(form.daRate),
+                pensionMode: 'none',
+                professionalTaxMode: 'none',
+                professionalTaxLevelBand: Number(selectedLevel) >= 15
+                  ? 'level-15-and-above'
+                  : 'below-level-15'
+              }
+        )
       : null
   );
   const fmt = (value: number) =>
@@ -57,28 +71,47 @@
     selectedLevel = value === '' ? '' : Number(value);
     selectedCell = '';
     hasCalculated = false;
+    advancedApplied = false;
+    advancedError = '';
   }
 
   function calculate() {
     if (!selectedBasic) {
       hasCalculated = false;
-      calculationError = 'Choose a pay level and cell before calculating.';
+      calculationError = 'Choose a pay level and basic pay before calculating.';
       return;
     }
 
+    const daRate = Number(form.daRate);
+    if (!Number.isFinite(daRate) || daRate < 0 || daRate > 200) {
+      hasCalculated = false;
+      calculationError = 'Enter a valid DA rate between 0% and 200%.';
+      return;
+    }
+
+    calculationError = '';
+    advancedError = '';
+    advancedApplied = false;
+    hasCalculated = true;
+  }
+
+  function applyAdvanced() {
     form.professionalTaxLevelBand = Number(selectedLevel) >= 15
       ? 'level-15-and-above'
       : 'below-level-15';
 
     const errors = validateSalaryInput({ ...form, basicPay: selectedBasic });
+    if (daNeedsManualVerification && Number(form.daRate) === 0) {
+      errors.unshift('Enter the DA rate verified for the selected salary month.');
+    }
     if (errors.length) {
-      hasCalculated = false;
-      calculationError = errors[0];
+      advancedError = errors[0];
+      advancedApplied = false;
       return;
     }
 
-    calculationError = '';
-    hasCalculated = true;
+    advancedError = '';
+    advancedApplied = true;
   }
 
   function changeSalaryMonth() {
@@ -87,7 +120,8 @@
     } else if (form.daRate === 0) {
       form.daRate = 60;
     }
-    hasCalculated = false;
+    advancedApplied = false;
+    advancedError = '';
     calculationError = '';
   }
 
@@ -95,11 +129,13 @@
     selectedLevel = '';
     selectedCell = '';
     form = { ...DEFAULT_SALARY_INPUT };
-    appointmentDate = '';
     salaryMonth = '2026-11';
     calculationError = '';
+    advancedError = '';
+    advancedApplied = false;
     hasCalculated = false;
     matrixOpen = false;
+    showSources = false;
   }
 
   function toggleTheme() {
@@ -119,60 +155,18 @@
 
 <div data-client-ready={clientReady ? 'true' : 'false'} class:dark class="app-shell min-h-screen bg-[#f4f6f3] text-slate-900 transition-colors dark:bg-[#0b1411] dark:text-slate-100">
   <div class="mx-auto flex min-h-screen max-w-[1600px]">
-    <aside class="no-print hidden w-[250px] shrink-0 border-r border-slate-200/80 bg-white/80 px-5 py-6 dark:border-slate-800 dark:bg-[#0e1915] lg:flex lg:flex-col">
-      <a href="#top" class="flex items-center gap-3 rounded-2xl">
-        <span class="grid size-11 place-items-center rounded-2xl bg-emerald-800 text-white shadow-lg shadow-emerald-950/15">
-          <svg viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
-            <path d="M4 19.5V5.8L12 2l8 3.8v13.7H4Z" />
-            <path d="M8 8h8M8 11.5h8M8 15h3m2 0h3M9 19.5v-2.8h6v2.8" />
-          </svg>
-        </span>
-        <span class="min-w-0">
-          <span class="block text-sm font-black tracking-tight">Sikkim Salary</span>
-          <span class="block text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Employee tools</span>
-        </span>
-      </a>
 
-      <div class="mt-10">
-        <p class="eyebrow px-3">Workspace</p>
-        <nav class="mt-3 space-y-1" aria-label="Main navigation">
-          <a href="#calculator" class="nav-link active">
-            <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M8 7h8M8 11h2m4 0h2M8 15h2m4 0h2M8 18h8"/></svg>
-            Salary calculator
-          </a>
-          <a href="#pay-matrix" class="nav-link">
-            <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 4v16m6-16v16"/></svg>
-            Pay matrix
-          </a>
-          <a href="#sources" class="nav-link">
-            <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 3.5h10l4 4V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z"/><path d="M14 3.5V8h5M8 12h8M8 16h8"/></svg>
-            Rules & sources
-          </a>
-        </nav>
-      </div>
-
-      <div class="mt-auto space-y-4">
-        <div class="rounded-2xl border border-emerald-100 bg-emerald-50/80 p-4 dark:border-emerald-900/60 dark:bg-emerald-950/30">
-          <div class="flex items-center gap-2 text-emerald-900 dark:text-emerald-200">
-            <span class="size-2 rounded-full bg-emerald-500"></span>
-            <span class="text-xs font-extrabold">Private by design</span>
-          </div>
-          <p class="mt-2 text-[11px] leading-5 text-emerald-900/70 dark:text-emerald-100/70">Your entries stay in this browser. No employee login or payroll account is needed.</p>
-        </div>
-        <p class="px-2 text-[10px] leading-4 text-slate-400">Independent estimate tool<br/>Not an official payroll system</p>
-      </div>
-    </aside>
 
     <div class="min-w-0 flex-1">
       <header id="top" class="no-print sticky top-0 z-30 border-b border-slate-200/80 bg-[#f8faf7]/90 backdrop-blur-xl dark:border-slate-800 dark:bg-[#0b1411]/90">
         <div class="mx-auto flex min-h-[70px] max-w-[1320px] items-center gap-3 px-4 sm:px-6 xl:px-10">
-          <div class="grid size-10 shrink-0 place-items-center rounded-xl bg-emerald-800 text-white lg:hidden">
+          <div class="grid size-10 shrink-0 place-items-center rounded-xl bg-emerald-800 text-white">
             <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 19.5V5.8L12 2l8 3.8v13.7H4Z"/><path d="M8 8h8M8 11.5h8M8 15h3m2 0h3"/></svg>
           </div>
           <div class="min-w-0 flex-1">
             <p class="text-[10px] font-extrabold uppercase tracking-[0.2em] text-emerald-800 dark:text-emerald-400">Government of Sikkim · Employee utility</p>
             <p class="mt-0.5 text-sm font-extrabold tracking-tight sm:hidden">Sikkim Salary</p>
-            <p class="mt-0.5 hidden truncate text-sm font-extrabold tracking-tight sm:block">Salary estimation workspace</p>
+            <p class="mt-0.5 hidden truncate text-sm font-extrabold tracking-tight sm:block">Salary calculator</p>
           </div>
           <span class="hidden items-center gap-2 rounded-full border border-emerald-200 bg-white px-3 py-1.5 text-[11px] font-bold text-emerald-800 sm:inline-flex dark:border-emerald-900 dark:bg-slate-900 dark:text-emerald-300">
             <span class="size-1.5 rounded-full bg-emerald-500"></span>
@@ -185,68 +179,31 @@
               <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20.2 15.3A8 8 0 1 1 8.7 3.8 6.2 6.2 0 0 0 20.2 15.3Z"/></svg>
             {/if}
           </button>
-          <button type="button" onclick={printStatement} class="button-secondary hidden sm:inline-flex">
-            <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 8V3h10v5M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/><path d="M7 14h10v7H7z"/></svg>
-            Print
-          </button>
+          {#if hasCalculated}
+            <button type="button" onclick={printStatement} class="button-secondary hidden sm:inline-flex">
+              <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 8V3h10v5M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/><path d="M7 14h10v7H7z"/></svg>
+              Print
+            </button>
+          {/if}
         </div>
       </header>
 
-      <main class="mx-auto max-w-[1320px] px-4 pb-12 pt-7 sm:px-6 sm:pt-9 xl:px-10">
-        <section class="mb-8">
-          <div class="flex flex-wrap items-end justify-between gap-4">
-            <div class="max-w-3xl">
-              <p class="eyebrow">Monthly pay · Revised pay structure</p>
-              <h1 class="mt-2 text-3xl font-black tracking-[-0.04em] text-slate-950 sm:text-4xl dark:text-white">Your salary, <span class="text-emerald-800 dark:text-emerald-400">clearly explained.</span></h1>
-              <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base dark:text-slate-400">Build a monthly estimate from your Sikkim Government pay-matrix cell, then review earnings, deductions and the estimated amount in hand.</p>
-            </div>
-            <div class="flex flex-wrap gap-2">
-              <span class="stat-chip"><strong>23</strong> pay levels</span>
-              <span class="stat-chip"><strong>{PAY_MATRIX_TOTAL_CELLS}</strong> official pay cells</span>
-              <span class="stat-chip"><strong>INR</strong> currency</span>
-            </div>
-          </div>
+      <main class="mx-auto w-full max-w-3xl px-4 pb-12 pt-7 sm:px-6 sm:pt-9">
+        <section class="mb-7">
+          <p class="eyebrow">Government of Sikkim · Monthly pay estimate</p>
+          <h1 class="mt-2 text-3xl font-black tracking-[-0.04em] text-slate-950 sm:text-4xl dark:text-white">Sikkim Government Salary Calculator</h1>
+          <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base dark:text-slate-400">Select your Pay Matrix level, Basic Pay and Dearness Allowance to calculate your monthly salary.</p>
         </section>
 
-        <section class="mb-7 grid gap-3 sm:grid-cols-3">
-          <article class="info-tile">
-            <span class="info-icon bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-              <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 18V6m0 12h16M7 14l3-3 3 2 5-6"/></svg>
-            </span>
-            <div><p class="text-xs font-bold text-slate-500 dark:text-slate-400">Pay structure</p><p class="mt-1 text-sm font-extrabold">2018 Revised Pay Matrix</p></div>
-          </article>
-          <article class="info-tile">
-            <span class="info-icon bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300">
-              <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3v18m5-14H9.5a3 3 0 0 0 0 6h5a3 3 0 0 1 0 6H6"/></svg>
-            </span>
-            <div><p class="text-xs font-bold text-slate-500 dark:text-slate-400">DA reference input</p><p class="mt-1 text-sm font-extrabold">60% reported from Jan 2026</p></div>
-          </article>
-          <article class="info-tile">
-            <span class="info-icon bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-              <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3 3 20h18L12 3Z"/><path d="M12 9v5m0 3h.01"/></svg>
-            </span>
-            <div><p class="text-xs font-bold text-slate-500 dark:text-slate-400">Important</p><p class="mt-1 text-sm font-extrabold">Verify eligibility & current orders</p></div>
-          </article>
-        </section>
-
-        <section id="temporary-pay" class="mb-7 scroll-mt-28 surface-card flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-          <div class="min-w-0">
-            <p class="eyebrow">Separate pay pathway · Temporary appointments</p>
-            <h2 class="mt-1 text-xl font-black tracking-tight">Temporary employee & training pay</h2>
-            <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-400">Use the dedicated notification-based calculator for effective-date checks, employee/post applicability confirmation and the Labour Department daily-wage evidence required for temporary drivers. No unverified temporary-pay amount is calculated in this regular salary form.</p>
-          </div>
-          <a href="/temporary-pay" class="button-primary shrink-0">Open temporary pay calculator</a>
-        </section>
-
-        <div class="grid items-start gap-6 xl:grid-cols-[minmax(0,1.02fr)_minmax(390px,0.98fr)]">
+        <div class="mx-auto grid w-full items-start gap-6">
           <section id="calculator" class="scroll-mt-28 space-y-5">
             <div class="surface-card overflow-hidden">
               <div class="section-heading">
                 <div class="flex items-center gap-3">
                   <span class="step-badge">01</span>
                   <div>
-                    <p class="text-[10px] font-extrabold uppercase tracking-[0.17em] text-emerald-800 dark:text-emerald-400">Employee details</p>
-                    <h2 class="text-lg font-black tracking-tight">Select your basic pay</h2>
+                    <p class="text-[10px] font-extrabold uppercase tracking-[0.17em] text-emerald-800 dark:text-emerald-400">Step 1 · Select your pay</p>
+                    <h2 class="text-lg font-black tracking-tight">Choose Pay Level and Basic Pay</h2>
                   </div>
                 </div>
                 <span class="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">Required</span>
@@ -255,7 +212,7 @@
               <div class="space-y-5 p-5 sm:p-6">
                 <div class="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label for="level" class="field-label">Pay Matrix level</label>
+                    <label for="level" class="field-label">Pay Level</label>
                     <select id="level" bind:value={selectedLevel} onchange={changeLevel} class="field-control">
                       <option value="">Choose your level</option>
                       {#each PAY_LEVELS as item}
@@ -264,7 +221,7 @@
                     </select>
                   </div>
                   <div>
-                    <label for="cell" class="field-label">Pay cell</label>
+                    <label for="cell" class="field-label">Basic Pay</label>
                     <select id="cell" bind:value={selectedCell} disabled={!selectedLevel} class="field-control disabled:cursor-not-allowed disabled:opacity-50">
                       <option value="">Choose your cell</option>
                       {#each currentCells as pay, index}
@@ -288,38 +245,19 @@
                   </div>
                 </div>
 
-                <div class="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label for="salaryMonth" class="field-label">Salary month</label>
-                    <input id="salaryMonth" type="month" bind:value={salaryMonth} onchange={changeSalaryMonth} class="field-control" required />
-                    <p class="field-help">Choose the month you are estimating; rule rates may change by effective date.</p>
-                  </div>
-                  <div>
-                    <label for="appointmentDate" class="field-label">Date of appointment</label>
-                    <input id="appointmentDate" type="date" bind:value={appointmentDate} class="field-control" />
-                    <p class="field-help">Optional context for pension-scheme checks; it does not determine eligibility on its own.</p>
-                  </div>
-                </div>
-
                 <div>
                   <div class="mb-2 flex items-center justify-between gap-3">
                     <label for="daRate" class="field-label mb-0">Dearness Allowance (DA)</label>
-                    <span class="rounded-full bg-sky-50 px-2.5 py-1 text-[10px] font-extrabold text-sky-800 dark:bg-sky-950 dark:text-sky-200">{daNeedsManualVerification ? 'Rate needs verification' : '60% latest reference'}</span>
+                    <output for="daRate" class="rounded-full bg-sky-50 px-3 py-1 text-sm font-extrabold tabular-nums text-sky-800 dark:bg-sky-950 dark:text-sky-200">{Number(form.daRate).toFixed(1)}%</output>
                   </div>
-                  <div class="relative">
-                    <input id="daRate" type="number" min="0" max="200" step="0.5" bind:value={form.daRate} class="field-control pr-12 text-right font-bold tabular-nums" />
-                    <span class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-400">%</span>
-                  </div>
-                  {#if daNeedsManualVerification}
-                    <p class="field-help text-amber-700 dark:text-amber-300">The available rule register verifies 60% only for January–November 2026. For this earlier or future month, enter the rate from the applicable Finance Department order or payslip.</p>
-                  {:else}
-                    <p class="field-help">60% is the latest revised-pay reference located, effective 1 January 2026. Check for any later order covering the selected month and verify the rate for your employee category.</p>
-                  {/if}
+                  <input id="daRate" type="range" min="0" max="200" step="0.5" bind:value={form.daRate} class="w-full accent-emerald-700" aria-describedby="da-help" />
+                  <div class="mt-1 flex justify-between text-[10px] font-semibold text-slate-400"><span>0%</span><span>100%</span><span>200%</span></div>
+                  <p id="da-help" class="field-help">60% is the latest located revised-pay reference for January–November 2026. Verify the latest applicable Finance Department order before use.</p>
                 </div>
 
                 <div class="flex flex-col gap-2 border-t border-slate-100 pt-5 sm:flex-row dark:border-slate-800">
                   <button type="button" onclick={calculate} disabled={!selectedBasic} class="button-primary flex-1 disabled:cursor-not-allowed disabled:opacity-45">
-                    Calculate monthly salary
+                    Calculate Salary
                     <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>
                   </button>
                   <button type="button" onclick={reset} class="button-secondary">Reset form</button>
@@ -331,6 +269,120 @@
               </div>
             </div>
 
+
+
+            <section class="surface-card p-5 sm:p-6">
+              <h2 class="text-sm font-black">Calculation formula</h2>
+              <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                <div class="rounded-xl bg-slate-50 p-3 dark:bg-slate-800/60">
+                  <p class="text-xs font-bold text-slate-500 dark:text-slate-400">Dearness Allowance</p>
+                  <p class="mt-1 text-sm font-extrabold">Basic Pay × DA rate</p>
+                </div>
+                <div class="rounded-xl bg-slate-50 p-3 dark:bg-slate-800/60">
+                  <p class="text-xs font-bold text-slate-500 dark:text-slate-400">Basic gross estimate</p>
+                  <p class="mt-1 text-sm font-extrabold">Basic Pay + DA</p>
+                </div>
+              </div>
+              <p class="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">HRA, SBCA, transport and employee-specific deductions are not assumed in this first estimate. You can add them after calculating.</p>
+            </section>
+
+            <section class="rounded-2xl border border-amber-200/80 bg-amber-50/70 p-4 dark:border-amber-900/60 dark:bg-amber-950/20">
+              <div class="flex gap-3">
+                <svg viewBox="0 0 24 24" class="mt-0.5 size-5 shrink-0 text-amber-700 dark:text-amber-300" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3 3 20h18L12 3Z"/><path d="M12 9v5m0 3h.01"/></svg>
+                <div><p class="text-xs font-extrabold text-amber-950 dark:text-amber-100">Use this as an estimate</p><p class="mt-1 text-xs leading-5 text-amber-900/80 dark:text-amber-100/70">Rates, eligibility and deductions can change through Government orders. Confirm the applicable month, service category and employee-specific entitlements with your DDO / Accounts section.</p></div>
+              </div>
+            </section>
+          </section>
+
+          <section class="min-w-0 space-y-5">
+            {#if result}
+              <section class="result-card print-card" aria-live="polite">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p class="text-[10px] font-extrabold uppercase tracking-[0.18em] text-emerald-100/70">Monthly estimate</p>
+                    <h2 class="mt-1 text-lg font-black tracking-tight text-white">{advancedApplied ? 'Estimated take-home pay' : 'Estimated monthly gross salary'}</h2>
+                  </div>
+                  <span class="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-emerald-50">Illustrative</span>
+                </div>
+                <p class="mt-7 text-4xl font-black tracking-[-0.05em] text-white sm:text-5xl">{fmt(advancedApplied ? result.takeHome : result.gross)}</p>
+                <p class="mt-2 text-xs font-medium text-emerald-50/70">{salaryMonth} · Level {selectedLevel} · Cell {selectedCell} · Basic {fmt(result.basicPay)}</p>
+                {#if advancedApplied}
+                  <div class="mt-7 grid grid-cols-2 gap-3">
+                    <div class="rounded-2xl border border-white/10 bg-white/10 p-4">
+                      <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-50/65">Gross earnings</p>
+                      <p class="mt-1 text-xl font-extrabold text-white">{fmt(result.gross)}</p>
+                    </div>
+                    <div class="rounded-2xl border border-white/10 bg-white/10 p-4">
+                      <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-50/65">Deductions</p>
+                      <p class="mt-1 text-xl font-extrabold text-white">{fmt(result.totalDeductions)}</p>
+                    </div>
+                  </div>
+                {:else}
+                  <p class="mt-3 max-w-xl text-sm leading-6 text-emerald-50/80">This first estimate includes Basic Pay and DA only. Add applicable allowances and deductions below to estimate monthly in-hand pay.</p>
+                {/if}
+                <div class="mt-5 flex items-center justify-between gap-4 border-t border-white/15 pt-4 text-xs text-emerald-50/75">
+                  <span>Calculation updates when you edit an input after calculating.</span>
+                  <button type="button" onclick={printStatement} class="rounded-lg border border-white/20 px-3 py-2 font-bold text-white transition hover:bg-white/10">Print result</button>
+                </div>
+                {#if advancedApplied && form.pensionMode === 'cps'}
+                  <p class="mt-4 rounded-xl border border-white/15 bg-white/5 p-3 text-xs leading-5 text-emerald-50/80">After CPS membership is explicitly confirmed, this calculator applies the configured 10% employee share on Basic Pay + DA and shows an equal State share separately. Verify the applicable base and current scheme treatment against the employee’s option and Finance / DDO records.</p>
+                {/if}
+              </section>
+
+              <section class="surface-card p-5 sm:p-6">
+                <div class="flex items-center justify-between gap-3">
+                  <div><p class="eyebrow">Calculation details</p><h2 class="mt-1 text-lg font-black">Salary breakdown</h2></div>
+                  <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">INR / month</span>
+                </div>
+
+                <div class="mt-5">
+                  <div class="mb-2 flex items-center justify-between"><p class="text-[10px] font-extrabold uppercase tracking-[0.16em] text-emerald-800 dark:text-emerald-400">Earnings</p><span class="text-xs font-bold text-slate-400">{fmt(result.gross)}</span></div>
+                  <div class="divide-y divide-slate-100 rounded-xl border border-slate-200 px-4 dark:divide-slate-800 dark:border-slate-700">
+                    {#each [
+                      { label: 'Basic Pay', value: result.basicPay },
+                      { label: 'Dearness Allowance (' + result.daRate + '%)', value: result.da },
+                      ...(advancedApplied ? [
+                        { label: 'House Rent Allowance', value: result.hra },
+                        { label: 'SBCA', value: result.sbca },
+                        { label: 'Transport Allowance', value: result.transportAllowance },
+                        { label: 'Other monthly earnings', value: result.otherEarnings }
+                      ] : [])
+                    ] as item}
+                      <div class="flex items-center justify-between gap-4 py-3 text-sm"><span class="text-slate-500 dark:text-slate-400">{item.label}</span><strong class="tabular-nums">{fmt(item.value)}</strong></div>
+                    {/each}
+                  </div>
+                  <div class="mt-2 flex items-center justify-between rounded-xl bg-emerald-50 px-4 py-3 text-sm font-extrabold text-emerald-950 dark:bg-emerald-950/50 dark:text-emerald-200"><span>Gross salary</span><span class="tabular-nums">{fmt(result.gross)}</span></div>
+                </div>
+
+                {#if advancedApplied}
+                <div class="mt-6">
+                  <div class="mb-2 flex items-center justify-between"><p class="text-[10px] font-extrabold uppercase tracking-[0.16em] text-rose-700 dark:text-rose-300">Employee deductions</p><span class="text-xs font-bold text-slate-400">{fmt(result.totalDeductions)}</span></div>
+                  <div class="divide-y divide-slate-100 rounded-xl border border-slate-200 px-4 dark:divide-slate-800 dark:border-slate-700">
+                    {#each [
+                      { label: result.pensionLabel, value: result.employeePension },
+                      { label: 'Professional Tax (' + result.professionalTaxBand + ')', value: result.professionalTax },
+                      { label: 'GIS deduction', value: result.gis },
+                      { label: 'Stamp / fixed fee', value: result.stampFee },
+                      { label: 'TDS, loans and other deductions', value: result.otherDeductions }
+                    ] as item}
+                      <div class="flex items-center justify-between gap-4 py-3 text-sm"><span class="max-w-[70%] text-slate-500 dark:text-slate-400">{item.label}</span><strong class="whitespace-nowrap tabular-nums">{fmt(item.value)}</strong></div>
+                    {/each}
+                  </div>
+                  <div class="mt-2 flex items-center justify-between rounded-xl bg-rose-50 px-4 py-3 text-sm font-extrabold text-rose-950 dark:bg-rose-950/40 dark:text-rose-200"><span>Total deductions</span><span class="tabular-nums">{fmt(result.totalDeductions)}</span></div>
+                </div>
+
+                {/if}
+                {#if advancedApplied && result.employerCpsContribution > 0}
+                  <div class="mt-5 rounded-xl border border-sky-200 bg-sky-50/70 p-4 dark:border-sky-900 dark:bg-sky-950/30">
+                    <div class="flex items-start justify-between gap-4"><div><p class="text-sm font-extrabold text-sky-950 dark:text-sky-100">State matching CPS contribution</p><p class="mt-1 text-xs leading-5 text-sky-900/75 dark:text-sky-100/70">Shown separately; this amount is not deducted from employee take-home pay.</p></div><strong class="whitespace-nowrap text-sm tabular-nums text-sky-950 dark:text-sky-100">{fmt(result.employerCpsContribution)}</strong></div>
+                  </div>
+                {/if}
+              </section>
+            {/if}
+
+
+
+            {#if result}
             <details class="surface-card group">
               <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 sm:p-6">
                 <span class="flex items-center gap-3">
@@ -340,7 +392,12 @@
                 <span class="grid size-8 place-items-center rounded-full bg-slate-100 text-slate-500 transition group-open:rotate-45 dark:bg-slate-800 dark:text-slate-300"><span class="text-xl leading-none">+</span></span>
               </summary>
               <div class="space-y-5 border-t border-slate-100 px-5 py-5 sm:px-6 dark:border-slate-800">
-                <p class="text-xs leading-5 text-slate-500 dark:text-slate-400">These components can depend on posting, accommodation, appointment category and individual service conditions. Reference values are editable and should be checked against current orders and your payslip.</p>
+                <p class="text-xs leading-5 text-slate-500 dark:text-slate-400">Add employee-specific details only when you need a more complete take-home estimate. Use current orders and the employee's payslip / DDO confirmation.</p>
+                <div>
+                  <label for="salaryMonth" class="field-label">Salary month</label>
+                  <input id="salaryMonth" type="month" bind:value={salaryMonth} onchange={changeSalaryMonth} class="field-control" required />
+                  <p class="field-help">The DA reference is limited to January–November 2026. For another month, enter the rate from the applicable order or payslip.</p>
+                </div>
 
                 <div class="grid gap-4 sm:grid-cols-2">
                   <div>
@@ -457,122 +514,43 @@
                     </div>
                   </div>
                 </div>
+                <div class="border-t border-slate-100 pt-5 dark:border-slate-800">
+                  <button type="button" onclick={applyAdvanced} class="button-primary w-full">Apply details and calculate take-home pay</button>
+                  {#if advancedError}
+                    <p class="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200" role="alert">{advancedError}</p>
+                  {/if}
+                </div>
               </div>
             </details>
-
-            <section class="rounded-2xl border border-amber-200/80 bg-amber-50/70 p-4 dark:border-amber-900/60 dark:bg-amber-950/20">
-              <div class="flex gap-3">
-                <svg viewBox="0 0 24 24" class="mt-0.5 size-5 shrink-0 text-amber-700 dark:text-amber-300" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3 3 20h18L12 3Z"/><path d="M12 9v5m0 3h.01"/></svg>
-                <div><p class="text-xs font-extrabold text-amber-950 dark:text-amber-100">Use this as an estimate</p><p class="mt-1 text-xs leading-5 text-amber-900/80 dark:text-amber-100/70">Rates, eligibility and deductions can change through Government orders. Confirm the applicable month, service category and employee-specific entitlements with your DDO / Accounts section.</p></div>
-              </div>
-            </section>
-          </section>
-
-          <section class="min-w-0 space-y-5">
-            {#if result}
-              <section class="result-card print-card" aria-live="polite">
-                <div class="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p class="text-[10px] font-extrabold uppercase tracking-[0.18em] text-emerald-100/70">Monthly estimate</p>
-                    <h2 class="mt-1 text-lg font-black tracking-tight text-white">Estimated take-home pay</h2>
-                  </div>
-                  <span class="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-emerald-50">Illustrative</span>
-                </div>
-                <p class="mt-7 text-4xl font-black tracking-[-0.05em] text-white sm:text-5xl">{fmt(result.takeHome)}</p>
-                <p class="mt-2 text-xs font-medium text-emerald-50/70">{salaryMonth} · Level {selectedLevel} · Cell {selectedCell} · Basic {fmt(result.basicPay)}</p>
-                <div class="mt-7 grid grid-cols-2 gap-3">
-                  <div class="rounded-2xl border border-white/10 bg-white/10 p-4">
-                    <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-50/65">Gross earnings</p>
-                    <p class="mt-1 text-xl font-extrabold text-white">{fmt(result.gross)}</p>
-                  </div>
-                  <div class="rounded-2xl border border-white/10 bg-white/10 p-4">
-                    <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-50/65">Deductions</p>
-                    <p class="mt-1 text-xl font-extrabold text-white">{fmt(result.totalDeductions)}</p>
-                  </div>
-                </div>
-                <div class="mt-5 flex items-center justify-between gap-4 border-t border-white/15 pt-4 text-xs text-emerald-50/75">
-                  <span>Calculation updates when you edit an input after calculating.</span>
-                  <button type="button" onclick={printStatement} class="rounded-lg border border-white/20 px-3 py-2 font-bold text-white transition hover:bg-white/10">Print result</button>
-                </div>
-                {#if form.pensionMode === 'cps'}
-                  <p class="mt-4 rounded-xl border border-white/15 bg-white/5 p-3 text-xs leading-5 text-emerald-50/80">After CPS membership is explicitly confirmed, this calculator applies the configured 10% employee share on Basic Pay + DA and shows an equal State share separately. Verify the applicable base and current scheme treatment against the employee’s option and Finance / DDO records.</p>
-                {/if}
-              </section>
-
               <section class="surface-card p-5 sm:p-6">
-                <div class="flex items-center justify-between gap-3">
-                  <div><p class="eyebrow">Calculation details</p><h2 class="mt-1 text-lg font-black">Salary breakdown</h2></div>
-                  <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">INR / month</span>
-                </div>
-
-                <div class="mt-5">
-                  <div class="mb-2 flex items-center justify-between"><p class="text-[10px] font-extrabold uppercase tracking-[0.16em] text-emerald-800 dark:text-emerald-400">Earnings</p><span class="text-xs font-bold text-slate-400">{fmt(result.gross)}</span></div>
-                  <div class="divide-y divide-slate-100 rounded-xl border border-slate-200 px-4 dark:divide-slate-800 dark:border-slate-700">
-                    {#each [
-                      { label: 'Basic Pay', value: result.basicPay },
-                      { label: 'Dearness Allowance (' + result.daRate + '%)', value: result.da },
-                      { label: 'House Rent Allowance', value: result.hra },
-                      { label: 'SBCA', value: result.sbca },
-                      { label: 'Transport Allowance', value: result.transportAllowance },
-                      { label: 'Other monthly earnings', value: result.otherEarnings }
-                    ] as item}
-                      <div class="flex items-center justify-between gap-4 py-3 text-sm"><span class="text-slate-500 dark:text-slate-400">{item.label}</span><strong class="tabular-nums">{fmt(item.value)}</strong></div>
-                    {/each}
-                  </div>
-                  <div class="mt-2 flex items-center justify-between rounded-xl bg-emerald-50 px-4 py-3 text-sm font-extrabold text-emerald-950 dark:bg-emerald-950/50 dark:text-emerald-200"><span>Gross salary</span><span class="tabular-nums">{fmt(result.gross)}</span></div>
-                </div>
-
-                <div class="mt-6">
-                  <div class="mb-2 flex items-center justify-between"><p class="text-[10px] font-extrabold uppercase tracking-[0.16em] text-rose-700 dark:text-rose-300">Employee deductions</p><span class="text-xs font-bold text-slate-400">{fmt(result.totalDeductions)}</span></div>
-                  <div class="divide-y divide-slate-100 rounded-xl border border-slate-200 px-4 dark:divide-slate-800 dark:border-slate-700">
-                    {#each [
-                      { label: result.pensionLabel, value: result.employeePension },
-                      { label: 'Professional Tax (' + result.professionalTaxBand + ')', value: result.professionalTax },
-                      { label: 'GIS deduction', value: result.gis },
-                      { label: 'Stamp / fixed fee', value: result.stampFee },
-                      { label: 'TDS, loans and other deductions', value: result.otherDeductions }
-                    ] as item}
-                      <div class="flex items-center justify-between gap-4 py-3 text-sm"><span class="max-w-[70%] text-slate-500 dark:text-slate-400">{item.label}</span><strong class="whitespace-nowrap tabular-nums">{fmt(item.value)}</strong></div>
-                    {/each}
-                  </div>
-                  <div class="mt-2 flex items-center justify-between rounded-xl bg-rose-50 px-4 py-3 text-sm font-extrabold text-rose-950 dark:bg-rose-950/40 dark:text-rose-200"><span>Total deductions</span><span class="tabular-nums">{fmt(result.totalDeductions)}</span></div>
-                </div>
-
-                {#if result.employerCpsContribution > 0}
-                  <div class="mt-5 rounded-xl border border-sky-200 bg-sky-50/70 p-4 dark:border-sky-900 dark:bg-sky-950/30">
-                    <div class="flex items-start justify-between gap-4"><div><p class="text-sm font-extrabold text-sky-950 dark:text-sky-100">State matching CPS contribution</p><p class="mt-1 text-xs leading-5 text-sky-900/75 dark:text-sky-100/70">Shown separately; this amount is not deducted from employee take-home pay.</p></div><strong class="whitespace-nowrap text-sm tabular-nums text-sky-950 dark:text-sky-100">{fmt(result.employerCpsContribution)}</strong></div>
-                  </div>
-                {/if}
-              </section>
-            {:else}
-              <section class="empty-state">
-                <div class="mx-auto grid size-14 place-items-center rounded-2xl bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                  <svg viewBox="0 0 24 24" class="size-7" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M8 7h8M8 11h2m4 0h2M8 15h2m4 0h2"/></svg>
-                </div>
-                <p class="eyebrow mt-5">Your result space</p>
-                <h2 class="mt-2 text-xl font-black tracking-tight">Your salary summary will appear here.</h2>
-                <p class="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500 dark:text-slate-400">Choose a pay level and cell, personalise any applicable allowances and deductions, then calculate to see the full breakdown.</p>
-                <div class="mx-auto mt-6 grid max-w-sm grid-cols-3 gap-2 text-left">
-                  <div class="rounded-xl bg-slate-50 p-3 dark:bg-slate-800/60"><span class="block text-[10px] font-bold text-slate-400">01</span><span class="mt-1 block text-xs font-extrabold">Basic pay</span></div>
-                  <div class="rounded-xl bg-slate-50 p-3 dark:bg-slate-800/60"><span class="block text-[10px] font-bold text-slate-400">02</span><span class="mt-1 block text-xs font-extrabold">Allowances</span></div>
-                  <div class="rounded-xl bg-slate-50 p-3 dark:bg-slate-800/60"><span class="block text-[10px] font-bold text-slate-400">03</span><span class="mt-1 block text-xs font-extrabold">Deductions</span></div>
+                <p class="eyebrow">More help</p>
+                <h2 class="mt-1 text-lg font-black">What would you like to do next?</h2>
+                <p class="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">Your basic salary estimate is ready. Open another tool only when you need it.</p>
+                <div class="mt-4 grid gap-2 sm:grid-cols-2">
+                  <a href="/payslip-generator" class="rounded-xl border border-slate-200 p-4 transition hover:border-emerald-400 dark:border-slate-700 dark:hover:border-emerald-700"><span class="block text-sm font-extrabold">Generate a salary slip</span><span class="mt-1 block text-xs text-slate-500 dark:text-slate-400">Prepare a monthly payslip and annual summary</span></a>
+                  <a href="/arrears-planner" class="rounded-xl border border-slate-200 p-4 transition hover:border-emerald-400 dark:border-slate-700 dark:hover:border-emerald-700"><span class="block text-sm font-extrabold">Calculate salary arrears</span><span class="mt-1 block text-xs text-slate-500 dark:text-slate-400">Compare revised salary with actual payments</span></a>
+                  <a href="/pay-progression" class="rounded-xl border border-slate-200 p-4 transition hover:border-emerald-400 dark:border-slate-700 dark:hover:border-emerald-700"><span class="block text-sm font-extrabold">Pay progression & service history</span><span class="mt-1 block text-xs text-slate-500 dark:text-slate-400">Track increments and service events</span></a>
+                  <a href="/gpf-planner" class="rounded-xl border border-slate-200 p-4 transition hover:border-emerald-400 dark:border-slate-700 dark:hover:border-emerald-700"><span class="block text-sm font-extrabold">Plan GPF contributions</span><span class="mt-1 block text-xs text-slate-500 dark:text-slate-400">Estimate a rule-based subscription range</span></a>
+                  <a href="/retirement-planner" class="rounded-xl border border-slate-200 p-4 transition hover:border-emerald-400 dark:border-slate-700 dark:hover:border-emerald-700"><span class="block text-sm font-extrabold">Estimate retirement benefits</span><span class="mt-1 block text-xs text-slate-500 dark:text-slate-400">Use employee-specific confirmed parameters</span></a>
+                  <a href="/temporary-pay" class="rounded-xl border border-slate-200 p-4 transition hover:border-emerald-400 dark:border-slate-700 dark:hover:border-emerald-700"><span class="block text-sm font-extrabold">Temporary & training pay</span><span class="mt-1 block text-xs text-slate-500 dark:text-slate-400">Check notification-based temporary pay</span></a>
                 </div>
               </section>
+              <details class="surface-card group">
+                <summary class="cursor-pointer list-none p-5 text-sm font-extrabold sm:p-6">How this estimate is built and the rules behind it</summary>
+                <div class="space-y-3 border-t border-slate-100 px-5 py-5 text-xs leading-5 text-slate-600 dark:border-slate-800 dark:text-slate-400 sm:px-6">
+                  <p><strong class="text-slate-900 dark:text-slate-200">DA</strong> is the selected percentage of Basic Pay.</p>
+                  <p><strong class="text-slate-900 dark:text-slate-200">HRA and SBCA</strong> are not presumed payable; eligibility and reference rates must be entered from applicable records.</p>
+                  <p><strong class="text-slate-900 dark:text-slate-200">CPS / GPF</strong> requires individual scheme or membership confirmation. The State share is shown separately and is not deducted from employee take-home pay.</p>
+                  <p><strong class="text-slate-900 dark:text-slate-200">Professional Tax</strong> uses a project reference estimate only when selected; the amount should be confirmed with DDO / Accounts.</p>
+                  <p>All outputs are estimates, not official salary certificates or payroll instructions.</p>
+                </div>
+              </details>
             {/if}
 
-            <section class="surface-card p-5 sm:p-6">
-              <h2 class="text-sm font-black">How this estimate is built</h2>
-              <div class="mt-4 space-y-3">
-                <div class="flex gap-3"><span class="number-dot">1</span><p class="text-xs leading-5 text-slate-600 dark:text-slate-400"><strong class="text-slate-900 dark:text-slate-200">DA</strong> is the selected percentage of Basic Pay.</p></div>
-                <div class="flex gap-3"><span class="number-dot">2</span><p class="text-xs leading-5 text-slate-600 dark:text-slate-400"><strong class="text-slate-900 dark:text-slate-200">HRA and SBCA</strong> use editable reference rates; HRA can be switched off.</p></div>
-                <div class="flex gap-3"><span class="number-dot">3</span><p class="text-xs leading-5 text-slate-600 dark:text-slate-400"><strong class="text-slate-900 dark:text-slate-200">CPS</strong> is calculated only after individual membership and the applicable contribution basis are confirmed; the State share is shown separately.</p></div>
-                <div class="flex gap-3"><span class="number-dot">4</span><p class="text-xs leading-5 text-slate-600 dark:text-slate-400"><strong class="text-slate-900 dark:text-slate-200">GPF</strong> requires confirmed account membership, the Accounts-confirmed reference pay for the subscription year, and a monthly subscription within the 6%–100% range.</p></div>
-                <div class="flex gap-3"><span class="number-dot">5</span><p class="text-xs leading-5 text-slate-600 dark:text-slate-400"><strong class="text-slate-900 dark:text-slate-200">Professional Tax</strong> offers a project reference estimate of ₹150 / ₹200 by pay level, but the user should prefer a manually verified payslip amount unless the current rule is confirmed with DDO / Accounts.</p></div>
-              </div>
-            </section>
           </section>
         </div>
 
+        {#if hasCalculated}
         <section id="pay-matrix" class="scroll-mt-28 mt-8 surface-card p-5 sm:p-6">
           <div class="flex flex-wrap items-center justify-between gap-4">
             <div class="flex items-center gap-3"><span class="step-badge muted">03</span><div><p class="eyebrow">Reference table</p><h2 class="text-lg font-black">Sikkim Government pay matrix</h2></div></div>
@@ -613,6 +591,8 @@
             </div>
           {/if}
         </section>
+
+        {/if}
 
         <footer class="no-print mt-8 flex flex-col gap-2 border-t border-slate-200 py-5 text-xs leading-5 text-slate-500 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800 dark:text-slate-400">
           <span>Built for Sikkim Government employees · Independent estimate tool</span>

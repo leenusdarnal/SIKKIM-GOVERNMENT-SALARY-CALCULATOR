@@ -5,6 +5,7 @@ A Sikkim-specific salary estimation application built with SvelteKit 3, Svelte 5
 > This is an estimate tool, not an official Government payroll system. Confirm rates and eligibility with the applicable signed Government order and the employee's DDO / Accounts section.
 
 ## Features
+- Salary-first home page: choose Pay Level, Basic Pay and DA, then calculate a simple Basic Pay + DA gross estimate. Allowances, deductions, historical salary context and the separate employee tools appear only after the first result, when the user chooses to open them.
 - All 23 State pay levels with the exact variable cell counts printed in Schedule Part A (794 cells total).
 - Temporary consolidated-pay and direct-recruit training allowance calculator at /temporary-pay, with source references, effective-date checks, explicit applicability confirmation and no unsupported partial-month proration.
 - Editable DA rate; 60% is the latest located revised-pay rate effective 1 January 2026. Historical months require a manually verified rate.
