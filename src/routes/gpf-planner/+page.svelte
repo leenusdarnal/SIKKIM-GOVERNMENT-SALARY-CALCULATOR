@@ -1,6 +1,6 @@
 <script lang="ts">
   import { calculateGpfContribution } from '../../lib/gpf';
-  let referencePay = $state(56_000);
+  let referencePay = $state(0);
   let rate = $state(6);
   const result = $derived(calculateGpfContribution(referencePay, rate));
   const fmt = (value: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(value);
@@ -17,14 +17,14 @@
     <header>
       <p class="text-xs font-extrabold uppercase tracking-[0.2em] text-emerald-800 dark:text-emerald-400">Sikkim Government employee utility</p>
       <h1 class="mt-2 text-3xl font-black tracking-tight">GPF contribution planner</h1>
-      <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-300">Estimate a monthly General Provident Fund subscription using the contribution limits in the Sikkim General Provident Fund Rules, 1984.</p>
+      <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-300">Estimate a monthly General Provident Fund subscription using the contribution limits in the Sikkim General Provident Fund Rules, 1984. Enter the applicable reference pay from your service/pay record; no employee pay is pre-filled.</p>
     </header>
 
     <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
       <div class="grid gap-5 sm:grid-cols-2">
         <label class="text-sm font-bold">Reference pay (₹)
-          <input type="number" min="1" step="1" bind:value={referencePay} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
-          <span class="mt-1 block text-xs font-normal text-slate-500">Enter the pay/emoluments figure applicable under the GPF Rules for the relevant subscription year. Do not automatically use today's basic pay without checking the rule.</span>
+          <input type="number" min="0" step="1" bind:value={referencePay} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
+          <span class="mt-1 block text-xs font-normal text-slate-500">No default is assumed. Enter the pay/emoluments figure applicable under the GPF Rules for the relevant subscription year. Do not automatically use today's basic pay without checking the rule.</span>
         </label>
         <label class="text-sm font-bold">Contribution percentage
           <input type="number" min="6" max="100" step="0.5" bind:value={rate} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
@@ -33,10 +33,10 @@
       </div>
 
       <div class="mt-6 grid gap-3 sm:grid-cols-2">
-        <div class="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800"><p class="text-xs text-slate-500">Estimated monthly subscription</p><p class="mt-1 text-2xl font-black">{fmt(result.monthlyContribution)}</p></div>
-        <div class="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800"><p class="text-xs text-slate-500">Estimated annual subscription (12 months)</p><p class="mt-1 text-2xl font-black">{fmt(result.annualContribution)}</p></div>
-        <div class="rounded-2xl border border-slate-200 p-4 dark:border-slate-700"><p class="text-xs text-slate-500">Minimum at 6%</p><p class="mt-1 text-lg font-bold">{fmt(result.minimumMonthlyContribution)}</p></div>
-        <div class="rounded-2xl border border-slate-200 p-4 dark:border-slate-700"><p class="text-xs text-slate-500">Maximum at 100%</p><p class="mt-1 text-lg font-bold">{fmt(result.maximumMonthlyContribution)}</p></div>
+        <div class="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800"><p class="text-xs text-slate-500">Estimated monthly subscription</p><p class="mt-1 text-2xl font-black">{result.valid ? fmt(result.monthlyContribution) : '—'}</p></div>
+        <div class="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800"><p class="text-xs text-slate-500">Estimated annual subscription (12 months)</p><p class="mt-1 text-2xl font-black">{result.valid ? fmt(result.annualContribution) : '—'}</p></div>
+        <div class="rounded-2xl border border-slate-200 p-4 dark:border-slate-700"><p class="text-xs text-slate-500">Minimum at 6%</p><p class="mt-1 text-lg font-bold">{result.referencePay > 0 ? fmt(result.minimumMonthlyContribution) : '—'}</p></div>
+        <div class="rounded-2xl border border-slate-200 p-4 dark:border-slate-700"><p class="text-xs text-slate-500">Maximum at 100%</p><p class="mt-1 text-lg font-bold">{result.referencePay > 0 ? fmt(result.maximumMonthlyContribution) : '—'}</p></div>
       </div>
       <p class="mt-4 text-sm leading-6 {result.valid ? 'text-emerald-800 dark:text-emerald-300' : 'text-amber-800 dark:text-amber-300'}" role="status">{result.message}</p>
     </section>
