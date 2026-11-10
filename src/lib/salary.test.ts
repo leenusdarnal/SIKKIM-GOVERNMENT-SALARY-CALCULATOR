@@ -86,7 +86,13 @@ describe('salary calculation', () => {
   it('does not calculate Professional Tax until the treatment is selected', () => {
     const result = calculateSalary({ ...base, professionalTaxMode: 'unselected' });
     expect(result.professionalTax).toBe(0);
-    expect(result.professionalTaxBand).toContain('Not selected');\n  });\n\n  it('does not apply automatic Professional Tax without a pay-level band', () => {\n    const result = calculateSalary({ ...base, professionalTaxLevelBand: 'unselected' });\n    expect(result.professionalTax).toBe(0);\n    expect(result.professionalTaxBand).toContain('not selected');
+    expect(result.professionalTaxBand).toContain('Not selected');
+  });
+
+  it('does not apply automatic Professional Tax without a pay-level band', () => {
+    const result = calculateSalary({ ...base, professionalTaxLevelBand: 'unselected' });
+    expect(result.professionalTax).toBe(0);
+    expect(result.professionalTaxBand).toContain('not selected');
   });
 
   it('does not deduct CPS when the scheme has not been selected', () => {
