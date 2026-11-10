@@ -5,7 +5,8 @@ const config = {
   kit: {
     paths: {
       base: isGitHubPages ? '/SIKKIM-GOVERNMENT-SALARY-CALCULATOR' : ''
-    }
+    },
+    ...(isGitHubPages ? { prerender: { entries: ['*'] } } : {})
   }
 };
 
