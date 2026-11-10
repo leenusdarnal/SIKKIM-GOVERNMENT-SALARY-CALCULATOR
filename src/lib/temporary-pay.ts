@@ -93,7 +93,7 @@ export function calculateTemporaryPay(input: TemporaryPayCalculationInput): Temp
       errors.push('Days in month must match the selected calendar month.');
     }
     if (input.payableDays !== undefined && (!Number.isInteger(input.payableDays) || input.payableDays < 1 || (input.daysInMonth !== undefined && input.payableDays > input.daysInMonth))) {
-      errors.push('Payable days must be a whole number within the selected month's calendar days.');
+      errors.push('Payable days must be a whole number within the selected month.');
     }
     if (input.payableDays !== undefined && input.daysInMonth !== undefined && input.payableDays !== input.daysInMonth) {
       errors.push('The notification provides a monthly consolidated amount; partial-month proration is not implemented without an applicable order or DDO-approved formula.');
