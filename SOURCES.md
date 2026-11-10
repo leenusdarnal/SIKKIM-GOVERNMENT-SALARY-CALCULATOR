@@ -33,19 +33,19 @@ The circular's rounding instruction is to round 50 paise or more up to the next 
 
 **Calculator treatment:** For the revised-pay structure, the employee's CPF/CPS contribution is calculated as 10% of Basic Pay + DA. The matching State contribution is displayed separately and excluded from employee deductions and in-hand pay. Employees not covered by the scheme should select GPF/manual or no pension, as applicable. Appointment date alone does not settle coverage: the establishment and Rule 2 exclusions must also be checked.
 
-## 4. Professional Tax — current official schedule
+## 4. Professional Tax — current official schedule requires clarification
 
-The Commercial Taxes Division, Government of Sikkim, lists **Professional Rate-of-tax** on its official notifications page, dated **8 November 2026**, with a direct PDF:
+The Commercial Taxes Division, Government of Sikkim, lists a **Professional Rate-of-tax** schedule on its official notifications page (listed 7 November 2026 at the time of review):
 
-- Official notifications page: http://www.sikkimtax.gov.in/notifications-circulars/annual-reports/
-- Direct official salary-earner schedule: http://www.sikkimtax.gov.in/wp-content/uploads/Professional-Rate-of-tax2.pdf
+- Official notifications page: https://www.sikkimtax.gov.in/notifications-circulars/annual-reports/
+- Direct official schedule: https://www.sikkimtax.gov.in/wp-content/uploads/Professional-Rate-of-tax2.pdf
 - The PDF is headed *The Sikkim Tax on Professions, Trades, Callings and Employment Act, 2006*, Schedule (see section 4).
 
-**Calculator interpretation for salary/wage earners:** up to ₹20,000 per month — nil; ₹20,001–₹30,000 — ₹125; ₹30,001–₹40,000 — ₹150; ₹40,001 and above — ₹200. The current PDF text has inconsistent boundary wording in places, but an earlier Sikkim CAG audit explicitly records these salary ranges and rates under the 2006 Act:
+The schedule text identifies salary and wage earners and four monthly rates (nil, ₹125, ₹150 and ₹200). However, the extracted boundary wording contains apparent inconsistencies and overlaps. The exact monthly threshold ranges and assessment base could not be established reliably from the text extraction in this review. An earlier CAG audit records historical income bands, but a 2008 audit is not proof that those boundaries remain the current operative schedule:
 
 - CAG, Audit of Transactions, Sikkim Civil Report 2008, Chapter IV, page 121: https://www.cag.gov.in/uploads/old_reports/state/Sikkim/2008/Civil/Civil_Sikkim_2008/civil_chap_4.pdf
 
-The slab boundaries implemented here follow that Sikkim-specific CAG audit cross-check. The automatic mode in the calculator applies these indicative slabs to gross monthly earnings (Basic + DA + entered allowances). The precise statutory assessment base, exclusions, exemptions and subsequent amendments have not been conclusively verified for every employee category. Accordingly, Professional Tax is no longer calculated by default: the user must explicitly select a manual payslip amount, the optional automatic estimate, or not-applicable where exempt.
+**Calculator treatment and limitation:** The ₹150 below Level 15 / ₹200 at Level 15 and above configuration was supplied for this project; it is not established by the current official salary/wage schedule identified above. It remains an optional, explicitly selected **project reference estimate**, not a verified statutory rule or universal entitlement. The calculator does not apply it by default. Use the actual monthly deduction shown on the employee's current payslip or an amount confirmed by DDO / Accounts. Do not use the estimate for payroll or a formal claim until the current applicable notification and employee category are confirmed. The manual override and not-applicable / exempt paths remain available.
 
 ## 5. HRA and SBCA — historical departmental reference only
 
