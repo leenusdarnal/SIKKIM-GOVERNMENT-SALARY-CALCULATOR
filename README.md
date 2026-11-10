@@ -65,3 +65,7 @@ The arrears planner includes a print-ready A4 landscape statement for DDO / Acco
 
 ### Retirement benefits estimator
 The /retirement-planner route provides an employee-specific worksheet for monthly pension, commutation, gratuity and leave encashment. All scheme rates, emoluments bases, service units, multipliers, divisors and ceilings must be entered from applicable current signed orders and DDO / Accounts confirmation. The module deliberately starts with zero values and does not infer OPS/CPS/CPF/NPS/GPF eligibility. See [RETIREMENT-PLANNER-AUDIT.md](./RETIREMENT-PLANNER-AUDIT.md). It is an illustration, not a pension sanction calculator.
+
+
+### Monthly salary slip generator
+The /payslip-generator route creates a monthly draft salary statement using the existing salary calculation engine. It includes employee/payroll metadata, earnings and deductions, employer CPS contribution as informational, print / Save as PDF, CSV export, an annual summary of explicitly entered month snapshots and comparison with the most recent earlier month. Employee data and history remain session-only. Annual totals include only recorded months. See [PAYSLIP-GENERATOR-AUDIT.md](./PAYSLIP-GENERATOR-AUDIT.md).
