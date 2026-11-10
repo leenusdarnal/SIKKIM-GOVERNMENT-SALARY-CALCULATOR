@@ -635,6 +635,7 @@
             <label class="text-sm font-bold">Professional Tax pay-level band
               <select bind:value={baseSalary.professionalTaxLevelBand} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700"><option value="unselected">Select pay-level band</option><option value="below-level-15">Below Level 15 — ₹150</option><option value="level-15-and-above">Level 15 and above — ₹200</option></select>
             </label>
+            <p class="col-span-full text-xs leading-5 text-amber-700 dark:text-amber-300">This is an optional project reference estimate, not a verified statutory calculation. The current official salary/wage schedule lists income-based ranges whose boundary wording needs clarification. Prefer the manual amount from the employee’s payslip / DDO unless the pay-level rule is confirmed for this arrears period.</p>
           {/if}
           {#if baseSalary.professionalTaxMode === 'manual'}
             <label class="text-sm font-bold">Monthly Professional Tax (₹)
