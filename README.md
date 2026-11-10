@@ -6,7 +6,7 @@ A Sikkim-specific salary estimation application built with SvelteKit 3, Svelte 5
 
 ## Features
 - All 23 State pay levels with the exact variable cell counts printed in Schedule Part A (794 cells total).
-- Temporary consolidated-pay and direct-recruit training allowance references from applicable Department of Personnel notifications.
+- Temporary consolidated-pay and direct-recruit training allowance calculator at /temporary-pay, with source references, effective-date checks, explicit applicability confirmation and no unsupported partial-month proration.
 - Editable DA rate; 60% is the latest located revised-pay rate effective 1 January 2026. Historical months require a manually verified rate.
 - HRA and SBCA are not presumed payable: HRA starts disabled and SBCA starts at 0%.
 - Explicit pension-scheme selection; CPS/CPF employee contribution is calculated only when selected, with the State matching share shown separately.
@@ -18,7 +18,7 @@ A Sikkim-specific salary estimation application built with SvelteKit 3, Svelte 5
 - Browser-only calculations. No employee identity, bank details or payroll credentials are requested.
 
 ## Project structure
-- src/routes — SvelteKit routes; /pay-progression provides pay history, /gpf-planner provides the GPF planner, and /arrears-planner provides the arrears estimator.
+- src/routes — SvelteKit routes; /temporary-pay provides temporary/training pay, /pay-progression provides pay history, /gpf-planner provides the GPF planner, and /arrears-planner provides the arrears estimator.
 - src/lib/data/pay-matrix.ts — 23 Government pay levels and 794 official cells.
 - src/lib/salary.ts — regular salary calculation engine.
 - src/lib/pay-progression.ts — pay-cell progression and history validation.
@@ -27,7 +27,8 @@ A Sikkim-specific salary estimation application built with SvelteKit 3, Svelte 5
 - src/lib/arrears.ts — effective-dated month-by-month arrears model and CSV statement export.
 - src/lib/historical-rates.ts — source-backed effective-dated DA, HRA, SBCA and transport-rate validation and resolution.\n- src/lib/HistoricalRateEditor.svelte — add/edit/delete interface for historical rate schedules.
 - src/lib/arrears-storage.ts — browser-local arrears draft persistence, versioned JSON backup/restore and monthly payslip CSV import/template.
-- src/lib/temporary-pay.ts — temporary consolidated-pay and training allowance schedule.
+- src/lib/temporary-pay.ts — source/effective-dated temporary consolidated-pay and training allowance schedule with guarded calculation.
+- TEMPORARY-PAY-AUDIT.md — temporary-pay sources, validation rules and limitations.
 - src/lib/sources.ts — in-app source register.
 - SOURCES.md — source evidence and limitations.
 - PAY-PROGRESSION-AUDIT.md — progression scope, sources and limitations.
