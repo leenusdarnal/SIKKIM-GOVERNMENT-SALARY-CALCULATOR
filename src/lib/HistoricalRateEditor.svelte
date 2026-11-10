@@ -7,7 +7,7 @@ const components: { value: HistoricalRateComponent; label: string; unit: 'percen
 const unit = $derived(components.find(x=>x.value===component)?.unit ?? 'percent');
 function resetForm(){component='daRate';effectiveFrom='';effectiveTo='';value='';sourceReference='';applicability='';verified=false;editingIndex=null;error='';}
 function saveEntry(){
-const amount=Number(value), validMonth=(v:string)=>/^\\d{4}-(0[1-9]|1[0-2])$/.test(v);
+const amount=Number(value), validMonth=(v:string)=>/^\d{4}-(0[1-9]|1[0-2])$/.test(v);
 if(!validMonth(effectiveFrom)){error='Enter a valid effective-from month (YYYY-MM).';return;}
 if(effectiveTo&&(!validMonth(effectiveTo)||effectiveTo<effectiveFrom)){error='Effective-to must be on or after effective-from.';return;}
 const max=component==='daRate'?200:component==='transportAllowance'?Number.MAX_SAFE_INTEGER:100;
