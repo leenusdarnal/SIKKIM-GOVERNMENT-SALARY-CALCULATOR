@@ -53,6 +53,8 @@ export interface ArrearMonthRow {
   otherEarnings: number;
   grossEntitlement: number;
   employeePension: number;
+  /** State matching contribution; displayed separately and excluded from employee deductions. */
+  employerCpsContribution: number;
   professionalTax: number;
   gis: number;
   stampFee: number;
@@ -68,6 +70,7 @@ export interface ArrearMonthRow {
 export interface ArrearsTotals {
   grossEntitlement: number;
   employeeDeductions: number;
+  employerCpsContribution: number;
   revisedTakeHome: number;
   actualTakeHome: number;
   recoveries: number;
@@ -338,6 +341,7 @@ export function calculateArrears(input: ArrearsInput): ArrearsResult {
       totals: {
         grossEntitlement: 0,
         employeeDeductions: 0,
+        employerCpsContribution: 0,
         revisedTakeHome: 0,
         actualTakeHome: 0,
         recoveries: 0,
@@ -400,6 +404,7 @@ export function calculateArrears(input: ArrearsInput): ArrearsResult {
       otherEarnings: salary.otherEarnings,
       grossEntitlement: salary.gross,
       employeePension: salary.employeePension,
+      employerCpsContribution: salary.employerCpsContribution,
       professionalTax: salary.professionalTax,
       gis: salary.gis,
       stampFee: salary.stampFee,
@@ -419,6 +424,7 @@ export function calculateArrears(input: ArrearsInput): ArrearsResult {
   const totals: ArrearsTotals = rows.reduce<ArrearsTotals>((sum, row) => ({
     grossEntitlement: sum.grossEntitlement + row.grossEntitlement,
     employeeDeductions: sum.employeeDeductions + row.employeeDeductions,
+    employerCpsContribution: sum.employerCpsContribution + row.employerCpsContribution,
     revisedTakeHome: sum.revisedTakeHome + row.revisedTakeHome,
     actualTakeHome: sum.actualTakeHome + (row.actualTakeHome ?? 0),
     recoveries: sum.recoveries + row.recovery,
@@ -430,6 +436,7 @@ export function calculateArrears(input: ArrearsInput): ArrearsResult {
   }), {
     grossEntitlement: 0,
     employeeDeductions: 0,
+    employerCpsContribution: 0,
     revisedTakeHome: 0,
     actualTakeHome: 0,
     recoveries: 0,
@@ -451,7 +458,7 @@ export function createArrearsAuditCsv(input: ArrearsInput, result: ArrearsResult
   const headers = [
     'Report status', 'Month', 'Validation issue', 'Basic pay (INR)', 'DA rate (%)',
     'DA (INR)', 'HRA (INR)', 'SBCA (INR)', 'Transport allowance (INR)',
-    'Revised gross (INR)', 'Employee deductions (INR)', 'Revised take-home (INR)',
+    'Revised gross (INR)', 'Employee deductions (INR)', 'Employer / State CPS share (separate, INR)', 'Revised take-home (INR)',
     'Actual credited (INR)', 'Recovery (INR)', 'Net difference (INR)',
     'Applied changes and source references'
   ];
@@ -463,15 +470,15 @@ export function createArrearsAuditCsv(input: ArrearsInput, result: ArrearsResult
       rows.push([
         status, row.month, '', row.basicPay, row.daRate, row.da, row.hra, row.sbca,
         row.transportAllowance, row.grossEntitlement, row.employeeDeductions,
-        row.revisedTakeHome, row.actualTakeHome ?? '', row.recovery,
+        row.employerCpsContribution, row.revisedTakeHome, row.actualTakeHome ?? '', row.recovery,
         row.netArrears ?? '', row.appliedChanges.join(' | ')
       ]);
     }
   }
   if (result.errors.length) {
-    for (const issue of result.errors) rows.push([status, '', issue, '', '', '', '', '', '', '', '', '', '', '', '', '']);
+    for (const issue of result.errors) rows.push([status, '', issue, ...Array(headers.length - 3).fill('')]);
   } else if (!result.complete) {
-    rows.push([status, '', 'Enter actual credited salary for every month before final arrears export.', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+    rows.push([status, '', 'Enter actual credited salary for every month before final arrears export.', ...Array(headers.length - 3).fill('')]);
   }
   rows.push(['Selected historical components', '', (input.historicalRateComponents ?? []).join(', ') || 'None', '', '', '', '', '', '', '', '', '', '', '', '', '']);
   return '\\uFEFF' + rows.map((row) => row.map(csvCell).join(',')).join('\\r\\n') + '\\r\\n';
@@ -483,7 +490,7 @@ export function createArrearsCsv(result: ArrearsResult): string {
   }
 
   const rows = [
-    ['Month', 'Basic Pay (INR)', 'DA Rate (%)', 'DA (INR)', 'HRA (INR)', 'SBCA (INR)', 'Transport Allowance (INR)', 'Other Earnings (INR)', 'Revised Gross (INR)', 'Employee Pension / GPF (INR)', 'Professional Tax (INR)', 'GIS (INR)', 'Stamp / Fixed Fee (INR)', 'Other Deductions (INR)', 'Total Employee Deductions (INR)', 'Revised Take-home (INR)', 'Actual Credited (INR)', 'Recovery from Arrears (INR)', 'Net Difference (INR)', 'Effective change / order reference'],
+    ['Month', 'Basic Pay (INR)', 'DA Rate (%)', 'DA (INR)', 'HRA (INR)', 'SBCA (INR)', 'Transport Allowance (INR)', 'Other Earnings (INR)', 'Revised Gross (INR)', 'Employee Pension / GPF (INR)', 'Employer / State CPS contribution (separate, INR)', 'Professional Tax (INR)', 'GIS (INR)', 'Stamp / Fixed Fee (INR)', 'Other Deductions (INR)', 'Total Employee Deductions (INR)', 'Revised Take-home (INR)', 'Actual Credited (INR)', 'Recovery from Arrears (INR)', 'Net Difference (INR)', 'Effective change / order reference'],
     ...result.rows.map((row) => [
       row.month,
       row.basicPay,
@@ -495,6 +502,7 @@ export function createArrearsCsv(result: ArrearsResult): string {
       row.otherEarnings,
       row.grossEntitlement,
       row.employeePension,
+      row.employerCpsContribution,
       row.professionalTax,
       row.gis,
       row.stampFee,
