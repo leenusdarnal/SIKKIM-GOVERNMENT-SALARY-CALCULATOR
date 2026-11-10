@@ -621,7 +621,7 @@
           <label class="text-sm font-bold">Professional Tax treatment
             <select bind:value={baseSalary.professionalTaxMode} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700">
               <option value="unselected">Select treatment</option>
-              <option value="auto">Automatic — pay-level band</option>
+              <option value="auto">Reference estimate — pay-level band</option>
               <option value="manual">Manual payslip amount</option>
               <option value="none">Not applicable / exempt</option>
             </select>
@@ -734,9 +734,12 @@
             {/if}
             <label class="text-sm font-bold">Professional Tax treatment
               <select bind:value={componentEvent.professionalTaxMode} class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
-                <option value="">Unchanged</option><option value="auto">Automatic — pay-level band</option><option value="manual">Manual payslip amount</option><option value="none">Not applicable / exempt</option>
+                <option value="">Unchanged</option><option value="auto">Reference estimate — pay-level band</option><option value="manual">Manual payslip amount</option><option value="none">Not applicable / exempt</option>
               </select>
             </label>
+            {#if componentEvent.professionalTaxMode === 'auto'}
+              <p class="col-span-full text-xs leading-5 text-amber-700 dark:text-amber-300">This is an optional project reference estimate, not a verified statutory calculation. The current official salary/wage schedule lists income-based ranges whose boundary wording needs clarification. Prefer the manual amount from the employee’s payslip / DDO unless the pay-level rule is confirmed for this effective month.</p>
+            {/if}
             {#if componentEvent.professionalTaxMode === 'auto'}
               <label class="text-sm font-bold">Professional Tax pay-level band
                 <select bind:value={componentEvent.professionalTaxLevelBand} class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900"><option value="">Select pay-level band</option><option value="below-level-15">Below Level 15 — ₹150</option><option value="level-15-and-above">Level 15 and above — ₹200</option></select>
