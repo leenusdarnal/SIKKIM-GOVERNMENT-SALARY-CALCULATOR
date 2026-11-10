@@ -45,15 +45,19 @@ export function buildPayslipModel(month: string, employee: PayslipEmployee, sala
   }).sort((a,b)=>a.month.localeCompare(b.month));
   const previousMonth = history.filter(r=>r.month < month).sort((a,b)=>b.month.localeCompare(a.month))[0] ?? null;
   const current = { gross:salary.gross, deductions:salary.totalDeductions, net:salary.takeHome };
+  const annual = {
+    year, monthsRecorded:yearRecords.length,
+    gross:yearRecords.reduce((sum,r)=>sum+r.gross,0),
+    deductions:yearRecords.reduce((sum,r)=>sum+r.deductions,0),
+    net:yearRecords.reduce((sum,r)=>sum+r.net,0)
+  };
+  if ([annual.gross, annual.deductions, annual.net].some((value) =>
+    !Number.isFinite(value) || Math.abs(value) > Number.MAX_SAFE_INTEGER
+  )) errors.push('Annual totals exceed the supported safe calculation range.');
   return {
     valid: errors.length===0, errors, month, employee: { ...blankEmployee, ...employee },
     salaryInput: { ...salaryInput }, salary,
-    annual: {
-      year, monthsRecorded:yearRecords.length,
-      gross:yearRecords.reduce((sum,r)=>sum+r.gross,0),
-      deductions:yearRecords.reduce((sum,r)=>sum+r.deductions,0),
-      net:yearRecords.reduce((sum,r)=>sum+r.net,0)
-    },
+    annual,
     previousMonth,
     monthComparison: previousMonth ? {
       gross:current.gross-previousMonth.gross,
