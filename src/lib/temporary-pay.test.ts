@@ -52,11 +52,13 @@ describe('Sikkim temporary and training pay references', () => {
     expect(result.errors.some((error) => error.includes('partial-month proration'))).toBe(true);
   });
 
-  it('validates calendar attendance boundaries and zero days', () => {
+  it('validates calendar attendance boundaries, zero days and actual month length', () => {
     const zero = calculateTemporaryPay({ ...confirmed, optionId: 'driver-daily-wage', payableDays: 0, dailyRate: 500, dailyRateSourceReference: 'Labour notification', dailyRateEffectiveFrom: '2026-01-01', dailyRateVerified: true, daysInMonth: 30 });
     expect(zero.valid).toBe(false);
     const over = calculateTemporaryPay({ ...confirmed, optionId: 'driver-daily-wage', payableDays: 31, dailyRate: 500, dailyRateSourceReference: 'Labour notification', dailyRateEffectiveFrom: '2026-01-01', dailyRateVerified: true, daysInMonth: 30 });
     expect(over.valid).toBe(false);
+    const wrongMonthLength = calculateTemporaryPay({ ...confirmed, optionId: 'driver-daily-wage', payableDays: 30, dailyRate: 500, dailyRateSourceReference: 'Labour notification', dailyRateEffectiveFrom: '2026-01-01', dailyRateVerified: true, daysInMonth: 30, salaryMonth: '2026-10' });
+    expect(wrongMonthLength.valid).toBe(false);
   });
 
   it('requires the Labour Department rate, its source, effective date and applicability confirmation', () => {
