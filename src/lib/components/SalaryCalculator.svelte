@@ -167,7 +167,8 @@
           </div>
           <div class="min-w-0 flex-1">
             <p class="text-[10px] font-extrabold uppercase tracking-[0.2em] text-emerald-800 dark:text-emerald-400">Government of Sikkim · Employee utility</p>
-            <p class="mt-0.5 truncate text-sm font-extrabold tracking-tight">Salary estimation workspace</p>
+            <p class="mt-0.5 text-sm font-extrabold tracking-tight sm:hidden">Sikkim Salary</p>
+            <p class="mt-0.5 hidden truncate text-sm font-extrabold tracking-tight sm:block">Salary estimation workspace</p>
           </div>
           <span class="hidden items-center gap-2 rounded-full border border-emerald-200 bg-white px-3 py-1.5 text-[11px] font-bold text-emerald-800 sm:inline-flex dark:border-emerald-900 dark:bg-slate-900 dark:text-emerald-300">
             <span class="size-1.5 rounded-full bg-emerald-500"></span>
