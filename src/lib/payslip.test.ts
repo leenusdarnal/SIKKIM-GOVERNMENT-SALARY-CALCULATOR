@@ -69,6 +69,12 @@ describe('monthly payslip',()=>{
   expect(()=>createPayslipCsv(m)).toThrow(/validation issues/);
  });
 
+ it('withholds annual totals that overflow the safe calculation range',()=>{
+  const hugeHistory=Array.from({length:12},(_,index)=>({month:'2026-'+String(index+1).padStart(2,'0'),gross:Number.MAX_SAFE_INTEGER,deductions:0,net:Number.MAX_SAFE_INTEGER}));
+  const m=buildPayslipModel('2026-12',employee,input,hugeHistory);
+  expect(m.valid).toBe(false);
+  expect(m.errors.join(' ')).toContain('Annual totals exceed');
+ });
  it('neutralizes spreadsheet formula prefixes in exported employee text fields',()=>{
   const m=buildPayslipModel('2026-11',{...employee,name:'=HYPERLINK("https://bad.example","click")'},input);
   const csv=createPayslipCsv(m);
