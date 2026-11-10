@@ -72,7 +72,7 @@
       calculationError = 'Select a Professional Tax treatment, enter the amount from your payslip, or mark it not applicable where exempt.';
       return;
     }
-    form.professionalTaxLevelBand = selectedLevel >= 15 ? 'level-15-and-above' : 'below-level-15';
+    form.professionalTaxLevelBand = Number(selectedLevel) >= 15 ? 'level-15-and-above' : 'below-level-15';
     calculationError = '';
     hasCalculated = true;
   }
