@@ -1,4 +1,4 @@
-import { calculateSalary, validateGpfSubscription, type SalaryInput } from './salary';
+import { calculateSalary, validateSalaryInput, type SalaryInput } from './salary';
 import { resolveHistoricalRates, validateHistoricalRateSchedule, type HistoricalRateComponent, type HistoricalRateEntry } from './historical-rates';
 
 export type ArrearChangeType =
@@ -124,46 +124,7 @@ export function getArrearsMonthKeys(startMonth: string, endMonth: string): strin
 }
 
 function validateSalaryBasis(input: SalaryInput): string[] {
-  const errors: string[] = [];
-
-  for (const field of NUMERIC_SALARY_FIELDS) {
-    const value = input[field];
-    if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
-      errors.push(field + ' must be a valid non-negative number.');
-    }
-  }
-
-  if (input.cpsMembershipConfirmed !== undefined && typeof input.cpsMembershipConfirmed !== 'boolean') {
-    errors.push('CPS membership confirmation must be a boolean value.');
-  }
-  if (input.gpfMembershipConfirmed !== undefined && typeof input.gpfMembershipConfirmed !== 'boolean') {
-    errors.push('GPF membership confirmation must be a boolean value.');
-  }
-  if (!(input.basicPay > 0)) errors.push('Enter a basic pay greater than zero.');
-  if (input.daRate > 200) errors.push('DA rate must be between 0% and 200%.');
-  if (input.hraRate > 100 || input.sbcaRate > 100) {
-    errors.push('HRA and SBCA rates must be between 0% and 100%.');
-  }
-  if (!['cps', 'gpf', 'manual', 'none'].includes(input.pensionMode)) {
-    errors.push('Select the applicable pension arrangement before calculating arrears.');
-  }
-  if (input.cpsMembershipConfirmed !== undefined && typeof input.cpsMembershipConfirmed !== 'boolean') {
-    errors.push('CPS membership confirmation must be a boolean selection.');
-  }
-  if (input.pensionMode === 'cps' && input.cpsMembershipConfirmed !== true) {
-    errors.push('Confirm CPS membership and the applicable contribution basis in the opening salary record before calculating arrears.');
-  }
-  if (input.pensionMode === 'gpf') {
-    errors.push(...validateGpfSubscription(input.gpfReferencePay, input.manualPension, input.gpfMembershipConfirmed));
-  }
-  if (!['auto', 'manual', 'none'].includes(input.professionalTaxMode)) {
-    errors.push('Select a Professional Tax treatment before calculating arrears.');
-  }
-  if (input.professionalTaxMode === 'auto' && !['below-level-15', 'level-15-and-above'].includes(input.professionalTaxLevelBand)) {
-    errors.push('Select the employee pay-level band for Sikkim Professional Tax before calculating arrears.');
-  }
-
-  return errors;
+  return validateSalaryInput(input);
 }
 
 const ALLOWED_SALARY_UPDATE_KEYS = new Set([
