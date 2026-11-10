@@ -1,4 +1,4 @@
-import { calculateSalary, validateSalaryInput, type SalaryInput } from './salary';
+import { calculateSalary, validateGpfSubscription, validateSalaryInput, type SalaryInput } from './salary';
 import { resolveHistoricalRates, validateHistoricalRateSchedule, type HistoricalRateComponent, type HistoricalRateEntry } from './historical-rates';
 
 export type ArrearChangeType =
