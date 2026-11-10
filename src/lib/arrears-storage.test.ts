@@ -73,6 +73,15 @@ describe('arrears draft storage and import/export', () => {
     expect(loadArrearsScenario(store)?.monthlyRecords).toHaveLength(3);
   });
 
+  it('preserves an incomplete but structurally valid draft while salary inputs are being entered', () => {
+    const store = new MemoryStorage();
+    const draft = input();
+    draft.baseSalary = { ...DEFAULT_SALARY_INPUT, basicPay: 0 };
+    saveArrearsScenario(draft, store);
+    expect(loadArrearsScenario(store)?.baseSalary.basicPay).toBe(0);
+    expect(calculateArrears(draft).valid).toBe(false);
+  });
+
   it('creates a consecutive monthly CSV template and imports editable payslip data', () => {
     const months = getArrearsMonthKeys('2026-01', '2026-03');
     const template = createArrearsEntryTemplateCsv(months);
