@@ -18,6 +18,8 @@ A Sikkim-specific salary estimation application built with SvelteKit 3, Svelte 5
 - Browser-only calculations. No employee identity, bank details or payroll credentials are requested.
 
 ## Project structure
+
+- Regular salary, payslip and arrears workflows share the same salary input validation guard; invalid and out-of-range salary inputs are withheld from result reports.
 - src/routes — SvelteKit routes; /temporary-pay provides temporary/training pay, /pay-progression provides pay history, /gpf-planner provides the GPF planner, and /arrears-planner provides the arrears estimator.
 - src/lib/data/pay-matrix.ts — 23 Government pay levels and 794 official cells.
 - src/lib/salary.ts — regular salary calculation engine.
