@@ -39,10 +39,10 @@ describe('Professional Tax pay-level safeguards in arrears', () => {
 
   it('withholds arrears when period totals exceed the safe rupee range', () => {
     const hugeBasis = {
-      ...input(),
+      ...makeInput(),
       endMonth: '2026-02',
       baseSalary: {
-        ...input().baseSalary,
+        ...makeInput().baseSalary,
         basicPay: 5_000_000_000_000_000,
         daRate: 0,
         hraEligible: false,
@@ -66,8 +66,8 @@ describe('Professional Tax pay-level safeguards in arrears', () => {
 
   it('blocks arrears calculations when salary bases exceed the safe amount range', () => {
     const result = calculateArrears({
-      ...input(),
-      baseSalary: { ...input().baseSalary, basicPay: Number.MAX_VALUE }
+      ...makeInput(),
+      baseSalary: { ...makeInput().baseSalary, basicPay: Number.MAX_VALUE }
     });
     expect(result.valid).toBe(false);
     expect(result.rows).toHaveLength(0);
