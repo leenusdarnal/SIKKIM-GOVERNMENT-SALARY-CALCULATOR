@@ -1,10 +1,14 @@
 import { expect, test } from '@playwright/test';
 
+const selectInsideLabel = (page: import('@playwright/test').Page, labelText: string) =>
+  page.locator('label').filter({ hasText: labelText }).locator('select').first();
+
 test.describe('Sikkim salary calculator browser workflows', () => {
   test('the main calculator computes a Level 17 salary with the correct Sikkim PT band', async ({ page }) => {
     await page.goto('/');
 
     await page.locator('#level').selectOption('17');
+    await expect(page.locator('#cell')).toBeEnabled();
     await page.locator('#cell').selectOption('1');
     await page.locator('#daRate').fill('60');
 
@@ -18,7 +22,7 @@ test.describe('Sikkim salary calculator browser workflows', () => {
     await expect(result).toBeVisible();
     await expect(result).toContainText('₹89,400');
     await expect(result).toContainText('₹89,600');
-    await expect(page.getByText('Professional Tax (Level 15 and above — ₹200)', { exact: false })).toBeVisible();
+    await expect(result).toContainText('Level 15 and above — ₹200');
   });
 
   test('the payslip form calculates, records the month and updates the annual summary', async ({ page }) => {
@@ -26,17 +30,18 @@ test.describe('Sikkim salary calculator browser workflows', () => {
 
     await page.getByLabel('Basic pay (₹)', { exact: true }).fill('56000');
     await page.getByLabel('DA rate (%)', { exact: true }).fill('60');
-    await page.getByLabel('Pension arrangement', { exact: true }).selectOption('none');
-    await page.getByLabel('Professional Tax treatment', { exact: true }).selectOption('auto');
-    await page.getByLabel('Professional Tax pay-level band', { exact: true }).selectOption('level-15-and-above');
+    await selectInsideLabel(page, 'Pension arrangement').selectOption('none');
+    await selectInsideLabel(page, 'Professional Tax treatment').selectOption('auto');
+    await selectInsideLabel(page, 'Professional Tax pay-level band').selectOption('level-15-and-above');
 
     const statement = page.locator('#print-slip');
     await expect(statement).toContainText('₹89,400');
     await expect(statement).toContainText('₹89,600');
 
     await page.getByRole('button', { name: 'Add / update this month' }).click();
-    await expect(page.getByRole('status')).toContainText('Current month added to annual summary.');
-    await expect(page.getByText('Annual gross to date', { exact: false })).toBeVisible();
+    await expect(page.locator('[role="status"]').filter({ hasText: 'Current month added to annual summary.' })).toBeVisible();
+    await expect(page.getByText('2026 gross', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Print / Save salary slip as PDF' })).toBeEnabled();
   });
 
   test('the arrears workflow applies an effective-dated increment and produces a complete printable statement', async ({ page }) => {
@@ -46,16 +51,16 @@ test.describe('Sikkim salary calculator browser workflows', () => {
     await page.getByLabel('To month', { exact: true }).fill('2026-02');
     await page.getByLabel('Basic pay (₹)', { exact: true }).fill('56000');
     await page.getByLabel('DA rate (%)', { exact: true }).fill('60');
-    await page.getByLabel('Pension arrangement', { exact: true }).selectOption('none');
-    await page.getByLabel('Professional Tax treatment', { exact: true }).selectOption('none');
+    await selectInsideLabel(page, 'Pension arrangement').selectOption('none');
+    await selectInsideLabel(page, 'Professional Tax treatment').selectOption('none');
 
     await page.getByLabel('Effective month', { exact: true }).fill('2026-02');
-    await page.getByLabel('Change type', { exact: true }).selectOption('annual-increment');
+    await selectInsideLabel(page, 'Change type').selectOption('annual-increment');
     await page.getByLabel('Order / payslip reference', { exact: true }).fill('Synthetic browser QA fixture — increment');
     await page.getByLabel('New basic pay (₹)', { exact: true }).fill('57000');
     await page.getByRole('button', { name: 'Add effective-dated change' }).click();
 
-    const monthlyTable = page.getByRole('table').first();
+    const monthlyTable = page.locator('table').filter({ hasText: 'Actual net paid (₹)' });
     await expect(monthlyTable).toContainText('2026-02');
     await expect(monthlyTable).toContainText('57,000');
 
