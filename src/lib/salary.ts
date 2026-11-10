@@ -161,6 +161,78 @@ export function calculateSalary(input: SalaryInput): SalaryResult {
   };
 }
 
+
+/**
+ * Validates the complete regular monthly salary input before presenting a result.
+ * The calculation engine remains deterministic and forgiving for display use,
+ * but user-facing workflows should call this guard before treating an amount as valid.
+ */
+export function validateSalaryInput(input: SalaryInput): string[] {
+  const errors: string[] = [];
+  const numericFields = [
+    'basicPay', 'daRate', 'hraRate', 'hraMinimum', 'sbcaRate',
+    'transportAllowance', 'otherEarnings', 'manualPension',
+    'manualProfessionalTax', 'gis', 'stampFee', 'otherDeductions'
+  ] as const;
+
+  for (const field of numericFields) {
+    const value = input[field];
+    if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+      errors.push(field + ' must be a finite, non-negative number.');
+    } else if (Math.abs(value) > Number.MAX_SAFE_INTEGER) {
+      errors.push(field + ' exceeds the supported calculation range.');
+    }
+  }
+
+  if (input.gpfReferencePay !== undefined &&
+      (typeof input.gpfReferencePay !== 'number' || !Number.isFinite(input.gpfReferencePay) ||
+       input.gpfReferencePay < 0 || input.gpfReferencePay > Number.MAX_SAFE_INTEGER)) {
+    errors.push('GPF reference pay must be a finite, non-negative amount within the supported range.');
+  }
+  if (!(input.basicPay > 0)) errors.push('Enter a basic pay greater than zero.');
+  if (input.daRate > 200) errors.push('DA rate must be between 0% and 200%.');
+  if (input.hraRate > 100 || input.sbcaRate > 100) errors.push('HRA and SBCA rates must be between 0% and 100%.');
+  if (typeof input.hraEligible !== 'boolean') errors.push('Select whether the employee is eligible for HRA.');
+  if (!['cps', 'gpf', 'manual', 'none'].includes(input.pensionMode)) {
+    errors.push('Select the applicable pension arrangement before calculating.');
+  }
+  if (input.cpsMembershipConfirmed !== undefined && typeof input.cpsMembershipConfirmed !== 'boolean') {
+    errors.push('CPS membership confirmation must be a boolean selection.');
+  }
+  if (input.pensionMode === 'cps' && input.cpsMembershipConfirmed !== true) {
+    errors.push('Confirm the employee CPS membership and applicable contribution basis from the service record / DDO before calculating.');
+  }
+  if (input.gpfMembershipConfirmed !== undefined && typeof input.gpfMembershipConfirmed !== 'boolean') {
+    errors.push('GPF membership confirmation must be a boolean selection.');
+  }
+  if (input.pensionMode === 'gpf') {
+    errors.push(...validateGpfSubscription(input.gpfReferencePay, input.manualPension, input.gpfMembershipConfirmed));
+  }
+  if (!['auto', 'manual', 'none'].includes(input.professionalTaxMode)) {
+    errors.push('Select a Professional Tax treatment before calculating.');
+  }
+  if (!['unselected', 'below-level-15', 'level-15-and-above'].includes(input.professionalTaxLevelBand)) {
+    errors.push('Select a valid Sikkim Professional Tax pay-level band.');
+  }
+  if (input.professionalTaxMode === 'auto' &&
+      !['below-level-15', 'level-15-and-above'].includes(input.professionalTaxLevelBand)) {
+    errors.push('Select the employee pay-level band for Sikkim Professional Tax.');
+  }
+
+  const result = calculateSalary(input);
+  const calculatedAmounts = [
+    result.basicPay, result.da, result.hra, result.sbca, result.transportAllowance,
+    result.otherEarnings, result.gross, result.employeePension, result.employerCpsContribution,
+    result.professionalTax, result.gis, result.stampFee, result.otherDeductions,
+    result.totalDeductions, result.takeHome
+  ];
+  if (calculatedAmounts.some((value) => !Number.isFinite(value) || Math.abs(value) > Number.MAX_SAFE_INTEGER)) {
+    errors.push('The entered figures produce an amount outside the supported calculation range.');
+  }
+
+  return [...new Set(errors)];
+}
+
 export const DEFAULT_SALARY_INPUT: SalaryInput = {
   basicPay: 0,
   daRate: 60,
