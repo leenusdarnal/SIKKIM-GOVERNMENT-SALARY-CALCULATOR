@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import {
     calculateArrears,
+    createArrearsAuditCsv,
     createArrearsCsv,
     getArrearsMonthKeys,
     type ArrearChange,
@@ -231,6 +232,20 @@
     } : {})
   }));
   const missingPaidMonths = $derived(result.rows.filter((row) => row.actualTakeHome === null).length);
+  const historicalCoverage = $derived(months.flatMap((month) =>
+    historicalRateComponents.map((component) => {
+      const matches = historicalRateSchedule.filter((entry) =>
+        entry.component === component && entry.effectiveFrom <= month &&
+        (entry.effectiveTo === undefined || entry.effectiveTo >= month)
+      );
+      const label = component === 'daRate' ? 'DA' : component === 'hraRate' ? 'HRA' :
+        component === 'sbcaRate' ? 'SBCA' : 'Transport allowance';
+      const status = matches.length > 1 ? 'Conflict' :
+        matches.length === 0 ? 'Missing' : matches[0].verified ? 'Covered' : 'Unverified';
+      return { month, component, label, status, source: matches.length === 1 ? matches[0].sourceReference : '' };
+    })
+  ));
+  const historicalCoverageIssues = $derived(historicalCoverage.filter((item) => item.status !== 'Covered').length);
   const fmt = (value: number | null | undefined) =>
     value === null || value === undefined || !Number.isFinite(value)
       ? '—'
@@ -344,6 +359,12 @@
     changes = changes.filter((_, itemIndex) => itemIndex !== index);
   }
 
+  function exportAuditCsv() {
+    const filename = 'sikkim-arrears-audit-' + startMonth + '-to-' + endMonth + '.csv';
+    downloadText(filename, createArrearsAuditCsv(currentInput(), result), 'text/csv;charset=utf-8');
+    formError = '';
+  }
+
   function exportCsv() {
     try {
       const filename = 'sikkim-salary-arrears-' + startMonth + '-to-' + endMonth + '.csv';
@@ -427,6 +448,15 @@
 
     <HistoricalRateEditor bind:entries={historicalRateSchedule} bind:selected={historicalRateComponents} />
 
+    {#if historicalRateComponents.length}
+      <section class="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+        <div class="flex flex-wrap items-start justify-between gap-3"><div><h2 class="font-extrabold">Historical rate coverage</h2><p class="mt-1 text-xs text-slate-500">Month-by-month source coverage for selected components.</p></div>
+          <span class={historicalCoverageIssues === 0 && result.valid ? "rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800" : "rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900"}>{historicalCoverageIssues === 0 && result.valid ? "Coverage complete" : historicalCoverageIssues + " coverage issue(s)"}</span></div>
+        <div class="mt-4 overflow-x-auto"><table class="w-full min-w-[620px] text-left text-xs"><thead><tr class="border-b text-[10px] uppercase tracking-wide text-slate-500"><th class="py-2">Month</th><th>Component</th><th>Status</th><th>Source reference</th></tr></thead>
+          <tbody>{#each historicalCoverage as item}<tr class="border-b border-slate-100 dark:border-slate-800"><td class="py-2 font-semibold">{item.month}</td><td>{item.label}</td><td><span class={item.status === "Covered" ? "font-bold text-emerald-700 dark:text-emerald-300" : "font-bold text-amber-700 dark:text-amber-300"}>{item.status}</span></td><td>{item.source || "—"}</td></tr>{/each}</tbody></table></div>
+        <p class="mt-3 text-xs text-slate-500">A covered month has exactly one verified matching entry. The calculation engine performs authoritative schedule validation.</p>
+      </section>
+    {/if}
     <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
@@ -641,6 +671,7 @@
         </div>
         <div class="no-print flex flex-wrap gap-2">
           <button type="button" onclick={printStatement} class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold dark:border-slate-700">Print statement</button>
+          <button type="button" onclick={exportAuditCsv} class="rounded-lg border border-emerald-800 px-3 py-2 text-xs font-bold text-emerald-900 dark:border-emerald-500 dark:text-emerald-300">Download audit report</button>
           <button type="button" onclick={exportCsv} disabled={!result.valid || !result.complete} class="rounded-lg bg-emerald-800 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40">Download CSV</button>
         </div>
       </div>
