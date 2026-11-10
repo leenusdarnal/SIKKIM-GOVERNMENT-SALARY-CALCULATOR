@@ -50,7 +50,7 @@
     <div class="rounded-2xl bg-emerald-950 p-4 text-white"><p class="text-xs text-emerald-200">Net take-home</p><p class="mt-1 text-2xl font-black">{fmt(model.salary.takeHome)}</p></div>
    </div>
   </section>
-  <section id="print-slip" class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
+  <section id="print-slip" class="print-report rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
    <div class="flex flex-wrap items-center justify-between gap-3"><div><h2 class="text-lg font-black">Salary statement preview</h2><p class="text-xs text-slate-500">{month} · {employee.department||'Department not entered'}</p></div><span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900">Draft · For verification</span></div>
    <div class="mt-4 grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-4">{#each fields as field}<p><span class="text-slate-500">{field[1]}: </span><strong>{employee[field[0]]||'—'}</strong></p>{/each}</div>
    <div class="mt-5 grid gap-5 md:grid-cols-2">
@@ -75,5 +75,5 @@
  </div>
 </main>
 <style>
- @media print { @page {size:A4 portrait;margin:12mm;} :global(body){background:#fff!important;color:#111!important;} main{min-height:0!important;padding:0!important;background:#fff!important;color:#111!important;} main>div{max-width:none!important;} button,a,select{display:none!important;} section{break-inside:avoid;box-shadow:none!important;} input{border:0!important;padding:1px!important;} }
+ @media print { @page {size:A4 portrait;margin:12mm;} :global(body){background:#fff!important;color:#111!important;} main{min-height:0!important;padding:0!important;background:#fff!important;color:#111!important;} main>div{max-width:none!important;} main>div>*:not(#print-slip){display:none!important;} #print-slip{display:block!important;border:0!important;padding:0!important;} button,a,select,input{display:none!important;} #print-slip table{break-inside:auto;} #print-slip tr{break-inside:avoid;} #print-slip th,#print-slip td{padding:4px 6px!important;} }
 </style>
