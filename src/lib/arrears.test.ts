@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_SALARY_INPUT, type SalaryInput } from './salary';
 import {
   calculateArrears,
+  createArrearsAuditCsv,
   createArrearsCsv,
   getArrearsMonthKeys,
   type ArrearsInput
