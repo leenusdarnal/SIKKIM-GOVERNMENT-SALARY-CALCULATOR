@@ -40,7 +40,7 @@
    </div>
    {#if !result.valid}<div class="mt-5 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950" role="alert"><strong>Review required</strong><ul class="mt-2 list-disc pl-5">{#each result.errors as error}<li>{error}</li>{/each}</ul></div>{/if}
   </section>
-  <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
+  <section class="print-report rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
    <h2 class="text-lg font-black">Estimated results</h2>
    {#if !result.valid}<p class="mt-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100" role="status">Results are withheld because one or more benefit sections are incomplete or invalid. Complete the required inputs and review the validation messages above.</p>{/if}
    <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -68,5 +68,14 @@
  </div>
 </main>
 <style>
- @media print { @page {size:A4 portrait;margin:12mm;} :global(body){background:#fff!important;color:#111!important;} main{min-height:0!important;padding:0!important;background:#fff!important;color:#111!important;} main>div{max-width:none!important;} main>div>*:not(.print-report){display:none!important;} .print-report{display:block!important;border:0!important;padding:0!important;} button,a,input{display:none!important;} .print-report>div{break-inside:avoid;} }
+ @media print {
+   @page { size: A4 portrait; margin: 12mm; }
+   :global(body) { background: #fff !important; color: #111 !important; }
+   main { min-height: 0 !important; padding: 0 !important; background: #fff !important; color: #111 !important; }
+   main > div { max-width: none !important; }
+   :global(main > div > *:not(.print-report)) { display: none !important; }
+   :global(.print-report) { display: block !important; border: 0 !important; padding: 0 !important; }
+   :global(button), :global(a), :global(input) { display: none !important; }
+   :global(.print-report > div) { break-inside: avoid; }
+ }
 </style>
