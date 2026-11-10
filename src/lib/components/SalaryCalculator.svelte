@@ -4,12 +4,11 @@
   import {
     calculateSalary,
     DEFAULT_SALARY_INPUT,
-    validateGpfSubscription,
+    validateSalaryInput,
     type SalaryInput,
     type SalaryResult
   } from '../salary';
   import { SALARY_SOURCES } from '../sources';
-  import { getTemporaryPay, TEMPORARY_PAY_OPTIONS } from '../temporary-pay';
 
   let selectedLevel = $state<number | ''>('');
   let selectedCell = $state<number | ''>('');
@@ -21,12 +20,6 @@
   let dark = $state(false);
   let matrixOpen = $state(false);
   let showSources = $state(false);
-  let temporaryOptionId = $state('');
-  let temporaryDailyRate = $state(0);
-  let temporaryPayableDays = $state(0);
-  const temporaryOption = $derived(TEMPORARY_PAY_OPTIONS.find((option) => option.id === temporaryOptionId));
-  const temporaryAmount = $derived(temporaryOptionId ? getTemporaryPay(temporaryOptionId, temporaryPayableDays, temporaryDailyRate) : null);
-
   const currentCells = $derived(selectedLevel !== '' ? PAY_MATRIX[selectedLevel] ?? [] : []);
   const daNeedsManualVerification = $derived(
     salaryMonth !== '' && (salaryMonth < '2026-01' || salaryMonth > '2026-11')
@@ -63,30 +56,18 @@
       calculationError = 'Choose a pay level and cell before calculating.';
       return;
     }
-    if (form.pensionMode === 'unselected') {
+
+    form.professionalTaxLevelBand = Number(selectedLevel) >= 15
+      ? 'level-15-and-above'
+      : 'below-level-15';
+
+    const errors = validateSalaryInput({ ...form, basicPay: selectedBasic });
+    if (errors.length) {
       hasCalculated = false;
-      calculationError = 'Select the pension arrangement applicable to your service before calculating.';
+      calculationError = errors[0];
       return;
     }
-    if (form.pensionMode === 'cps' && form.cpsMembershipConfirmed !== true) {
-      hasCalculated = false;
-      calculationError = 'Confirm the employee’s CPS membership and applicable contribution basis from the signed pension option / service record and DDO or Accounts before calculating.';
-      return;
-    }
-    if (form.pensionMode === 'gpf') {
-      const gpfErrors = validateGpfSubscription(form.gpfReferencePay, form.manualPension, form.gpfMembershipConfirmed);
-      if (gpfErrors.length) {
-        hasCalculated = false;
-        calculationError = gpfErrors[0];
-        return;
-      }
-    }
-    if (form.professionalTaxMode === 'unselected') {
-      hasCalculated = false;
-      calculationError = 'Select a Professional Tax treatment, enter the amount from your payslip, or mark it not applicable where exempt.';
-      return;
-    }
-    form.professionalTaxLevelBand = Number(selectedLevel) >= 15 ? 'level-15-and-above' : 'below-level-15';
+
     calculationError = '';
     hasCalculated = true;
   }
@@ -234,74 +215,13 @@
           </article>
         </section>
 
-        <section id="temporary-pay" class="mb-7 scroll-mt-28 surface-card p-5 sm:p-6">
-          <div class="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <p class="eyebrow">Separate pay pathway · Temporary appointments</p>
-              <h2 class="mt-1 text-xl font-black tracking-tight">Temporary employee & training pay</h2>
-              <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-400">Uses the Department of Personnel notification dated 12 August 2026 for temporary consolidated pay and the 25 July 2024 amendment for direct-recruit training allowances. This is separate from the regular pay-matrix calculator.</p>
-            </div>
-            <span class="rounded-full bg-amber-50 px-3 py-1.5 text-[10px] font-bold text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">Not regular pay</span>
+        <section id="temporary-pay" class="mb-7 scroll-mt-28 surface-card flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+          <div class="min-w-0">
+            <p class="eyebrow">Separate pay pathway · Temporary appointments</p>
+            <h2 class="mt-1 text-xl font-black tracking-tight">Temporary employee & training pay</h2>
+            <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-400">Use the dedicated notification-based calculator for effective-date checks, employee/post applicability confirmation and the Labour Department daily-wage evidence required for temporary drivers. No unverified temporary-pay amount is calculated in this regular salary form.</p>
           </div>
-          <div class="mt-5 grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(240px,0.65fr)]">
-            <div>
-              <label for="temporaryPayOption" class="field-label">Appointment / post category</label>
-              <select id="temporaryPayOption" bind:value={temporaryOptionId} class="field-control">
-                <option value="">Select the applicable notification category</option>
-                <optgroup label="Temporary Group C / D — equivalent grade pay">
-                  {#each TEMPORARY_PAY_OPTIONS.filter((option) => option.id.startsWith('gp-')) as option}
-                    <option value={option.id}>{option.label}</option>
-                  {/each}
-                </optgroup>
-                <optgroup label="Temporary — specific posts">
-                  {#each TEMPORARY_PAY_OPTIONS.filter((option) => option.category === 'specific-post') as option}
-                    <option value={option.id}>{option.label}</option>
-                  {/each}
-                </optgroup>
-                <optgroup label="Direct recruitment — first-year training allowance">
-                  {#each TEMPORARY_PAY_OPTIONS.filter((option) => option.category === 'training') as option}
-                    <option value={option.id}>{option.label}</option>
-                  {/each}
-                </optgroup>
-                <optgroup label="Temporary driver">
-                  <option value="driver-daily-wage">Driver — enter Labour Department daily wage rate</option>
-                </optgroup>
-              </select>
-            </div>
-            {#if temporaryOption?.category === 'driver-manual'}
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label for="driverDailyRate" class="field-label">Daily rate (₹)</label>
-                  <input id="driverDailyRate" type="number" min="0" bind:value={temporaryDailyRate} class="field-control" />
-                </div>
-                <div>
-                  <label for="driverDays" class="field-label">Payable days</label>
-                  <input id="driverDays" type="number" min="0" max="31" bind:value={temporaryPayableDays} class="field-control" />
-                </div>
-              </div>
-            {/if}
-          </div>
-          {#if temporaryOption}
-            <div class="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 dark:border-emerald-900/60 dark:bg-emerald-950/20">
-              <p class="text-[10px] font-extrabold uppercase tracking-[0.16em] text-emerald-800 dark:text-emerald-300">Monthly consolidated / training amount</p>
-              {#if temporaryAmount !== null}
-                <p class="mt-1 text-3xl font-black tracking-tight text-emerald-950 dark:text-emerald-100">{fmt(temporaryAmount)}</p>
-                <p class="mt-1 text-xs text-emerald-900/70 dark:text-emerald-200/70">{temporaryOption.category === 'driver-manual' ? 'Calculated as daily rate × payable days.' : 'Amount prescribed by the selected notification row.'}</p>
-              {:else}
-                <p class="mt-1 text-sm font-bold text-amber-800 dark:text-amber-300">Enter a valid daily rate and payable days.</p>
-              {/if}
-            </div>
-            {#if temporaryOption.note}
-              <p class="mt-3 text-xs leading-5 text-slate-600 dark:text-slate-400">{temporaryOption.note}</p>
-            {/if}
-          {/if}
-          <div class="mt-4 rounded-xl bg-slate-50 p-4 text-xs leading-5 text-slate-600 dark:bg-slate-800/60 dark:text-slate-300">
-            <strong>Important:</strong> Consolidated pay is not Basic Pay in the regular pay matrix. Do not add DA, HRA, SBCA or CPS/GPF automatically to this amount. The 2026 notification specifies a separate daily-wage basis for temporary drivers. Deductions, arrears, leave salary and employee-specific terms are not calculated in this first increment; confirm the appointment order and DDO bill.
-          </div>
-          <div class="mt-4 border-t border-slate-100 pt-4 dark:border-slate-800">
-            <p class="text-sm font-extrabold">Regularisation transition — reference only</p>
-            <p class="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-400">The Department of Personnel notification dated 25 July 2024 states that certain employees regularised after completing 8 or 4 years of service as on 31 December 2023 would draw their previous temporary consolidated pay for the first year from the effective regularisation date, then be placed in Level 1/2/3 for the next four years, with pay regulated after five years under Notification No. 99/GEN/DOP dated 6 February 2020. This is a specific transition provision, not a general guarantee of regularisation. Verify later orders and the employee's individual regularisation order before using it for a pay-fixation calculation.</p>
-          </div>
+          <a href="/temporary-pay" class="button-primary shrink-0">Open temporary pay calculator</a>
         </section>
 
         <div class="grid items-start gap-6 xl:grid-cols-[minmax(0,1.02fr)_minmax(390px,0.98fr)]">
