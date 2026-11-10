@@ -144,3 +144,12 @@ This is a calculation safeguard, not an official GPF account verification or pay
 - Regression automation is being run against the updated PR branch head. Check the linked GitHub Actions result for the exact committed head before merging.
 - This code-level QA does not claim visual browser emulation, device testing or physical/PDF print-preview inspection. Those remain manual final QA checks.
 - No PR merge or production deployment has been performed.
+
+
+## Browser visual QA follow-up — 10 November 2026
+- A Vercel preview was created for PR #17 head `6646cf1cc7d01f2987e420eaa8b58c3fd5a73f0c`; it is a preview deployment only and is not production.
+- Read-only browser QA covered all seven routes at desktop 1440×900 and mobile 390×844. All routes loaded, no measured horizontal overflow or captured runtime/console errors were reported, and form controls had associated labels. Keyboard focus indicators were visible.
+- Homepage utility links wrapped awkwardly on mobile and the compact workspace title was truncated. The utility links have been converted into a semantic, two-column mobile navigation grid and the mobile header now uses a shorter title.
+- The arrears print route previously produced a blank print-media page when no complete statement existed. A clearly labelled withheld-state print report is now rendered in that case; the actual print action remains disabled until a valid, complete statement is available.
+- Print-media inspection (not a separate system print-preview window): payslip shows a withheld notice when invalid; retirement shows the configured zero-value illustration; arrears now shows a withheld notice when incomplete.
+- No employee data was entered, no form was submitted and no PDF was saved. Populated calculation and populated-report printing remain untested. A further preview build and browser pass are required after these code changes.
