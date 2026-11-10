@@ -13,7 +13,7 @@ A Sikkim-specific salary estimation application built with SvelteKit 3, Svelte 5
 - GPF, manual pension, Professional Tax manual/estimate/exempt options and editable employee-specific deductions.
 - Pay progression and service history: exact matrix-cell scenario, explicit eligibility confirmation and a chronological service record saved in browser-local storage, with validated JSON backup/restore and CSV export. Individual entries can be edited or deleted, with search by date/event/pay details/reference and filters by event/date range.
 - GPF contribution planner: estimates monthly and annual subscription using the Sikkim GPF Rules' 6%–100% limits, with manual reference-pay input and explicit membership caveats.
-- Salary arrears planner: month-by-month revised take-home using opening salary components and effective-dated DA/basic-pay changes for increments, promotion or pay fixation; supports historical HRA eligibility/rate, SBCA, transport, other earnings, pension/GPF, Professional Tax, GIS and deduction changes. Compares itemized monthly salary against actual net credited salary, subtracts separately entered arrears recoveries and exports a detailed CSV statement.
+- Salary arrears planner: month-by-month revised take-home using effective-dated DA, basic pay, HRA, SBCA, transport, pension/GPF, Professional Tax and other component changes; supports editable order references, monthly actual-pay entry, recovery adjustments, browser-local draft saving, versioned JSON backup/restore, monthly CSV template/import, detailed CSV export and print-ready statement.
 - Browser-only calculations. No employee identity, bank details or payroll credentials are requested.
 
 ## Project structure
