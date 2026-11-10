@@ -257,4 +257,16 @@ describe('Sikkim salary arrears planner', () => {
     expect(result.errors.some((message) => message.includes('Overlapping effective periods'))).toBe(true);
   });
 
+  it('rejects a manual DA change when DA is controlled by the historical schedule', () => {
+    const result = calculateArrears(makeInput({
+      historicalRateSchedule: [
+        { component: 'daRate', effectiveFrom: '2026-01', value: 58, unit: 'percent', sourceReference: 'Verified DA Order', verified: true }
+      ],
+      historicalRateComponents: ['daRate'],
+      changes: [{ effectiveMonth: '2026-02', type: 'da-revision', daRate: 60, description: 'Conflicting manual DA revision' }]
+    }));
+    expect(result.valid).toBe(false);
+    expect(result.errors.some((message) => message.includes('DA is controlled by the historical rate schedule'))).toBe(true);
+  });
+
 });
