@@ -153,3 +153,11 @@ This is a calculation safeguard, not an official GPF account verification or pay
 - The arrears print route previously produced a blank print-media page when no complete statement existed. A clearly labelled withheld-state print report is now rendered in that case; the actual print action remains disabled until a valid, complete statement is available.
 - Print-media inspection (not a separate system print-preview window): payslip shows a withheld notice when invalid; retirement shows the configured zero-value illustration; arrears now shows a withheld notice when incomplete.
 - No employee data was entered, no form was submitted and no PDF was saved. Populated calculation and populated-report printing remain untested. A further preview build and browser pass are required after these code changes.
+
+
+### Follow-up code validation — 10 November 2026
+- Mobile homepage navigation changed from a loose wrapping link string to a semantic `nav` with a two-column small-screen grid. The compact workspace title now uses “Sikkim Salary” on narrow screens.
+- The arrears planner always renders a printable withheld-state notice when a complete statement is unavailable. The actual statement print button remains disabled until the calculation and all actual credited-pay entries are complete; the audit CSV remains available.
+- Latest GitHub Actions run [42807618376](https://github.com/leenusdarnal/SIKKIM-GOVERNMENT-SALARY-CALCULATOR/actions/runs/42807618376) passed on PR head `39bc6b64068131110586d3441dfcede6d83044fe`: 12 test files / 142 tests, Svelte check 0 errors / 0 warnings, and Vercel adapter production build succeeded.
+- The browser visual run covered the previous PR head `6646cf1cc7d01f2987e420eaa8b58c3fd5a73f0c`. The updated mobile navigation and withheld arrears print notice are covered by the latest CI build but could not be re-opened in a new Vercel preview: the Vercel Git deployment status for the newer commit is rate-limited and instructs retry after 24 hours. Do not treat the older preview as the current code.
+- The temporary preview share URL is time-limited and should not be reused after its expiry. No production alias was changed.
