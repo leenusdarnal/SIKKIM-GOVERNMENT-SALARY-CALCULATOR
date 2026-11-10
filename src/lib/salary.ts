@@ -1,5 +1,6 @@
 export type PensionMode = 'unselected' | 'cps' | 'gpf' | 'manual' | 'none';
 export type ProfessionalTaxMode = 'unselected' | 'auto' | 'manual' | 'none';
+export type ProfessionalTaxLevelBand = 'unselected' | 'below-level-15' | 'level-15-and-above';
 
 export interface SalaryInput {
   basicPay: number;
@@ -13,6 +14,7 @@ export interface SalaryInput {
   pensionMode: PensionMode;
   manualPension: number;
   professionalTaxMode: ProfessionalTaxMode;
+  professionalTaxLevelBand: ProfessionalTaxLevelBand;
   manualProfessionalTax: number;
   gis: number;
   stampFee: number;
@@ -47,15 +49,10 @@ export const roundRupee = (amount: number): number =>
 const safeAmount = (amount: number): number =>
   Number.isFinite(amount) && amount > 0 ? amount : 0;
 
-export function getSikkimProfessionalTax(monthlySalary: number): {
-  amount: number;
-  band: string;
-} {
-  const salary = safeAmount(monthlySalary);
-  if (salary <= 20_000) return { amount: 0, band: 'Up to ₹20,000 — nil' };
-  if (salary <= 30_000) return { amount: 125, band: '₹20,001–₹30,000 — ₹125' };
-  if (salary <= 40_000) return { amount: 150, band: '₹30,001–₹40,000 — ₹150' };
-  return { amount: 200, band: 'Above ₹40,000 — ₹200' };
+export function getSikkimProfessionalTax(levelBand: ProfessionalTaxLevelBand): { amount: number; band: string } {
+  if (levelBand === 'below-level-15') return { amount: 150, band: 'Below Level 15 — ₹150' };
+  if (levelBand === 'level-15-and-above') return { amount: 200, band: 'Level 15 and above — ₹200' };
+  return { amount: 0, band: 'Pay-level band not selected — amount not calculated' };
 }
 
 export function calculateSalary(input: SalaryInput): SalaryResult {
@@ -94,7 +91,7 @@ export function calculateSalary(input: SalaryInput): SalaryResult {
       break;
   }
 
-  const automaticTax = getSikkimProfessionalTax(gross);
+  const automaticTax = getSikkimProfessionalTax(input.professionalTaxLevelBand);
   const professionalTax =
     input.professionalTaxMode === 'none' || input.professionalTaxMode === 'unselected'
       ? 0
@@ -137,6 +134,7 @@ export const DEFAULT_SALARY_INPUT: SalaryInput = {
   pensionMode: 'unselected',
   manualPension: 0,
   professionalTaxMode: 'unselected',
+  professionalTaxLevelBand: 'unselected',
   manualProfessionalTax: 0,
   gis: 0,
   stampFee: 0,
