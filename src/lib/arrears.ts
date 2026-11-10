@@ -480,7 +480,7 @@ export function createArrearsAuditCsv(input: ArrearsInput, result: ArrearsResult
   } else if (!result.complete) {
     rows.push([status, '', 'Enter actual credited salary for every month before final arrears export.', ...Array(headers.length - 3).fill('')]);
   }
-  rows.push(['Selected historical components', '', (input.historicalRateComponents ?? []).join(', ') || 'None', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+  rows.push(['Selected historical components', '', (input.historicalRateComponents ?? []).join(', ') || 'None', ...Array(headers.length - 3).fill('')]);
   return '\\uFEFF' + rows.map((row) => row.map(csvCell).join(',')).join('\\r\\n') + '\\r\\n';
 }
 
