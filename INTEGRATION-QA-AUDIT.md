@@ -23,3 +23,9 @@ The ₹150 / ₹200 amounts and Level 15 threshold are based on the user's previ
 - This change does not modify CPS, GPF, GIS or other deduction formulas.
 - No employee data is sent to a server by these local calculation modules.
 - No merge or production deployment is performed as part of this QA stage.
+
+## Additional payslip QA corrections
+- Annual-to-date totals now include only records from the selected financial/calendar year up to and including the selected month; later months in the same year are excluded.
+- Payslip validation now rejects non-finite, negative, or out-of-range salary inputs and requires explicit pension/GPF and Professional Tax treatment rather than silently presenting a zero deduction as a completed calculation.
+- CSV text cells now neutralize spreadsheet formula prefixes (=, +, - and @) before export to reduce formula-injection risk when the file is opened in spreadsheet software.
+- Regression tests cover annual cut-off, malformed salary inputs, unselected deduction treatments and formula-prefixed employee names.
