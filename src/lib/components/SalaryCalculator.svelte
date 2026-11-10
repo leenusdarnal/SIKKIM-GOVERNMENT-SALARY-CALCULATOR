@@ -72,6 +72,7 @@
       calculationError = 'Select a Professional Tax treatment, enter the amount from your payslip, or mark it not applicable where exempt.';
       return;
     }
+    form.professionalTaxLevelBand = selectedLevel >= 15 ? 'level-15-and-above' : 'below-level-15';
     calculationError = '';
     hasCalculated = true;
   }
@@ -460,10 +461,10 @@
                     <select id="ptMode" bind:value={form.professionalTaxMode} class="field-control">
                       <option value="unselected" disabled>Select Professional Tax treatment</option>
                       <option value="manual">Manual amount from payslip (recommended)</option>
-                      <option value="auto">Automatic estimate — based on gross monthly earnings</option>
+                      <option value="auto">Automatic — based on selected pay level</option>
                       <option value="none">Not applicable / exempt</option>
                     </select>
-                    <p class="field-help">Automatic mode is an estimate using gross monthly earnings. The exact statutory assessment base, exclusions and employee-specific exemptions need confirmation. Use the amount on your payslip or confirm with your DDO / Accounts section.</p>
+                    <p class="field-help">Automatic mode uses the selected pay level: ₹150 below Level 15 and ₹200 for Level 15 and above, as per the Sikkim-specific rule supplied for this calculator. Confirm applicability and any exemption with DDO / Accounts.</p>
                   </div>
                   {#if form.professionalTaxMode === 'manual'}
                     <div class="mt-4">
@@ -599,7 +600,7 @@
                 <div class="flex gap-3"><span class="number-dot">1</span><p class="text-xs leading-5 text-slate-600 dark:text-slate-400"><strong class="text-slate-900 dark:text-slate-200">DA</strong> is the selected percentage of Basic Pay.</p></div>
                 <div class="flex gap-3"><span class="number-dot">2</span><p class="text-xs leading-5 text-slate-600 dark:text-slate-400"><strong class="text-slate-900 dark:text-slate-200">HRA and SBCA</strong> use editable reference rates; HRA can be switched off.</p></div>
                 <div class="flex gap-3"><span class="number-dot">3</span><p class="text-xs leading-5 text-slate-600 dark:text-slate-400"><strong class="text-slate-900 dark:text-slate-200">CPS</strong> uses the configured employee contribution; confirm coverage and contribution base.</p></div>
-                <div class="flex gap-3"><span class="number-dot">4</span><p class="text-xs leading-5 text-slate-600 dark:text-slate-400"><strong class="text-slate-900 dark:text-slate-200">Professional Tax</strong> uses monthly salary slabs, not the pay level.</p></div>
+                <div class="flex gap-3"><span class="number-dot">4</span><p class="text-xs leading-5 text-slate-600 dark:text-slate-400"><strong class="text-slate-900 dark:text-slate-200">Professional Tax</strong> uses the Sikkim pay-level bands: ₹150 below Level 15 and ₹200 for Level 15 and above.</p></div>
               </div>
             </section>
           </section>
