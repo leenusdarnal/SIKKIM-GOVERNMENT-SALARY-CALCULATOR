@@ -14,6 +14,7 @@ const baseSalary: SalaryInput = {
   basicPay: 56_000,
   daRate: 58,
   pensionMode: 'cps',
+  cpsMembershipConfirmed: true,
   professionalTaxMode: 'auto',
   professionalTaxLevelBand: 'level-15-and-above'
 };
@@ -43,6 +44,26 @@ describe('Professional Tax pay-level safeguards in arrears', () => {
     const result = calculateArrears(makeInput({ baseSalary: { ...baseSalary, basicPay: 15_200, professionalTaxLevelBand: 'below-level-15' } }));
     expect(result.valid).toBe(true);
     expect(result.rows.every(row => row.professionalTax === 150)).toBe(true);
+  });
+});
+
+describe('CPS membership safeguards in arrears', () => {
+  it('blocks a CPS opening basis without explicit membership confirmation', () => {
+    const result = calculateArrears(makeInput({ baseSalary: { ...baseSalary, cpsMembershipConfirmed: false } }));
+    expect(result.valid).toBe(false);
+    expect(result.errors.join(' ')).toContain('Confirm CPS membership');
+  });
+
+  it('requires an effective-dated CPS change to carry explicit confirmation', () => {
+    const result = calculateArrears(makeInput({
+      baseSalary: { ...baseSalary, pensionMode: 'none', cpsMembershipConfirmed: false },
+      changes: [{
+        effectiveMonth: '2026-02', type: 'allowance-deduction', description: 'CPS option confirmed',
+        salaryUpdates: { pensionMode: 'cps' }
+      }]
+    }));
+    expect(result.valid).toBe(false);
+    expect(result.errors.join(' ')).toContain('effective-dated change');
   });
 });
 
