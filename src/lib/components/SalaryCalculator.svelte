@@ -67,6 +67,11 @@
       calculationError = 'Select the pension arrangement applicable to your service before calculating.';
       return;
     }
+    if (form.pensionMode === 'cps' && form.cpsMembershipConfirmed !== true) {
+      hasCalculated = false;
+      calculationError = 'Confirm the employee’s CPS membership and applicable contribution basis from the signed pension option / service record and DDO or Accounts before calculating.';
+      return;
+    }
     if (form.professionalTaxMode === 'unselected') {
       hasCalculated = false;
       calculationError = 'Select a Professional Tax treatment, enter the amount from your payslip, or mark it not applicable where exempt.';
@@ -107,11 +112,6 @@
     window.print();
   }
 
-  const preCpsCutoff = $derived(
-    form.pensionMode === 'cps' &&
-    appointmentDate !== '' &&
-    appointmentDate < '2006-04-01'
-  );
 </script>
 
 <div class:dark class="app-shell min-h-screen bg-[#f4f6f3] text-slate-900 transition-colors dark:bg-[#0b1411] dark:text-slate-100">
@@ -437,7 +437,7 @@
                   <p class="mb-3 text-xs font-extrabold uppercase tracking-[0.15em] text-slate-500">Pension and provident fund</p>
                   <div>
                     <label for="pensionMode" class="field-label">Pension deduction scheme</label>
-                    <select id="pensionMode" bind:value={form.pensionMode} class="field-control">
+                    <select id="pensionMode" value={form.pensionMode} onchange={(event) => { form.pensionMode = (event.currentTarget as HTMLSelectElement).value as SalaryInput['pensionMode']; form.cpsMembershipConfirmed = false; hasCalculated = false; }} class="field-control">
                       <option value="unselected" disabled>Select applicable pension arrangement</option>
                       <option value="cps">Sikkim CPS / CPF — 10% employee contribution (where covered)</option>
                       <option value="gpf">GPF — enter monthly amount</option>
@@ -445,7 +445,14 @@
                       <option value="none">OPS / no employee contribution (only where applicable)</option>
                     </select>
                   </div>
-                  <p class="field-help">Choose the scheme supported by your appointment/service records or latest DDO confirmation. Do not infer CPS/CPF or OPS eligibility from appointment date alone.</p>
+                  <p class="field-help">Choose the arrangement shown in the employee’s applicable pension option, service records and DDO / Accounts confirmation. Do not infer CPS/CPF or OPS eligibility from appointment date alone.</p>
+                  {#if form.pensionMode === 'cps'}
+                    <label class="mt-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
+                      <input type="checkbox" checked={form.cpsMembershipConfirmed === true} onchange={(event) => { form.cpsMembershipConfirmed = (event.currentTarget as HTMLInputElement).checked; hasCalculated = false; }} class="mt-1 size-4 shrink-0" />
+                      <span>I have verified this employee’s CPS / CPF membership and the applicable contribution basis against the signed pension option / order, service record and DDO / Accounts confirmation.</span>
+                    </label>
+                    <p class="field-help">The 9 February 2024 DOP notification announced restoration of OPS for employees appointed on or after 1 April 2006 and said detailed reversion modalities would follow. Confirm the employee’s actual option / implementation status; appointment date alone is not sufficient. <a class="underline" href="https://dop.sikkim.gov.in/notificationdoc/23.pdf" target="_blank" rel="noreferrer">Notification No. 23/GEN/DOP</a>.</p>
+                  {/if}
                   {#if form.pensionMode === 'gpf' || form.pensionMode === 'manual'}
                     <div class="mt-4">
                       <label for="manualPension" class="field-label">Monthly GPF / pension amount (₹)</label>
@@ -526,10 +533,8 @@
                   <span>Calculation updates when you edit an input after calculating.</span>
                   <button type="button" onclick={printStatement} class="rounded-lg border border-white/20 px-3 py-2 font-bold text-white transition hover:bg-white/10">Print result</button>
                 </div>
-                {#if preCpsCutoff}
-                  <p class="mt-4 rounded-xl border border-amber-200/40 bg-amber-100/10 p-3 text-xs leading-5 text-amber-50">The appointment date entered is before 1 April 2006. Check CPS coverage and applicable exclusions before using the selected scheme.</p>
-                {:else if form.pensionMode === 'cps'}
-                  <p class="mt-4 rounded-xl border border-white/15 bg-white/5 p-3 text-xs leading-5 text-emerald-50/80">CPS coverage depends on the post and service category, not only the appointment date. Confirm eligibility under the Sikkim Government Servants (Contributory Pension) Rules, 2006.</p>
+                {#if form.pensionMode === 'cps'}
+                  <p class="mt-4 rounded-xl border border-white/15 bg-white/5 p-3 text-xs leading-5 text-emerald-50/80">After CPS membership is explicitly confirmed, this calculator applies the configured 10% employee share on Basic Pay + DA and shows an equal State share separately. Verify the applicable base and current scheme treatment against the employee’s option and Finance / DDO records.</p>
                 {/if}
               </section>
 
