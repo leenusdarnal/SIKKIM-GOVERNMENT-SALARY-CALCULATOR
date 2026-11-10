@@ -42,7 +42,12 @@
     }).format(Math.round(value));
 
   onMount(() => {
-    dark = localStorage.getItem('sikkim-salary-theme') === 'dark';
+    try {
+      dark = localStorage.getItem('sikkim-salary-theme') === 'dark';
+    } catch {
+      // Theme persistence is optional; a restricted browser still gets the light theme.
+      dark = false;
+    }
   });
 
   function changeLevel() {
@@ -95,7 +100,11 @@
 
   function toggleTheme() {
     dark = !dark;
-    localStorage.setItem('sikkim-salary-theme', dark ? 'dark' : 'light');
+    try {
+      localStorage.setItem('sikkim-salary-theme', dark ? 'dark' : 'light');
+    } catch {
+      // Keep the in-memory theme toggle usable when browser storage is unavailable.
+    }
   }
 
   function printStatement() {
