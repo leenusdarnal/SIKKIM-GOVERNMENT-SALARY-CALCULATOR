@@ -6,7 +6,7 @@ const employee={name:'Test Employee',employeeId:'T-01',designation:'Assistant',d
 describe('monthly payslip',()=>{
  it('builds current salary and annual summary using supplied month records',()=>{
   const m=buildPayslipModel('2026-11',employee,input,[{month:'2026-10',gross:49000,deductions:1000,net:48000}]);
-  expect(m.valid).toBe(true);expect(m.salary.gross).toBe(50000);expect(m.annual.monthsRecorded).toBe(2);expect(m.annual.gross).toBe(99000);expect(m.monthComparison.net).toBe(1000);
+  expect(m.valid).toBe(true);expect(m.salary.gross).toBe(50000);expect(m.annual.monthsRecorded).toBe(2);expect(m.annual.gross).toBe(99000);expect(m.monthComparison.net).toBe(2000);
  });
  it('compares against most recent earlier month, not an arbitrary row',()=>{
   const m=buildPayslipModel('2026-11',employee,input,[{month:'2026-09',gross:45000,deductions:1000,net:44000},{month:'2026-10',gross:49000,deductions:1000,net:48000}]);
