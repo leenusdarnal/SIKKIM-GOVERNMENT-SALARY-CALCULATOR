@@ -61,3 +61,7 @@ No license file is currently provided. Obtain permission from the repository own
 
 ### Printable salary / arrears statement
 The arrears planner includes a print-ready A4 landscape statement for DDO / Accounts review. It is enabled only after valid calculation and complete monthly actual-pay entry. Optional employee metadata is session-only and excluded from draft persistence and JSON backups. Use the browser Print dialog and choose Save as PDF. See [SALARY-ARREARS-STATEMENT-AUDIT.md](./SALARY-ARREARS-STATEMENT-AUDIT.md). This is a draft calculation aid, not an official pay certificate or sanction.
+
+
+### Retirement benefits estimator
+The /retirement-planner route provides an employee-specific worksheet for monthly pension, commutation, gratuity and leave encashment. All scheme rates, emoluments bases, service units, multipliers, divisors and ceilings must be entered from applicable current signed orders and DDO / Accounts confirmation. The module deliberately starts with zero values and does not infer OPS/CPS/CPF/NPS/GPF eligibility. See [RETIREMENT-PLANNER-AUDIT.md](./RETIREMENT-PLANNER-AUDIT.md). It is an illustration, not a pension sanction calculator.
