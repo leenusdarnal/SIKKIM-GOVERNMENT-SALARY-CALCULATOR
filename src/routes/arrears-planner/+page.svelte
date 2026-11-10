@@ -100,7 +100,7 @@
 
   $effect(() => {
     const snapshot = arrearsInput;
-    if (!storageReady || !result.valid) return;
+    if (!storageReady) return;
     try {
       saveArrearsScenario(snapshot, window.localStorage);
       saveStatus = 'Saved in this browser';
