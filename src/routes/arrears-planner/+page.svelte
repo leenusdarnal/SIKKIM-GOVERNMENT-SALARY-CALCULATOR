@@ -225,7 +225,7 @@
     baseSalary: { ...baseSalary },
     changes,
     monthlyRecords,
-    ...(historicalRateSchedule.length || historicalRateComponents.length ? {
+    ...(historicalRateComponents.length ? {
       historicalRateSchedule,
       historicalRateComponents
     } : {})
