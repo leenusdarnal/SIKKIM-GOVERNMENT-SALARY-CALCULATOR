@@ -102,7 +102,7 @@ export function calculateTemporaryPay(input: TemporaryPayCalculationInput): Temp
   if (option?.basis === 'daily') {
     if (!Number.isFinite(input.dailyRate) || (input.dailyRate ?? 0) <= 0) errors.push('Enter the positive daily rate from the applicable Labour Department notification.');
     if (!Number.isInteger(input.payableDays) || (input.payableDays ?? 0) < 1) errors.push('Enter at least one payable day.');
-    if (input.daysInMonth !== undefined && (!Number.isInteger(input.daysInMonth) || input.daysInMonth < 28 || input.daysInMonth > 31)) errors.push('Days in month must be a whole number from 28 to 31.');
+    if (input.daysInMonth !== undefined && (!Number.isInteger(input.daysInMonth) || input.daysInMonth < 28 || input.daysInMonth > 31 || input.daysInMonth !== new Date(Number(input.salaryMonth.slice(0, 4)), Number(input.salaryMonth.slice(5, 7)), 0).getDate())) errors.push('Days in month must match the selected calendar month.');
     if (input.daysInMonth !== undefined && (input.payableDays ?? 0) > input.daysInMonth) errors.push('Payable days cannot exceed the number of calendar days in the selected month.');
     if (!input.dailyRateSourceReference?.trim()) errors.push('Enter the Labour Department notification number/date for the daily rate.');
     if (!validIsoDate(input.dailyRateEffectiveFrom ?? '')) errors.push('Enter the effective date of the Labour Department daily-rate notification.');
