@@ -161,3 +161,12 @@ This is a calculation safeguard, not an official GPF account verification or pay
 - Latest GitHub Actions run [42807618376](https://github.com/leenusdarnal/SIKKIM-GOVERNMENT-SALARY-CALCULATOR/actions/runs/42807618376) passed on PR head `39bc6b64068131110586d3441dfcede6d83044fe`: 12 test files / 142 tests, Svelte check 0 errors / 0 warnings, and Vercel adapter production build succeeded.
 - The browser visual run covered the previous PR head `6646cf1cc7d01f2987e420eaa8b58c3fd5a73f0c`. The updated mobile navigation and withheld arrears print notice are covered by the latest CI build but could not be re-opened in a new Vercel preview: the Vercel Git deployment status for the newer commit is rate-limited and instructs retry after 24 hours. Do not treat the older preview as the current code.
 - The temporary preview share URL is time-limited and should not be reused after its expiry. No production alias was changed.
+
+
+## Dependency-chain end-to-end verification — 10 November 2026
+- PR #14 head `4cdbf78806e7364327525fe242006de841267850`: GitHub Actions [run 42772884493](https://github.com/leenusdarnal/SIKKIM-GOVERNMENT-SALARY-CALCULATOR/actions/runs/42772884493) passed, 8 test files / 69 tests, Svelte check 0 errors / 0 warnings, Vercel adapter build passed. Vercel preview status reported complete.
+- PR #15 head `15b9336c2f621790f10eb2d925d03e1fa9afce75`: GitHub Actions [run 42773259891](https://github.com/leenusdarnal/SIKKIM-GOVERNMENT-SALARY-CALCULATOR/actions/runs/42773259891) passed, 8 test files / 72 tests, Svelte check 0 errors / 0 warnings, Vercel adapter build passed. Vercel preview status reported complete.
+- PR #17 current code head before this documentation-only update `39bc6b64068131110586d3441dfcede6d83044fe`: GitHub Actions [run 42807766925](https://github.com/leenusdarnal/SIKKIM-GOVERNMENT-SALARY-CALCULATOR/actions/runs/42807766925) passed, 12 test files / 142 tests, Svelte check 0 errors / 0 warnings, Vercel adapter build passed.
+- All three PRs are still open and GitHub reports each as mergeable. Their bases form the intended dependency chain: #17 → #15 → #14. Do not merge out of order.
+- Vercel preview deployment creation for the newest PR #17 code is currently rate-limited for 24 hours. The older preview was inspected, but it does not contain the follow-up mobile-navigation and arrears withheld-print fixes. Re-verify those two fixes on a fresh preview after the limit clears before treating visual QA as fully closed.
+- No PR was merged and no production deployment was triggered.
