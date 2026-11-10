@@ -15,24 +15,34 @@ export interface GpfEstimate {
  * year from the service/pay records. This module does not decide GPF membership.
  */
 export function calculateGpfContribution(referencePay: number, contributionRate: number): GpfEstimate {
-  const pay = Number.isFinite(referencePay) && referencePay > 0 ? referencePay : 0;
+  // Keep the annual estimate within JavaScript's safe whole-rupee range.
+  const maximumReferencePay = Math.floor(Number.MAX_SAFE_INTEGER / 12);
+  const pay = Number.isFinite(referencePay) && referencePay > 0 && referencePay <= maximumReferencePay
+    ? referencePay : 0;
   const rate = Number.isFinite(contributionRate) ? contributionRate : 0;
   const minimumMonthlyContribution = Math.round(pay * 0.06);
   const maximumMonthlyContribution = Math.round(pay);
-  const valid = pay > 0 && rate >= 6 && rate <= 100;
-  const monthlyContribution = valid ? Math.round(pay * rate / 100) : 0;
+  const rateValid = rate >= 6 && rate <= 100;
+  const provisionalMonthly = pay > 0 && rateValid ? Math.round(pay * rate / 100) : 0;
+  const annual = provisionalMonthly * 12;
+  const safe = [minimumMonthlyContribution, maximumMonthlyContribution, provisionalMonthly, annual]
+    .every((value) => Number.isSafeInteger(value));
+  const valid = pay > 0 && rateValid && safe;
+
   return {
     referencePay: pay,
     contributionRate: rate,
-    monthlyContribution,
-    annualContribution: monthlyContribution * 12,
+    monthlyContribution: valid ? provisionalMonthly : 0,
+    annualContribution: valid ? annual : 0,
     minimumMonthlyContribution,
     maximumMonthlyContribution,
     valid,
     message: pay <= 0
-      ? 'Enter the applicable reference pay from the employee record.'
-      : rate < 6 || rate > 100
+      ? 'Enter a positive reference pay within the supported annual calculation range.'
+      : !rateValid
         ? 'The contribution percentage must be between 6% and 100% under the referenced GPF rule.'
-        : 'Illustrative amount only. Confirm subscription eligibility, reference emoluments and any permitted change with the Accounts/DDO section.'
+        : !safe
+          ? 'The entered reference pay produces an amount outside the supported calculation range.'
+          : 'Illustrative amount only. Confirm subscription eligibility, reference emoluments and any permitted change with the Accounts/DDO section.'
   };
 }
