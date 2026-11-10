@@ -76,6 +76,18 @@ describe('Sikkim temporary and training pay references', () => {
     expect(calculateTemporaryPay({ ...confirmed, optionId: 'driver-daily-wage', payableDays: 24, dailyRate: 500, dailyRateSourceReference: 'LD order', dailyRateEffectiveFrom: '2026-12-01', dailyRateVerified: true, daysInMonth: 30 }).valid).toBe(false);
   });
 
+  it('blocks daily-wage multiplication outside the safe calculation range', () => {
+    const result = calculateTemporaryPay({
+      ...confirmed, optionId: 'driver-daily-wage', payableDays: 30,
+      dailyRate: Number.MAX_SAFE_INTEGER, dailyRateSourceReference: 'LD order',
+      dailyRateEffectiveFrom: '2026-01-01', dailyRateVerified: true, daysInMonth: 30
+    });
+    expect(result.valid).toBe(false);
+    expect(result.amount).toBeNull();
+    expect(result.errors.join(' ')).toContain('supported calculation range');
+    expect(getTemporaryPay('driver-daily-wage', 30, Number.MAX_SAFE_INTEGER)).toBeNull();
+  });
+
   it('rounds daily-wage multiplication to the nearest rupee', () => {
     const result = calculateTemporaryPay({ ...confirmed, optionId: 'driver-daily-wage', payableDays: 3, dailyRate: 500.5, dailyRateSourceReference: 'LD order', dailyRateEffectiveFrom: '2026-01-01', dailyRateVerified: true, daysInMonth: 30 });
     expect(result.amount).toBe(1502);
