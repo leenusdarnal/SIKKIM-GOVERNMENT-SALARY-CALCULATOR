@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calculateSalary, DEFAULT_SALARY_INPUT, getSikkimProfessionalTax, validateGpfSubscription } from './salary';
+import { calculateSalary, DEFAULT_SALARY_INPUT, getSikkimProfessionalTax, validateGpfSubscription, validateSalaryInput } from './salary';
 import { PAY_LEVELS, PAY_MATRIX, PAY_MATRIX_CELL_COUNTS, PAY_MATRIX_TOTAL_CELLS } from './data/pay-matrix';
 
 describe('Sikkim pay matrix', () => {
@@ -83,6 +83,23 @@ describe('salary calculation', () => {
     professionalTaxMode: 'auto' as const, professionalTaxLevelBand: 'level-15-and-above' as const, manualProfessionalTax: 0,
     gis: 0, stampFee: 0, otherDeductions: 0
   };
+
+
+  it('validates every regular salary field before presenting a calculation', () => {
+    const validInput = {
+      ...DEFAULT_SALARY_INPUT,
+      ...base,
+      pensionMode: 'none' as const,
+      cpsMembershipConfirmed: false,
+      professionalTaxMode: 'auto' as const
+    };
+    expect(validateSalaryInput(validInput)).toEqual([]);
+    expect(validateSalaryInput({ ...validInput, transportAllowance: -1 })).toContain('transportAllowance must be a finite, non-negative number.');
+    expect(validateSalaryInput({ ...validInput, daRate: 201 })).toContain('DA rate must be between 0% and 200%.');
+    expect(validateSalaryInput({ ...validInput, hraRate: 101 })).toContain('HRA and SBCA rates must be between 0% and 100%.');
+    expect(validateSalaryInput({ ...validInput, professionalTaxLevelBand: 'unselected' })).toContain('Select the employee pay-level band for Sikkim Professional Tax.');
+    expect(validateSalaryInput({ ...validInput, otherDeductions: Number.MAX_VALUE })).toContain('otherDeductions exceeds the supported calculation range.');
+  });
 
   it('does not calculate Professional Tax until the treatment is selected', () => {
     const result = calculateSalary({ ...base, professionalTaxMode: 'unselected' });
