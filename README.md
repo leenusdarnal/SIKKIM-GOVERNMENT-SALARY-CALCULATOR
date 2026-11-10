@@ -25,7 +25,8 @@ A Sikkim-specific salary estimation application built with SvelteKit 3, Svelte 5
 - src/lib/pay-history-management.ts — validated edit/delete helpers and chronology-preserving updates.
 - src/lib/pay-history-storage.ts — browser-local history persistence, versioned backup/restore and CSV export.
 - src/lib/arrears.ts — effective-dated month-by-month arrears model and CSV statement export.
-- src/lib/historical-rates.ts — source-backed effective-dated DA, HRA, SBCA and transport-rate validation and resolution.\n- src/lib/HistoricalRateEditor.svelte — add/edit/delete interface for historical rate schedules.
+- src/lib/historical-rates.ts — source-backed effective-dated DA, HRA, SBCA and transport-rate validation and resolution.
+- src/lib/HistoricalRateEditor.svelte — add/edit/delete interface for historical rate schedules.
 - src/lib/arrears-storage.ts — browser-local arrears draft persistence, versioned JSON backup/restore and monthly payslip CSV import/template.
 - src/lib/temporary-pay.ts — source/effective-dated temporary consolidated-pay and training allowance schedule with guarded calculation.
 - TEMPORARY-PAY-AUDIT.md — temporary-pay sources, validation rules and limitations.
