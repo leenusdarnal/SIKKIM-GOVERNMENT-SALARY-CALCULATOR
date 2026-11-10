@@ -89,8 +89,8 @@ export function calculateTemporaryPay(input: TemporaryPayCalculationInput): Temp
   }
   if (input.sourceVerified !== true) errors.push('Confirm that the cited Government notification applies to this employee, post and salary period.');
   if (option?.basis === 'monthly' && option.amount !== null) {
-    if (input.daysInMonth !== undefined && (!Number.isInteger(input.daysInMonth) || input.daysInMonth < 28 || input.daysInMonth > 31)) {
-      errors.push('Days in month must be a whole number from 28 to 31.');
+    if (input.daysInMonth !== undefined && (!Number.isInteger(input.daysInMonth) || input.daysInMonth < 28 || input.daysInMonth > 31 || input.daysInMonth !== new Date(Number(input.salaryMonth.slice(0, 4)), Number(input.salaryMonth.slice(5, 7)), 0).getDate())) {
+      errors.push('Days in month must match the selected calendar month.');
     }
     if (input.payableDays !== undefined && (!Number.isInteger(input.payableDays) || input.payableDays < 1 || (input.daysInMonth !== undefined && input.payableDays > input.daysInMonth))) {
       errors.push('Payable days must be a whole number within the selected month's calendar days.');
