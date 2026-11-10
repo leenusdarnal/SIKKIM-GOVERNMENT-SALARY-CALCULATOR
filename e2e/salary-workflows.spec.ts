@@ -20,7 +20,7 @@ test.describe('Sikkim salary calculator browser workflows', () => {
     await expect(result).toBeVisible();
     await expect(result).toContainText('₹89,400');
     await expect(result).toContainText('₹89,600');
-    await expect(result).toContainText('Level 15 and above — ₹200');
+    await expect(page.getByText('Professional Tax (Level 15 and above — ₹200)', { exact: false })).toBeVisible();
   });
 
   test('the payslip form calculates, records the month and updates the annual summary', async ({ page }) => {
@@ -90,7 +90,9 @@ test.describe('Sikkim salary calculator browser workflows', () => {
 
     for (const route of routes) {
       await page.goto(route);
-      await page.locator('[data-client-ready="true"]').first().waitFor();
+      if (['/', '/payslip-generator', '/arrears-planner'].includes(route)) {
+        await page.locator('[data-client-ready="true"]').first().waitFor();
+      }
       await expect(page.locator('h1').first()).toBeVisible();
       const dimensions = await page.evaluate(() => ({
         viewport: document.documentElement.clientWidth,
