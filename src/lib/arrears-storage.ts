@@ -31,7 +31,8 @@ function isSalaryInput(value: unknown): value is SalaryInput {
     'transportAllowance', 'otherEarnings', 'manualPension',
     'manualProfessionalTax', 'gis', 'stampFee', 'otherDeductions'
   ];
-  return numericFields.every((key) => typeof value[key] === 'number' && Number.isFinite(value[key])) &&
+  return numericFields.every((key) => typeof value[key] === 'number' && Number.isFinite(value[key]) && Number(value[key]) >= 0) &&
+    Number(value.daRate) <= 200 && Number(value.hraRate) <= 100 && Number(value.sbcaRate) <= 100 &&
     typeof value.hraEligible === 'boolean' &&
     ['unselected', 'cps', 'gpf', 'manual', 'none'].includes(String(value.pensionMode)) &&
     ['unselected', 'auto', 'manual', 'none'].includes(String(value.professionalTaxMode));
@@ -67,7 +68,22 @@ export function validateArrearsScenario(value: unknown): value is ArrearsScenari
   if (!value.changes.every((change) => isObject(change) &&
       typeof change.effectiveMonth === 'string' &&
       typeof change.type === 'string' &&
-      typeof change.description === 'string')) return false;
+      ['da-revision', 'annual-increment', 'promotion', 'pay-fixation', 'manual-adjustment', 'allowance-deduction'].includes(change.type) &&
+      typeof change.description === 'string' && change.description.trim().length > 0 &&
+      (change.basicPay === undefined || (typeof change.basicPay === 'number' && Number.isFinite(change.basicPay) && change.basicPay > 0)) &&
+      (change.daRate === undefined || (typeof change.daRate === 'number' && Number.isFinite(change.daRate) && change.daRate >= 0 && change.daRate <= 200)) &&
+      (change.salaryUpdates === undefined || (isObject(change.salaryUpdates) && Object.entries(change.salaryUpdates).every(([key, item]) => {
+        if (key === 'hraEligible') return typeof item === 'boolean';
+        if (key === 'pensionMode') return ['cps', 'gpf', 'manual', 'none'].includes(String(item));
+        if (key === 'professionalTaxMode') return ['auto', 'manual', 'none'].includes(String(item));
+        return ['hraRate', 'hraMinimum', 'sbcaRate', 'transportAllowance', 'otherEarnings', 'manualPension', 'manualProfessionalTax', 'gis', 'stampFee', 'otherDeductions'].includes(key) &&
+          typeof item === 'number' && Number.isFinite(item) && item >= 0 &&
+          (!['hraRate', 'sbcaRate'].includes(key) || item <= 100);
+      }))) &&
+      (change.type !== 'da-revision' || change.daRate !== undefined) &&
+      (!['annual-increment', 'promotion', 'pay-fixation'].includes(change.type) || change.basicPay !== undefined) &&
+      (change.type !== 'allowance-deduction' || (isObject(change.salaryUpdates) && Object.keys(change.salaryUpdates).length > 0))
+    )) return false;
   if (!value.monthlyRecords.every(isMonthlyRecord)) return false;
 
   const months = getArrearsMonthKeys(value.startMonth, value.endMonth);
@@ -77,7 +93,7 @@ export function validateArrearsScenario(value: unknown): value is ArrearsScenari
   if (!value.monthlyRecords.every((record) => {
     if (!allowedMonths.has(record.month) || seenMonths.has(record.month)) return false;
     seenMonths.add(record.month);
-    return record.actualTakeHome === null || record.actualTakeHome >= 0;
+    return (record.actualTakeHome === null || record.actualTakeHome >= 0) && record.recovery >= 0;
   })) return false;
   return value.changes.every((change) => allowedMonths.has(String(change.effectiveMonth)));
 }
