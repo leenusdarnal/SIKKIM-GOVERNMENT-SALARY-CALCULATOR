@@ -425,7 +425,9 @@
       <p class="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Local browser storage is not encrypted. Avoid shared or public devices and keep a separate JSON backup. Imported CSV rows must use the selected month range; duplicate months and negative amounts are rejected.</p>
     </section>
 
-    <HistoricalRateEditor bind:entries={historicalRateSchedule} bind:selected={historicalRateComponents} />\n\n    <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
+    <HistoricalRateEditor bind:entries={historicalRateSchedule} bind:selected={historicalRateComponents} />
+
+    <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p class="text-xs font-extrabold uppercase tracking-[0.15em] text-emerald-800 dark:text-emerald-400">01 · Period and opening entitlement</p>
