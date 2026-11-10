@@ -23,14 +23,14 @@ A Sikkim-specific salary estimation application built with SvelteKit 3, Svelte 5
 - src/lib/pay-progression.ts — pay-cell progression and history validation.
 - src/lib/pay-history-management.ts — validated edit/delete helpers and chronology-preserving updates.
 - src/lib/pay-history-storage.ts — browser-local history persistence, versioned backup/restore and CSV export.
-- src/lib/arrears.ts — effective-dated month-by-month arrears model and CSV statement export.
+- src/lib/arrears.ts — effective-dated month-by-month arrears model and CSV statement export.\n- src/lib/historical-rates.ts — source-backed effective-dated DA, HRA, SBCA and transport-rate validation and resolution.
 - src/lib/arrears-storage.ts — browser-local arrears draft persistence, versioned JSON backup/restore and monthly payslip CSV import/template.
 - src/lib/temporary-pay.ts — temporary consolidated-pay and training allowance schedule.
 - src/lib/sources.ts — in-app source register.
 - SOURCES.md — source evidence and limitations.
 - PAY-PROGRESSION-AUDIT.md — progression scope, sources and limitations.
 - PAY-HISTORY-STORAGE-AUDIT.md — service-history storage, backup and data-handling notes. The same page also supports individual record management and filtering.
-- ARREARS-PLANNER-AUDIT.md — arrears formula, effective-dated inputs, assumptions and exclusions.
+- ARREARS-PLANNER-AUDIT.md — arrears formula, effective-dated inputs, assumptions and exclusions.\n- HISTORICAL-RATE-ENGINE-AUDIT.md — historical rate schedule validation, provenance requirements and limitations.
 
 ## Run locally
 Requires Node.js 24+ and npm.
