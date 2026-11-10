@@ -12,7 +12,8 @@
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:e2e": "playwright test"
   },
   "devDependencies": {
     "@sveltejs/adapter-vercel": "^7.0.0",
@@ -24,6 +25,7 @@
     "tailwindcss": "^4.0.0",
     "typescript": "^6.0.0",
     "vite": "^8.0.0",
-    "vitest": "^4.0.0"
+    "vitest": "^4.0.0",
+    "@playwright/test": "1.65.0"
   }
 }
