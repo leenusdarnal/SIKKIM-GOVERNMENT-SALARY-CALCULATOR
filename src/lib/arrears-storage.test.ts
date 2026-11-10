@@ -116,6 +116,27 @@ describe('arrears draft storage and import/export', () => {
     expect(restored.baseSalary.cpsMembershipConfirmed).toBe(true);
   });
 
+  it('round-trips confirmed GPF reference pay and account attestation', () => {
+    const scenario = createArrearsScenario({ ...input(), baseSalary: {
+      ...DEFAULT_SALARY_INPUT, basicPay: 30_000, daRate: 0, pensionMode: 'gpf',
+      gpfMembershipConfirmed: true, gpfReferencePay: 30_000, manualPension: 1_800,
+      professionalTaxMode: 'none'
+    } });
+    const restored = parseArrearsScenarioBackup(serializeArrearsScenario(scenario));
+    expect(restored.baseSalary.gpfMembershipConfirmed).toBe(true);
+    expect(restored.baseSalary.gpfReferencePay).toBe(30_000);
+  });
+
+  it('accepts legacy drafts without optional GPF fields but leaves them unconfirmed', () => {
+    const legacy = createArrearsScenario(input());
+    delete (legacy.baseSalary as Partial<typeof legacy.baseSalary>).gpfMembershipConfirmed;
+    delete (legacy.baseSalary as Partial<typeof legacy.baseSalary>).gpfReferencePay;
+    expect(validateArrearsScenario(legacy)).toBe(true);
+    const restored = parseArrearsScenarioBackup(JSON.stringify(legacy));
+    expect(restored.baseSalary.gpfMembershipConfirmed).toBeUndefined();
+    expect(restored.baseSalary.gpfReferencePay).toBeUndefined();
+  });
+
   it('rejects a backup with only one of historical schedule or selected components', () => {
     const scenario = createArrearsScenario({
       ...input(),
