@@ -117,3 +117,30 @@ This is a calculation safeguard, not an official GPF account verification or pay
 - GitHub Actions must complete against the new branch head before this stage is considered CI-verified.
 - Visual viewport testing with real mobile devices / browser emulation and physical/PDF print-preview inspection remain part of final end-to-end QA; they are not claimed as completed here.
 - No merge or production deployment has been performed.
+
+
+## Final integration QA corrections — 10 November 2026
+
+### Shared regular-salary input validation
+- Added `validateSalaryInput()` to the shared salary module. It validates all regular salary numeric inputs, basic pay, percentage limits, HRA eligibility type, pension treatment, CPS/GPF confirmation, GPF reference-pay/subscription constraints and Professional Tax treatment/pay-level band.
+- The main salary calculator now uses the shared validator before displaying a salary result. Payslip and arrears use the same validator rather than maintaining separate regular-salary rules.
+- The regular calculator's former temporary-pay shortcut has been replaced with a link to the guarded `/temporary-pay` workflow. This removes a path that could show notification amounts without date/applicability confirmation.
+
+### Range and aggregation safety
+- Shared salary validation rejects unsafe monetary inputs and derived outputs outside the supported safe whole-rupee range.
+- Payslip annual aggregates are validated after summation; invalid totals withhold the model output, print and CSV export. Invalid months cannot be added to the annual summary.
+- Arrears validates actual credited amounts and recoveries and rejects unsafe period totals before returning monthly result rows.
+- GPF annual illustrations and temporary-driver daily-wage multiplication now reject overflow / unsafe totals.
+- Regression tests cover salary input boundaries, payslip annual overflow, arrears input and aggregate overflow, GPF annual overflow and temporary daily-wage overflow.
+
+### Workflow consistency and UI corrections
+- The payslip UI withholds gross, deductions, net pay, statement breakdown and annual totals whenever validation fails. Print and add/update-month actions are disabled while invalid; CSV generation is already guarded by the model.
+- The pay-progression increment scenario now lets the user select the calendar year rather than hard-coding the 2026 Jan/Jul options. The date remains a record/scenario input and does not determine entitlement.
+- Browser theme persistence now fails gracefully where localStorage is unavailable; the in-memory theme control remains usable.
+- The project structure section in README uses separate real lines for the historical rate engine and editor.
+- Arrears, payslip and retirement print rules were corrected to select their intended report sections with valid CSS selectors. The retirement results section is explicitly tagged as the print target.
+
+### Verification boundary
+- Regression automation is being run against the updated PR branch head. Check the linked GitHub Actions result for the exact committed head before merging.
+- This code-level QA does not claim visual browser emulation, device testing or physical/PDF print-preview inspection. Those remain manual final QA checks.
+- No PR merge or production deployment has been performed.
