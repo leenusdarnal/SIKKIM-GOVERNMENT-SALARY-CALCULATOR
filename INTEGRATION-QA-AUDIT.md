@@ -61,3 +61,27 @@ The ₹150 / ₹200 amounts and Level 15 threshold are based on the user's previ
 ### Formula and applicability limitation
 The 10% Basic Pay + DA employee / equal State contribution is the Finance Department's published scheme description used by this calculator. The individual's scheme coverage, option status, precise contribution base and any subsequent implementation instructions must still be confirmed against applicable orders and service / DDO records before payroll use. This change does not apply CPS universally, infer OPS automatically, or treat the checkbox as Government approval.
 
+
+
+## GPF deduction integration QA — 10 November 2026
+
+### Rule basis and boundaries
+- The Sikkim General Provident Fund (Sikkim Services) Rules, 1984, Notification No. 8/Fin dated 16.10.1984 (effective 01.01.1985), prescribe a minimum subscription of 6% and a maximum of 100% against the applicable reference emoluments. The source register points to the [Sikkim Finance Department rule page](http://www.sikkimfred.gov.in/user/Rules_1984.aspx).
+- The relevant GPF reference-pay basis is tied to the preceding 31 March under the cited rules. The employee must enter the applicable reference pay confirmed by Accounts / DDO for the subscription year. The application does not substitute current Basic Pay automatically.
+- GPF membership/account status and authority to subscribe are not inferred from appointment date or from selecting GPF in the dropdown. The employee-specific service record and Accounts / DDO confirmation remain necessary.
+
+### Shared calculation safeguards
+- `src/lib/salary.ts` adds optional `gpfMembershipConfirmed` and `gpfReferencePay` fields plus `validateGpfSubscription()`. A GPF deduction is included only when membership/account status is confirmed, reference pay is positive and the entered monthly subscription lies between the rounded 6% minimum and 100% maximum.
+- The shared salary engine continues to treat GPF as an employee deduction only. It creates no employer / State matching contribution. The CPS employer matching field remains zero for GPF.
+- The main salary calculator requires the GPF attestation, Accounts-confirmed reference pay and monthly subscription before calculating. Changing the pension arrangement clears the GPF confirmation.
+- The payslip model rejects GPF when confirmation, reference pay or subscription range is invalid. Its UI asks for the reference pay and account confirmation, and the CSV carries the pension arrangement / GPF reference-pay context.
+- The arrears planner validates the opening GPF basis and simulates every effective-dated salary state month by month before calculating. A switch to GPF requires account confirmation, reference pay and a valid monthly subscription for that effective month. Later changes to only the subscription amount are also revalidated against the carried-forward reference pay.
+- Arrears draft storage and JSON backup preserve the new fields. Older drafts that omit the optional GPF fields remain structurally loadable; if such a draft selects GPF, calculation is blocked until the missing information is supplied.
+- The standalone GPF planner starts with no prefilled reference pay and links to the Sikkim GPF Rules. It remains an illustration and does not decide account membership.
+
+### Regression coverage
+- Tests cover the 6% and 100% boundaries, missing / invalid reference pay, unconfirmed membership, employee deduction / take-home arithmetic, no employer match under GPF, payslip gating, arrears opening and effective-dated changes, persistence round-trip and legacy draft compatibility.
+- GPF validation uses the same shared salary engine rule limits in the main calculator, payslip and arrears modules. No GPF amount is assumed or auto-derived from current Basic Pay.
+
+### Limitation
+This is a calculation safeguard, not an official GPF account verification or payroll authorization. Confirm the current amended rule text, applicable reference emoluments, subscription election and any permitted subscription change with the Accounts / DDO section before using the output for payroll.
