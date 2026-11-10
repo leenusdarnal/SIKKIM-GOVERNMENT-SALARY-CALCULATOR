@@ -329,6 +329,29 @@ export function calculateArrears(input: ArrearsInput): ArrearsResult {
     }
   }
 
+  const orderedChanges = input.changes
+    .map((change, originalIndex) => ({ change, originalIndex }))
+    .sort((a, b) =>
+      a.change.effectiveMonth.localeCompare(b.change.effectiveMonth) ||
+      a.originalIndex - b.originalIndex
+    );
+
+  // Validate the complete effective-dated pension state month by month before producing any rows.
+  let validationState: SalaryInput = { ...input.baseSalary };
+  let validationNextChange = 0;
+  for (const month of months) {
+    while (validationNextChange < orderedChanges.length && orderedChanges[validationNextChange].change.effectiveMonth <= month) {
+      const change = orderedChanges[validationNextChange].change;
+      if (change.basicPay !== undefined) validationState.basicPay = change.basicPay;
+      if (change.daRate !== undefined) validationState.daRate = change.daRate;
+      if (change.salaryUpdates) validationState = { ...validationState, ...change.salaryUpdates };
+      validationNextChange += 1;
+    }
+    const historical = historicalByMonth.get(month);
+    if (historical) validationState = { ...validationState, ...historical.values };
+    errors.push(...validateSalaryBasis(validationState).map((message) => month + ': ' + message));
+  }
+
   const paidByMonth = new Map<string, MonthlyPaidRecord>();
   for (const [index, record] of input.monthlyRecords.entries()) {
     if (!months.includes(record.month)) {
@@ -368,13 +391,6 @@ export function calculateArrears(input: ArrearsInput): ArrearsResult {
       }
     };
   }
-
-  const orderedChanges = input.changes
-    .map((change, originalIndex) => ({ change, originalIndex }))
-    .sort((a, b) =>
-      a.change.effectiveMonth.localeCompare(b.change.effectiveMonth) ||
-      a.originalIndex - b.originalIndex
-    );
 
   let salaryState: SalaryInput = { ...input.baseSalary };
   let nextChange = 0;
