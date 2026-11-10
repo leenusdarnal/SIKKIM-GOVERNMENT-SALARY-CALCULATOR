@@ -46,6 +46,8 @@
     otherEarnings: '',
     pensionMode: '',
     cpsMembershipConfirmed: '',
+    gpfMembershipConfirmed: '',
+    gpfReferencePay: '',
     manualPension: '',
     professionalTaxMode: '',
     professionalTaxLevelBand: '',
@@ -281,6 +283,8 @@
     if (componentEvent.otherEarnings.trim() !== '') update.otherEarnings = Number(componentEvent.otherEarnings);
     if (componentEvent.pensionMode !== '') update.pensionMode = componentEvent.pensionMode as SalaryInput['pensionMode'];
     if (componentEvent.cpsMembershipConfirmed === 'yes') update.cpsMembershipConfirmed = true;
+    if (componentEvent.gpfMembershipConfirmed === 'yes') update.gpfMembershipConfirmed = true;
+    if (componentEvent.gpfReferencePay.trim() !== '') update.gpfReferencePay = Number(componentEvent.gpfReferencePay);
     if (componentEvent.manualPension.trim() !== '') update.manualPension = Number(componentEvent.manualPension);
     if (componentEvent.professionalTaxMode !== '') update.professionalTaxMode = componentEvent.professionalTaxMode as SalaryInput['professionalTaxMode'];
     if (componentEvent.professionalTaxLevelBand !== '') update.professionalTaxLevelBand = componentEvent.professionalTaxLevelBand as SalaryInput['professionalTaxLevelBand'];
@@ -329,6 +333,14 @@
       formError = 'Confirm CPS membership and the applicable contribution basis for the effective month before adding this change.';
       return;
     }
+    if (componentEvent.pensionMode === 'gpf') {
+      const gpfReferencePay = Number(componentEvent.gpfReferencePay);
+      const manualPension = Number(componentEvent.manualPension);
+      if (componentEvent.gpfMembershipConfirmed !== 'yes' || !componentEvent.gpfReferencePay.trim() || !componentEvent.manualPension.trim() || !Number.isFinite(gpfReferencePay) || !Number.isFinite(manualPension) || manualPension < Math.round(gpfReferencePay * 0.06) || manualPension > Math.round(gpfReferencePay)) {
+        formError = 'For an effective-dated GPF change, confirm the GPF account, enter the applicable reference pay and monthly subscription within 6%–100% of that reference pay.';
+        return;
+      }
+    }
 
     changes = [...changes, candidate];
     eventBasicPay = '';
@@ -337,7 +349,7 @@
     componentEvent = {
       hraEligible: '', hraRate: '', hraMinimum: '', sbcaRate: '',
       transportAllowance: '', otherEarnings: '', pensionMode: '', cpsMembershipConfirmed: '',
-      manualPension: '', professionalTaxMode: '', professionalTaxLevelBand: '', manualProfessionalTax: '',
+      gpfMembershipConfirmed: '', gpfReferencePay: '', manualPension: '', professionalTaxMode: '', professionalTaxLevelBand: '', manualProfessionalTax: '',
       gis: '', stampFee: '', otherDeductions: ''
     };
     formError = '';
@@ -353,6 +365,8 @@
       otherEarnings: 'Other earnings',
       pensionMode: 'Pension arrangement',
       cpsMembershipConfirmed: 'CPS membership / basis confirmed',
+      gpfMembershipConfirmed: 'GPF account / subscription confirmed',
+      gpfReferencePay: 'GPF reference pay',
       manualPension: 'GPF / manual pension',
       professionalTaxMode: 'Professional Tax mode',
       manualProfessionalTax: 'Professional Tax',
@@ -534,6 +548,19 @@
               <option value="none">OPS / no employee contribution (where confirmed)</option>
             </select>
           </label>
+          {#if baseSalary.pensionMode === 'gpf'}
+            <label class="text-sm font-bold">GPF reference pay for subscription year (₹)
+              <input type="number" min="1" step="1" bind:value={baseSalary.gpfReferencePay} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
+            </label>
+            <label class="text-sm font-bold">Monthly GPF subscription (₹)
+              <input type="number" min="0" step="1" bind:value={baseSalary.manualPension} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
+            </label>
+            <label class="col-span-full flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-5 text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
+              <input type="checkbox" checked={baseSalary.gpfMembershipConfirmed === true} onchange={(event) => (baseSalary.gpfMembershipConfirmed = (event.currentTarget as HTMLInputElement).checked)} class="mt-1 size-4 shrink-0" />
+              <span>I verified the employee’s GPF account / membership and subscription authority against the service record and DDO / Accounts confirmation.</span>
+            </label>
+            <p class="col-span-full text-xs text-slate-500">Monthly subscription must be between 6% and 100% of the rule-defined reference pay for the relevant subscription year. Confirm the reference pay with Accounts / DDO; it is not automatically today's Basic Pay.</p>
+          {/if}
           {#if baseSalary.pensionMode === 'cps'}
             <label class="col-span-full flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-5 text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
               <input type="checkbox" checked={baseSalary.cpsMembershipConfirmed === true} onchange={(event) => (baseSalary.cpsMembershipConfirmed = (event.currentTarget as HTMLInputElement).checked)} class="mt-1 size-4 shrink-0" />
@@ -631,6 +658,18 @@
                 <option value="">Unchanged</option><option value="cps">CPS / CPF</option><option value="gpf">GPF</option><option value="manual">Manual pension</option><option value="none">OPS / no employee contribution</option>
               </select>
             </label>
+            {#if componentEvent.pensionMode === 'gpf'}
+              <label class="text-sm font-bold">GPF reference pay for subscription year (₹)
+                <input type="number" min="1" step="1" value={componentEvent.gpfReferencePay} oninput={(event) => (componentEvent.gpfReferencePay = (event.currentTarget as HTMLInputElement).value)} placeholder="Enter Accounts-confirmed reference pay" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
+              </label>
+              <label class="text-sm font-bold">Monthly GPF subscription (₹)
+                <input type="number" min="0" step="1" value={componentEvent.manualPension} oninput={(event) => (componentEvent.manualPension = (event.currentTarget as HTMLInputElement).value)} placeholder="Enter revised subscription" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
+              </label>
+              <label class="col-span-full flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-5 text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
+                <input type="checkbox" checked={componentEvent.gpfMembershipConfirmed === 'yes'} onchange={(event) => (componentEvent.gpfMembershipConfirmed = (event.currentTarget as HTMLInputElement).checked ? 'yes' : '')} class="mt-1 size-4 shrink-0" />
+                <span>I verified the GPF account and subscription authority for this effective month against the service record and DDO / Accounts confirmation.</span>
+              </label>
+            {/if}
             {#if componentEvent.pensionMode === 'cps'}
               <label class="col-span-full flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-5 text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
                 <input type="checkbox" checked={componentEvent.cpsMembershipConfirmed === 'yes'} onchange={(event) => (componentEvent.cpsMembershipConfirmed = (event.currentTarget as HTMLInputElement).checked ? 'yes' : '')} class="mt-1 size-4 shrink-0" />
