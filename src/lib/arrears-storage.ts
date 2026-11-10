@@ -39,7 +39,8 @@ function isSalaryInput(value: unknown): value is SalaryInput {
   ) &&
     typeof value.hraEligible === 'boolean' &&
     ['unselected', 'cps', 'gpf', 'manual', 'none'].includes(String(value.pensionMode)) &&
-    ['unselected', 'auto', 'manual', 'none'].includes(String(value.professionalTaxMode));
+    ['unselected', 'auto', 'manual', 'none'].includes(String(value.professionalTaxMode)) &&
+    ['unselected', 'below-level-15', 'level-15-and-above'].includes(String(value.professionalTaxLevelBand));
 }
 
 const CHANGE_TYPES = new Set([
@@ -50,7 +51,7 @@ const CHANGE_TYPES = new Set([
 const SALARY_UPDATE_KEYS = new Set([
   'hraEligible', 'hraRate', 'hraMinimum', 'sbcaRate',
   'transportAllowance', 'otherEarnings', 'pensionMode', 'manualPension',
-  'professionalTaxMode', 'manualProfessionalTax', 'gis', 'stampFee', 'otherDeductions'
+  'professionalTaxMode', 'professionalTaxLevelBand', 'manualProfessionalTax', 'gis', 'stampFee', 'otherDeductions'
 ]);
 
 function isSalaryUpdate(value: unknown): boolean {
@@ -60,6 +61,7 @@ function isSalaryUpdate(value: unknown): boolean {
     if (key === 'hraEligible') return typeof item === 'boolean';
     if (key === 'pensionMode') return ['cps', 'gpf', 'manual', 'none'].includes(String(item));
     if (key === 'professionalTaxMode') return ['auto', 'manual', 'none'].includes(String(item));
+    if (key === 'professionalTaxLevelBand') return ['unselected', 'below-level-15', 'level-15-and-above'].includes(String(item));
     return typeof item === 'number' && Number.isFinite(item) && item >= 0 &&
       (!['hraRate', 'sbcaRate'].includes(key) || item <= 100);
   });
@@ -136,6 +138,7 @@ export function validateArrearsScenario(value: unknown): value is ArrearsScenari
   if (!value.monthlyRecords.every((record) => isMonthlyRecord(record, months))) return false;
   const paidMonths = (value.monthlyRecords as MonthlyPaidRecord[]).map((record) => record.month);
   if (new Set(paidMonths).size !== paidMonths.length) return false;
+  if ((value.historicalRateSchedule === undefined) !== (value.historicalRateComponents === undefined)) return false;
   if (value.historicalRateSchedule !== undefined) {
     if (!Array.isArray(value.historicalRateSchedule) || !value.historicalRateSchedule.every(isHistoricalRateEntry)) return false;
   }
