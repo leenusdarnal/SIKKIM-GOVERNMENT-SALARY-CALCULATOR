@@ -83,6 +83,34 @@ describe('arrears draft storage and import/export', () => {
     expect(loadArrearsScenario(store)?.monthlyRecords).toHaveLength(3);
   });
 
+  it('round-trips Sikkim Professional Tax pay-level changes in saved drafts', () => {
+    const scenario = createArrearsScenario({
+      ...input(),
+      baseSalary: {
+        ...input().baseSalary,
+        professionalTaxLevelBand: 'below-level-15'
+      },
+      changes: [{
+        effectiveMonth: '2026-02',
+        type: 'allowance-deduction',
+        description: 'Pay-level change as recorded in service order',
+        salaryUpdates: { professionalTaxLevelBand: 'level-15-and-above' }
+      }]
+    });
+    const restored = parseArrearsScenarioBackup(serializeArrearsScenario(scenario));
+    expect(restored.baseSalary.professionalTaxLevelBand).toBe('below-level-15');
+    expect(restored.changes[0].salaryUpdates?.professionalTaxLevelBand).toBe('level-15-and-above');
+  });
+
+  it('rejects a backup with only one of historical schedule or selected components', () => {
+    const scenario = createArrearsScenario({
+      ...input(),
+      historicalRateComponents: ['daRate']
+    });
+    expect(validateArrearsScenario(scenario)).toBe(false);
+    expect(() => serializeArrearsScenario(scenario)).toThrow(/invalid/);
+  });
+
   it('creates a consecutive monthly CSV template and imports payslip data', () => {
     const months = getArrearsMonthKeys('2026-01', '2026-03');
     const template = createArrearsEntryTemplateCsv(months);
