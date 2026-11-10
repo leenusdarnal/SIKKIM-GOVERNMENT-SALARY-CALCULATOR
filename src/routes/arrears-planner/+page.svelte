@@ -575,8 +575,8 @@
               <option value="none">Not applicable / exempt</option>
             </select>
           </label>
-          {#if baseSalary.pensionMode === 'gpf' || baseSalary.pensionMode === 'manual'}
-            <label class="text-sm font-bold">Monthly pension / GPF (₹)
+          {#if baseSalary.pensionMode === 'manual'}
+            <label class="text-sm font-bold">Monthly other pension (₹)
               <input type="number" min="0" step="1" bind:value={baseSalary.manualPension} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
             </label>
           {/if}
@@ -676,9 +676,11 @@
                 <span>I verified CPS / CPF membership and the applicable contribution basis for this effective month against the employee’s service record and DDO / Accounts confirmation.</span>
               </label>
             {/if}
-            <label class="text-sm font-bold">Manual pension / GPF (₹)
-              <input type="number" min="0" step="1" value={componentEvent.manualPension} oninput={(event) => (componentEvent.manualPension = (event.currentTarget as HTMLInputElement).value)} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
-            </label>
+            {#if componentEvent.pensionMode === 'manual'}
+              <label class="text-sm font-bold">Monthly other pension (₹)
+                <input type="number" min="0" step="1" value={componentEvent.manualPension} oninput={(event) => (componentEvent.manualPension = (event.currentTarget as HTMLInputElement).value)} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
+              </label>
+            {/if}
             <label class="text-sm font-bold">Professional Tax treatment
               <select bind:value={componentEvent.professionalTaxMode} class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
                 <option value="">Unchanged</option><option value="auto">Automatic — pay-level band</option><option value="manual">Manual payslip amount</option><option value="none">Not applicable / exempt</option>
