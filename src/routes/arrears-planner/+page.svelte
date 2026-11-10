@@ -10,6 +10,8 @@
     type ArrearsInput
   } from '../../lib/arrears';
   import { DEFAULT_SALARY_INPUT, type SalaryInput } from '../../lib/salary';
+  import HistoricalRateEditor from '../../lib/HistoricalRateEditor.svelte';
+  import type { HistoricalRateComponent, HistoricalRateEntry } from '../../lib/historical-rates';
   import {
     createArrearsEntryTemplateCsv,
     createArrearsScenario,
@@ -26,6 +28,8 @@
   let endMonth = $state('2026-11');
   let baseSalary = $state<SalaryInput>({ ...DEFAULT_SALARY_INPUT, daRate: 0 });
   let changes = $state<ArrearChange[]>([]);
+  let historicalRateSchedule = $state<HistoricalRateEntry[]>([]);
+  let historicalRateComponents = $state<HistoricalRateComponent[]>([]);
   let eventMonth = $state('2026-01');
   let eventType = $state<ArrearChangeType>('da-revision');
   let eventBasicPay = $state('');
@@ -62,7 +66,9 @@
         ...change,
         ...(change.salaryUpdates ? { salaryUpdates: { ...change.salaryUpdates } } : {})
       })),
-      monthlyRecords: monthlyRecords.map((record) => ({ ...record }))
+      monthlyRecords: monthlyRecords.map((record) => ({ ...record })),
+      historicalRateSchedule: historicalRateSchedule.map((entry) => ({ ...entry })),
+      historicalRateComponents: [...historicalRateComponents]
     };
   }
 
@@ -70,6 +76,8 @@
     startMonth = scenario.startMonth;
     endMonth = scenario.endMonth;
     baseSalary = { ...scenario.baseSalary };
+    historicalRateSchedule = (scenario.historicalRateSchedule ?? []).map((entry) => ({ ...entry }));
+    historicalRateComponents = [...(scenario.historicalRateComponents ?? [])];
     changes = scenario.changes.map((change) => ({
       ...change,
       ...(change.salaryUpdates ? { salaryUpdates: { ...change.salaryUpdates } } : {})
@@ -216,7 +224,11 @@
     endMonth,
     baseSalary: { ...baseSalary },
     changes,
-    monthlyRecords
+    monthlyRecords,
+    ...(historicalRateSchedule.length || historicalRateComponents.length ? {
+      historicalRateSchedule,
+      historicalRateComponents
+    } : {})
   }));
   const missingPaidMonths = $derived(result.rows.filter((row) => row.actualTakeHome === null).length);
   const fmt = (value: number | null | undefined) =>
@@ -413,7 +425,7 @@
       <p class="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Local browser storage is not encrypted. Avoid shared or public devices and keep a separate JSON backup. Imported CSV rows must use the selected month range; duplicate months and negative amounts are rejected.</p>
     </section>
 
-    <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
+    <HistoricalRateEditor bind:entries={historicalRateSchedule} bind:selected={historicalRateComponents} />\n\n    <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p class="text-xs font-extrabold uppercase tracking-[0.15em] text-emerald-800 dark:text-emerald-400">01 · Period and opening entitlement</p>
