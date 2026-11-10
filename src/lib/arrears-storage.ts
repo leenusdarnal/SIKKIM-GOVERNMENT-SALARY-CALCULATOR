@@ -1,7 +1,6 @@
 import {
   calculateArrears,
   getArrearsMonthKeys,
-  type ArrearsInterestSettings,
   type ArrearsInput,
   type MonthlyPaidRecord
 } from './arrears';
@@ -9,7 +8,7 @@ import type { SalaryInput } from './salary';
 
 export const ARREARS_SCENARIO_VERSION = 1;
 export const ARREARS_SCENARIO_STORAGE_KEY = 'sikkim-salary-arrears-scenario-v1';
-export const MAX_ARREARS_BACKUP_BYTES = 2 * 1024 * 1024;
+export const MAX_ARREARS_BACKUP_BYTES = 1_000_000;
 
 export interface ArrearsScenario extends ArrearsInput {
   version: typeof ARREARS_SCENARIO_VERSION;
@@ -28,24 +27,22 @@ function isObject(value: unknown): value is Record<string, unknown> {
 
 function isSalaryInput(value: unknown): value is SalaryInput {
   if (!isObject(value)) return false;
-  const required = [
-    'basicPay', 'daRate', 'hraRate', 'hraMinimum', 'sbcaRate', 'cpsRate',
-    'transportAllowance', 'otherEarnings', 'manualPension', 'manualProfessionalTax',
-    'gis', 'stampFee', 'incomeTaxTds', 'otherDeductions'
+  const numericFields = [
+    'basicPay', 'daRate', 'hraRate', 'hraMinimum', 'sbcaRate',
+    'transportAllowance', 'otherEarnings', 'manualPension',
+    'manualProfessionalTax', 'gis', 'stampFee', 'otherDeductions'
   ];
-  return required.every((key) => typeof value[key] === 'number' && Number.isFinite(value[key])) &&
+  return numericFields.every((key) => typeof value[key] === 'number' && Number.isFinite(value[key])) &&
     typeof value.hraEligible === 'boolean' &&
     ['unselected', 'cps', 'gpf', 'manual', 'none'].includes(String(value.pensionMode)) &&
     ['unselected', 'auto', 'manual', 'none'].includes(String(value.professionalTaxMode));
 }
 
 function isMonthlyRecord(value: unknown): value is MonthlyPaidRecord {
-  if (!isObject(value)) return false;
-  return typeof value.month === 'string' &&
+  return isObject(value) &&
+    typeof value.month === 'string' &&
     (value.actualTakeHome === null || (typeof value.actualTakeHome === 'number' && Number.isFinite(value.actualTakeHome))) &&
-    typeof value.recovery === 'number' && Number.isFinite(value.recovery) &&
-    (value.payableDays === undefined || value.payableDays === null || (typeof value.payableDays === 'number' && Number.isFinite(value.payableDays))) &&
-    (value.salaryFactorPercent === undefined || (typeof value.salaryFactorPercent === 'number' && Number.isFinite(value.salaryFactorPercent)));
+    typeof value.recovery === 'number' && Number.isFinite(value.recovery);
 }
 
 export function createArrearsScenario(input: ArrearsInput, savedAt = new Date().toISOString()): ArrearsScenario {
@@ -59,8 +56,7 @@ export function createArrearsScenario(input: ArrearsInput, savedAt = new Date().
       ...change,
       ...(change.salaryUpdates ? { salaryUpdates: { ...change.salaryUpdates } } : {})
     })),
-    monthlyRecords: input.monthlyRecords.map((record) => ({ ...record })),
-    interestSettings: { ...(input.interestSettings ?? { annualRate: 0, settlementDate: '' }) }
+    monthlyRecords: input.monthlyRecords.map((record) => ({ ...record }))
   };
 }
 
@@ -75,24 +71,18 @@ export function validateArrearsScenario(value: unknown): value is ArrearsScenari
       typeof change.description === 'string')) return false;
   if (!value.monthlyRecords.every(isMonthlyRecord)) return false;
 
-  const settings = value.interestSettings;
-  if (settings !== undefined && (!isObject(settings) ||
-      typeof settings.annualRate !== 'number' ||
-      typeof settings.settlementDate !== 'string')) return false;
-
   const input: ArrearsInput = {
     startMonth: value.startMonth,
     endMonth: value.endMonth,
     baseSalary: value.baseSalary,
     changes: value.changes as ArrearsInput['changes'],
-    monthlyRecords: value.monthlyRecords,
-    interestSettings: (settings ?? { annualRate: 0, settlementDate: '' }) as ArrearsInterestSettings
+    monthlyRecords: value.monthlyRecords
   };
   return calculateArrears(input).valid;
 }
 
-function encodedSize(text: string): number {
-  return new TextEncoder().encode(text).length;
+function encodedSize(value: string): number {
+  return new TextEncoder().encode(value).byteLength;
 }
 
 export function serializeArrearsScenario(scenario: ArrearsScenario): string {
@@ -101,16 +91,15 @@ export function serializeArrearsScenario(scenario: ArrearsScenario): string {
   }
   const json = JSON.stringify(scenario, null, 2);
   if (encodedSize(json) > MAX_ARREARS_BACKUP_BYTES) {
-    throw new Error('The arrears backup exceeds the 2 MB size limit.');
+    throw new Error('The arrears backup exceeds the 1 MB size limit.');
   }
   return json;
 }
 
 export function parseArrearsScenarioBackup(json: string): ArrearsScenario {
   if (encodedSize(json) > MAX_ARREARS_BACKUP_BYTES) {
-    throw new Error('The selected backup exceeds the 2 MB size limit.');
+    throw new Error('The selected backup exceeds the 1 MB size limit.');
   }
-
   let parsed: unknown;
   try {
     parsed = JSON.parse(json);
@@ -124,8 +113,7 @@ export function parseArrearsScenarioBackup(json: string): ArrearsScenario {
 }
 
 export function saveArrearsScenario(input: ArrearsInput, storage: StorageLike): void {
-  const scenario = createArrearsScenario(input);
-  storage.setItem(ARREARS_SCENARIO_STORAGE_KEY, serializeArrearsScenario(scenario));
+  storage.setItem(ARREARS_SCENARIO_STORAGE_KEY, serializeArrearsScenario(createArrearsScenario(input)));
 }
 
 export function loadArrearsScenario(storage: StorageLike): ArrearsScenario | null {
@@ -145,13 +133,13 @@ export function restoreArrearsScenario(json: string, storage: StorageLike): Arre
 }
 
 export function createArrearsEntryTemplateCsv(months: string[]): string {
-  const allowed = getArrearsMonthKeys(months[0] ?? '', months[months.length - 1] ?? '');
-  if (!months.length || allowed.length !== months.length || allowed.some((month, index) => month !== months[index])) {
+  const expected = getArrearsMonthKeys(months[0] ?? '', months[months.length - 1] ?? '');
+  if (!months.length || expected.length !== months.length || expected.some((month, index) => month !== months[index])) {
     throw new Error('Provide a valid consecutive month list to create the CSV template.');
   }
   const rows = [
-    ['month', 'actualTakeHome', 'recovery', 'payableDays', 'salaryFactorPercent'],
-    ...months.map((month) => [month, '', '0', '', '100'])
+    ['month', 'actualTakeHome', 'recovery'],
+    ...months.map((month) => [month, '', '0'])
   ];
   return '\uFEFF' + rows.map((row) => row.join(',')).join('\r\n') + '\r\n';
 }
@@ -182,46 +170,35 @@ function parseCsvLine(line: string): string[] {
 }
 
 export function parseArrearsEntryCsv(csv: string, allowedMonths: string[]): MonthlyPaidRecord[] {
-  if (encodedSize(csv) > MAX_ARREARS_BACKUP_BYTES) {
-    throw new Error('The CSV file exceeds the 2 MB size limit.');
-  }
+  if (encodedSize(csv) > MAX_ARREARS_BACKUP_BYTES) throw new Error('The CSV file exceeds the 1 MB size limit.');
   const lines = csv.replace(/^\uFEFF/, '').split(/\r?\n/).filter((line) => line.trim() !== '');
   if (lines.length < 2) throw new Error('The CSV must contain a header and at least one month row.');
-
   const header = parseCsvLine(lines[0]).map((key) => key.toLowerCase());
-  const required = ['month', 'actualtakehome', 'recovery', 'payabledays', 'salaryfactorpercent'];
+  const required = ['month', 'actualtakehome', 'recovery'];
   const indices = required.map((key) => header.indexOf(key));
-  if (indices.some((index) => index < 0)) {
-    throw new Error('The CSV header must contain month, actualTakeHome, recovery, payableDays and salaryFactorPercent.');
-  }
+  if (indices.some((index) => index < 0)) throw new Error('The CSV header must contain month, actualTakeHome and recovery.');
 
   const allowed = new Set(allowedMonths);
   const seen = new Set<string>();
-  const result: MonthlyPaidRecord[] = [];
-
+  const records: MonthlyPaidRecord[] = [];
   for (const [lineIndex, line] of lines.slice(1).entries()) {
     const cells = parseCsvLine(line);
     const month = cells[indices[0]] ?? '';
     if (!allowed.has(month)) throw new Error('CSV row ' + (lineIndex + 2) + ': month is outside the selected arrears period.');
     if (seen.has(month)) throw new Error('CSV row ' + (lineIndex + 2) + ': duplicate month ' + month + '.');
     seen.add(month);
-
-    const numberAt = (index: number, label: string, blank: number | null): number | null => {
-      const value = (cells[index] ?? '').trim();
-      if (value === '') return blank;
-      const parsed = Number(value);
-      if (!Number.isFinite(parsed) || parsed < 0) {
-        throw new Error('CSV row ' + (lineIndex + 2) + ': ' + label + ' must be a non-negative number.');
-      }
-      return parsed;
+    const parseAmount = (index: number, label: string, blank: number | null): number | null => {
+      const raw = (cells[index] ?? '').trim();
+      if (!raw) return blank;
+      const value = Number(raw);
+      if (!Number.isFinite(value) || value < 0) throw new Error('CSV row ' + (lineIndex + 2) + ': ' + label + ' must be a non-negative number.');
+      return value;
     };
-
-    const actualTakeHome = numberAt(indices[1], 'actualTakeHome', null);
-    const recovery = numberAt(indices[2], 'recovery', 0) ?? 0;
-    const payableDays = numberAt(indices[3], 'payableDays', null);
-    const salaryFactorPercent = numberAt(indices[4], 'salaryFactorPercent', 100) ?? 100;
-    result.push({ month, actualTakeHome, recovery, payableDays, salaryFactorPercent });
+    records.push({
+      month,
+      actualTakeHome: parseAmount(indices[1], 'actualTakeHome', null),
+      recovery: parseAmount(indices[2], 'recovery', 0) ?? 0
+    });
   }
-
-  return result;
+  return records;
 }
