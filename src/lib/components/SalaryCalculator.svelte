@@ -117,7 +117,7 @@
 
 </script>
 
-<div class:dark class="app-shell min-h-screen bg-[#f4f6f3] text-slate-900 transition-colors dark:bg-[#0b1411] dark:text-slate-100">
+<div data-client-ready={clientReady ? 'true' : 'false'} class:dark class="app-shell min-h-screen bg-[#f4f6f3] text-slate-900 transition-colors dark:bg-[#0b1411] dark:text-slate-100">
   <div class="mx-auto flex min-h-screen max-w-[1600px]">
     <aside class="no-print hidden w-[250px] shrink-0 border-r border-slate-200/80 bg-white/80 px-5 py-6 dark:border-slate-800 dark:bg-[#0e1915] lg:flex lg:flex-col">
       <a href="#top" class="flex items-center gap-3 rounded-2xl">
