@@ -528,7 +528,7 @@
           <label class="text-sm font-bold">Professional Tax treatment
             <select bind:value={baseSalary.professionalTaxMode} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700">
               <option value="unselected">Select treatment</option>
-              <option value="auto">Use calculator's indicative slab</option>
+              <option value="auto">Automatic — pay-level band</option>
               <option value="manual">Manual payslip amount</option>
               <option value="none">Not applicable / exempt</option>
             </select>
@@ -536,6 +536,11 @@
           {#if baseSalary.pensionMode === 'gpf' || baseSalary.pensionMode === 'manual'}
             <label class="text-sm font-bold">Monthly pension / GPF (₹)
               <input type="number" min="0" step="1" bind:value={baseSalary.manualPension} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
+            </label>
+          {/if}
+          {#if baseSalary.professionalTaxMode === 'auto'}
+            <label class="text-sm font-bold">Professional Tax pay-level band
+              <select bind:value={baseSalary.professionalTaxLevelBand} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700"><option value="unselected">Select pay-level band</option><option value="below-level-15">Below Level 15 — ₹150</option><option value="level-15-and-above">Level 15 and above — ₹200</option></select>
             </label>
           {/if}
           {#if baseSalary.professionalTaxMode === 'manual'}
@@ -616,9 +621,14 @@
             </label>
             <label class="text-sm font-bold">Professional Tax treatment
               <select bind:value={componentEvent.professionalTaxMode} class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
-                <option value="">Unchanged</option><option value="auto">Indicative automatic slab</option><option value="manual">Manual payslip amount</option><option value="none">Not applicable / exempt</option>
+                <option value="">Unchanged</option><option value="auto">Automatic — pay-level band</option><option value="manual">Manual payslip amount</option><option value="none">Not applicable / exempt</option>
               </select>
             </label>
+            {#if componentEvent.professionalTaxMode === 'auto'}
+              <label class="text-sm font-bold">Professional Tax pay-level band
+                <select bind:value={componentEvent.professionalTaxLevelBand} class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900"><option value="">Select pay-level band</option><option value="below-level-15">Below Level 15 — ₹150</option><option value="level-15-and-above">Level 15 and above — ₹200</option></select>
+              </label>
+            {/if}
             <label class="text-sm font-bold">Manual Professional Tax (₹)
               <input type="number" min="0" step="1" value={componentEvent.manualProfessionalTax} oninput={(event) => (componentEvent.manualProfessionalTax = (event.currentTarget as HTMLInputElement).value)} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
             </label>
