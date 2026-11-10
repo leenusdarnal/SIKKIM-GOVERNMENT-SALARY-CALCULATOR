@@ -375,7 +375,7 @@
       otherDeductions: 'Other deductions'
     };
     return Object.entries(change.salaryUpdates ?? {}).map(([key, value]) => {
-      const display = key === 'cpsMembershipConfirmed' && value === true
+      const display = ['cpsMembershipConfirmed', 'gpfMembershipConfirmed'].includes(key) && value === true
         ? 'Confirmed'
         : typeof value === 'boolean'
           ? value ? 'Eligible' : 'Not eligible'
