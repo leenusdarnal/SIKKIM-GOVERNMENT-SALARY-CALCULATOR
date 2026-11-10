@@ -1,5 +1,4 @@
 import {
-  calculateArrears,
   getArrearsMonthKeys,
   type ArrearsInput,
   type MonthlyPaidRecord
@@ -71,14 +70,16 @@ export function validateArrearsScenario(value: unknown): value is ArrearsScenari
       typeof change.description === 'string')) return false;
   if (!value.monthlyRecords.every(isMonthlyRecord)) return false;
 
-  const input: ArrearsInput = {
-    startMonth: value.startMonth,
-    endMonth: value.endMonth,
-    baseSalary: value.baseSalary,
-    changes: value.changes as ArrearsInput['changes'],
-    monthlyRecords: value.monthlyRecords
-  };
-  return calculateArrears(input).valid;
+  const months = getArrearsMonthKeys(value.startMonth, value.endMonth);
+  if (!months.length) return false;
+  const allowedMonths = new Set(months);
+  const seenMonths = new Set<string>();
+  if (!value.monthlyRecords.every((record) => {
+    if (!allowedMonths.has(record.month) || seenMonths.has(record.month)) return false;
+    seenMonths.add(record.month);
+    return record.actualTakeHome === null || record.actualTakeHome >= 0;
+  })) return false;
+  return value.changes.every((change) => allowedMonths.has(String(change.effectiveMonth)));
 }
 
 function encodedSize(value: string): number {
