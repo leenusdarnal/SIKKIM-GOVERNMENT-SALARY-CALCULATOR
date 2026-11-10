@@ -84,6 +84,9 @@ describe('Sikkim salary arrears planner', () => {
     expect(result.valid).toBe(true);
     expect(result.rows.map((row) => row.daRate)).toEqual([58, 60, 60]);
     expect(result.rows[0].revisedTakeHome).toBeLessThan(result.rows[1].revisedTakeHome);
+    expect(result.rows.every(row => row.employerCpsContribution === row.employeePension)).toBe(true);
+    expect(result.rows.every(row => row.employeeDeductions === row.employeePension + row.professionalTax + row.gis + row.stampFee + row.otherDeductions)).toBe(true);
+    expect(result.totals.employerCpsContribution).toBe(result.rows.reduce((sum,row)=>sum+row.employeePension,0));
   });
 
   it('applies increments and promotion pay from their effective month forward', () => {
@@ -245,6 +248,7 @@ describe('Sikkim salary arrears planner', () => {
     expect(csv).toContain('HRA (INR)');
     expect(csv).toContain('Professional Tax (INR)');
     expect(csv).toContain('Total Employee Deductions (INR)');
+    expect(csv).toContain('Employer / State CPS contribution (separate, INR)');
   });
   it('uses verified historical DA rates month by month in arrears calculations', () => {
     const historicalRateSchedule: HistoricalRateEntry[] = [
