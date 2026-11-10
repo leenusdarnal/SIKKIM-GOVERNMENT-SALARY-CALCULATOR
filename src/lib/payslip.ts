@@ -85,7 +85,5 @@ export function createPayslipCsv(model: PayslipModel): string {
     ['Annual gross to date',model.annual.gross],['Annual deductions to date',model.annual.deductions],['Annual net to date',model.annual.net]
   ];
   const cell=(v:string|number)=>'"'+String(v).replace(/"/g,'""')+'"';
-  return '\uFEFF'+rows.map(row=>row.map(cell).join(',')).join('\r
-')+'\r
-';
+  return '\uFEFF'+rows.map(row=>row.map(cell).join(',')).join('\\r\\n')+'\\r\\n';
 }
