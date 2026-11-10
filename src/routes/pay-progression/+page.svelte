@@ -14,7 +14,9 @@
   let cell = $state(1);
   let increments = $state(1);
   let eligible = $state(false);
-  let effectiveDate = $state('2026-01-01');
+  const currentYear = new Date().getFullYear();
+  let incrementYear = $state(currentYear);
+  let effectiveDate = $state(String(currentYear) + '-01-01');
   let targetLevel = $state(18);
   let fixationBasis = $state('');
   const matrixPlacement = $derived(findNextMatrixCellAtOrAbove(targetLevel, Number(fixationBasis)));
@@ -34,6 +36,12 @@
   let fromDate = $state('');
   let toDate = $state('');
   let error = $state('');
+  function changeIncrementYear(event: Event) {
+    incrementYear = Number((event.currentTarget as HTMLInputElement).value);
+    const options = getIncrementDateOptions(incrementYear);
+    if (!options.includes(effectiveDate)) effectiveDate = options[0] ?? '';
+  }
+
   const result = $derived(calculateCellProgression(level, cell, increments, eligible));
   const historyResult = $derived(validatePayHistory(history));
   const filteredHistory = $derived(
@@ -247,11 +255,12 @@
     <header><p class="text-xs font-extrabold uppercase tracking-[0.2em] text-emerald-800 dark:text-emerald-400">Sikkim Government employee utility</p><h1 class="mt-2 text-3xl font-black tracking-tight">Pay progression & service history</h1><p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-300">Explore pay-matrix cell scenarios and maintain a chronological record of appointment, increments, promotion, financial upgradation and regularisation events.</p></header>
     <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
       <h2 class="text-lg font-extrabold">Pay-cell progression scenario</h2><p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Moves through published cells only. Confirm eligibility and effective date from the applicable order and service book before using the result.</p>
-      <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <label class="text-sm font-bold">Pay level<select class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" bind:value={level}>{#each PAY_LEVELS as item}<option value={item}>Level {item}</option>{/each}</select></label>
         <label class="text-sm font-bold">Current cell<select class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" bind:value={cell}>{#each PAY_MATRIX[level] as _, i}<option value={i + 1}>Cell {i + 1} — {fmt(PAY_MATRIX[level][i])}</option>{/each}</select></label>
         <label class="text-sm font-bold">Number of increments<input class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" type="number" min="1" max="5" bind:value={increments} /></label>
-        <label class="text-sm font-bold">Effective date<select class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" bind:value={effectiveDate}>{#each getIncrementDateOptions(2026) as date}<option value={date}>{date}</option>{/each}</select></label>
+        <label class="text-sm font-bold">Increment year<input class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" type="number" min="2016" max="2200" step="1" bind:value={incrementYear} oninput={changeIncrementYear} /></label>
+        <label class="text-sm font-bold">Effective date<select class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" bind:value={effectiveDate}>{#each getIncrementDateOptions(incrementYear) as date}<option value={date}>{date}</option>{/each}</select></label>
       </div>
       <label class="mt-4 flex items-start gap-3 rounded-xl bg-amber-50 p-3 text-sm text-amber-950 dark:bg-amber-950/30 dark:text-amber-100"><input type="checkbox" bind:checked={eligible} class="mt-1" />I have independently confirmed that the employee is eligible for the selected increment(s) under the applicable Sikkim rules and service record.</label>
       <div class="mt-5 grid gap-3 rounded-2xl bg-slate-50 p-4 dark:bg-slate-800 sm:grid-cols-3">

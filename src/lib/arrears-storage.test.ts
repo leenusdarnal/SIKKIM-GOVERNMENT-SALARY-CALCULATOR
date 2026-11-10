@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_SALARY_INPUT } from './salary';
 import { getArrearsMonthKeys, type ArrearsInput } from './arrears';
+import type { HistoricalRateEntry } from './historical-rates';
 import {
   createArrearsEntryTemplateCsv,
   createArrearsScenario,
@@ -24,6 +25,7 @@ function input(): ArrearsInput {
       basicPay: 56_000,
       daRate: 58,
       pensionMode: 'cps',
+      cpsMembershipConfirmed: true,
       professionalTaxMode: 'auto'
     },
     changes: [],
@@ -80,6 +82,68 @@ describe('arrears draft storage and import/export', () => {
     const restored = restoreArrearsScenario(serializeArrearsScenario(createArrearsScenario(input())), store);
     expect(restored.monthlyRecords).toHaveLength(3);
     expect(loadArrearsScenario(store)?.monthlyRecords).toHaveLength(3);
+  });
+
+  it('round-trips Sikkim Professional Tax pay-level changes in saved drafts', () => {
+    const scenario = createArrearsScenario({
+      ...input(),
+      baseSalary: {
+        ...input().baseSalary,
+        professionalTaxLevelBand: 'below-level-15'
+      },
+      changes: [{
+        effectiveMonth: '2026-02',
+        type: 'allowance-deduction',
+        description: 'Pay-level change as recorded in service order',
+        salaryUpdates: { professionalTaxLevelBand: 'level-15-and-above' }
+      }]
+    });
+    const restored = parseArrearsScenarioBackup(serializeArrearsScenario(scenario));
+    expect(restored.baseSalary.professionalTaxLevelBand).toBe('below-level-15');
+    expect(restored.changes[0].salaryUpdates?.professionalTaxLevelBand).toBe('level-15-and-above');
+  });
+
+  it('accepts a legacy draft without CPS confirmation but leaves it unconfirmed', () => {
+    const legacy = createArrearsScenario(input());
+    delete (legacy.baseSalary as Partial<typeof legacy.baseSalary>).cpsMembershipConfirmed;
+    expect(validateArrearsScenario(legacy)).toBe(true);
+    const restored = parseArrearsScenarioBackup(JSON.stringify(legacy));
+    expect(restored.baseSalary.cpsMembershipConfirmed).toBeUndefined();
+  });
+
+  it('round-trips confirmed CPS membership in saved drafts', () => {
+    const restored = parseArrearsScenarioBackup(serializeArrearsScenario(createArrearsScenario(input())));
+    expect(restored.baseSalary.cpsMembershipConfirmed).toBe(true);
+  });
+
+  it('round-trips confirmed GPF reference pay and account attestation', () => {
+    const scenario = createArrearsScenario({ ...input(), baseSalary: {
+      ...DEFAULT_SALARY_INPUT, basicPay: 30_000, daRate: 0, pensionMode: 'gpf',
+      gpfMembershipConfirmed: true, gpfReferencePay: 30_000, manualPension: 1_800,
+      professionalTaxMode: 'none'
+    } });
+    const restored = parseArrearsScenarioBackup(serializeArrearsScenario(scenario));
+    expect(restored.baseSalary.gpfMembershipConfirmed).toBe(true);
+    expect(restored.baseSalary.gpfReferencePay).toBe(30_000);
+  });
+
+  it('accepts legacy drafts without optional GPF fields but leaves them unconfirmed', () => {
+    const legacy = createArrearsScenario(input());
+    delete (legacy.baseSalary as Partial<typeof legacy.baseSalary>).gpfMembershipConfirmed;
+    delete (legacy.baseSalary as Partial<typeof legacy.baseSalary>).gpfReferencePay;
+    expect(validateArrearsScenario(legacy)).toBe(true);
+    const restored = parseArrearsScenarioBackup(JSON.stringify(legacy));
+    expect(restored.baseSalary.gpfMembershipConfirmed).toBeUndefined();
+    expect(restored.baseSalary.gpfReferencePay).toBeUndefined();
+  });
+
+  it('rejects a backup with only one of historical schedule or selected components', () => {
+    const scenario = createArrearsScenario({
+      ...input(),
+      historicalRateComponents: ['daRate']
+    });
+    expect(validateArrearsScenario(scenario)).toBe(false);
+    expect(() => serializeArrearsScenario(scenario)).toThrow(/invalid/);
   });
 
   it('creates a consecutive monthly CSV template and imports payslip data', () => {

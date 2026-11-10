@@ -1,0 +1,110 @@
+<script lang="ts">
+ import { onMount } from 'svelte';
+ import {DEFAULT_SALARY_INPUT,type SalaryInput} from '../../lib/salary';
+ import {addOrReplacePayslipMonth,buildPayslipModel,createPayslipCsv,type PayslipEmployee,type PayslipMonthRecord} from '../../lib/payslip';
+ let month=$state('2026-11');
+ let employee=$state<PayslipEmployee>({name:'',employeeId:'',designation:'',department:'',office:'',district:'',payLevel:'',cell:''});
+ let input=$state<SalaryInput>({...DEFAULT_SALARY_INPUT,daRate:0,hraRate:0,sbcaRate:0,professionalTaxMode:'unselected',pensionMode:'unselected'});
+ let history=$state<PayslipMonthRecord[]>([]);
+ let notice=$state('');
+ let clientReady=$state(false);
+ onMount(()=>{clientReady=true;});
+ const model=$derived(buildPayslipModel(month,employee,input,history));
+ const fmt=(v:number)=>new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:0}).format(v);
+ const update=(key:keyof SalaryInput,value:number|boolean|string)=>input={...input,[key]:value,...(key==='pensionMode'?{cpsMembershipConfirmed:false,gpfMembershipConfirmed:false}:{})};
+ const addMonth=()=>{if(!model.valid){notice='The month was not recorded because the current salary inputs have validation issues.';return;}try{history=addOrReplacePayslipMonth(history,{month,gross:model.salary.gross,deductions:model.salary.totalDeductions,net:model.salary.takeHome});notice='Current month added to annual summary.';}catch(e){notice=e instanceof Error?e.message:'Could not add month.';}};
+ const exportCsv=()=>{try{const blob=new Blob([createPayslipCsv(model)],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='sikkim-salary-slip-'+month+'.csv';a.click();URL.revokeObjectURL(url);}catch(e){notice=e instanceof Error?e.message:'Could not export CSV.';}};
+ const fields=[['name','Employee name'],['employeeId','Employee ID'],['designation','Designation'],['department','Department'],['office','Office'],['district','District'],['payLevel','Pay level'],['cell','Cell / stage']] as const;
+ const amounts=[['basicPay','Basic pay (₹)'],['daRate','DA rate (%)'],['hraRate','HRA rate (%)'],['hraMinimum','HRA minimum (₹)'],['sbcaRate','SBCA rate (%)'],['transportAllowance','Transport allowance (₹)'],['otherEarnings','Other earnings (₹)'],['manualPension','Employee pension / other pension (₹)'], ['manualProfessionalTax','Professional Tax override (₹)'],['gis','GIS (₹)'],['stampFee','Stamp / fixed fee (₹)'],['otherDeductions','Other deductions (₹)']] as const;
+</script>
+<svelte:head><title>Monthly Salary Slip | Sikkim Government Salary Calculator</title><meta name="description" content="Prepare an indicative monthly salary slip, annual summary and month comparison for Sikkim Government employees."/></svelte:head>
+<main data-client-ready={clientReady ? 'true' : 'false'} class="min-h-screen bg-[#f4f6f3] px-4 py-8 text-slate-900 dark:bg-[#0b1411] dark:text-slate-100 sm:px-8">
+ <div class="mx-auto max-w-6xl space-y-6">
+  <a href="/" class="text-sm font-bold text-emerald-800 hover:underline dark:text-emerald-400">← Back to salary calculator</a>
+  <header><p class="text-xs font-extrabold uppercase tracking-[0.2em] text-emerald-800 dark:text-emerald-400">Sikkim Government employee utility</p><h1 class="mt-2 text-3xl font-black tracking-tight">Monthly salary slip generator</h1><p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-300">Prepare a month-wise salary statement using the existing Sikkim salary calculation engine. Enter employee-specific rates, eligibility and deductions as confirmed by the applicable orders and payroll records.</p></header>
+  <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
+   <h2 class="text-lg font-black">Employee and payroll details</h2>
+   <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <label class="text-sm font-semibold">Salary month<input type="month" bind:value={month} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700"/></label>
+    {#each fields as field}<label class="text-sm font-semibold">{field[1]}<input type="text" bind:value={employee[field[0]]} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700"/></label>{/each}
+   </div>
+  </section>
+  <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
+   <h2 class="text-lg font-black">Monthly salary inputs</h2>
+   <p class="mt-2 text-xs leading-5 text-slate-500">No DA, HRA, SBCA or deduction rate is assumed in this worksheet. Choose the applicable HRA and pension / Professional Tax treatment below.</p>
+   <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    {#each amounts as field}<label class="text-sm font-semibold">{field[0]==='manualPension' && input.pensionMode==='gpf'?'Monthly GPF subscription (₹)':field[1]}<input type="number" min="0" step="any" value={input[field[0]]} oninput={(e)=>update(field[0],Number(e.currentTarget.value))} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700"/></label>{/each}
+    <label class="text-sm font-semibold">HRA eligibility<select value={input.hraEligible?'yes':'no'} onchange={(e)=>update('hraEligible',e.currentTarget.value==='yes')} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700"><option value="no">Not eligible / not selected</option><option value="yes">Eligible as verified</option></select></label>
+    <label class="text-sm font-semibold">Pension arrangement<select value={input.pensionMode} onchange={(e)=>update('pensionMode',e.currentTarget.value)} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700"><option value="unselected">Not selected</option><option value="cps">CPS / CPF</option><option value="gpf">GPF (manual amount)</option><option value="manual">Other (manual amount)</option><option value="none">OPS / no employee contribution (where confirmed)</option></select></label>
+    {#if input.pensionMode==='cps'}
+     <label class="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100"><input type="checkbox" checked={input.cpsMembershipConfirmed===true} onchange={(e)=>update('cpsMembershipConfirmed',e.currentTarget.checked)} class="mt-1 size-4 shrink-0"/><span>I verified this employee’s CPS / CPF membership and applicable contribution basis from the signed pension option / service record and DDO / Accounts confirmation. Do not infer CPS or OPS from appointment date alone. <a class="underline" href="https://dop.sikkim.gov.in/notificationdoc/23.pdf" target="_blank" rel="noreferrer">DOP Notification No. 23/GEN/DOP (09.02.2024)</a> announced OPS restoration for employees appointed on or after 01.04.2006; detailed reversion modalities were to follow.</span></label>
+    {/if}
+    {#if input.pensionMode==='gpf'}
+     <label class="text-sm font-semibold">GPF reference pay for subscription year (₹)<input type="number" min="1" step="1" value={input.gpfReferencePay ?? 0} oninput={(e)=>update('gpfReferencePay',Number(e.currentTarget.value))} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700"/><span class="mt-1 block text-xs font-normal text-slate-500">Use the GPF rule-defined reference pay for the relevant subscription year, confirmed by Accounts / DDO; do not assume it is today's Basic Pay.</span></label>
+     <label class="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100"><input type="checkbox" checked={input.gpfMembershipConfirmed===true} onchange={(e)=>update('gpfMembershipConfirmed',e.currentTarget.checked)} class="mt-1 size-4 shrink-0"/><span>I verified the employee's GPF account / membership and authority to subscribe against the service record and DDO / Accounts confirmation.</span></label>
+     <p class="text-xs text-slate-500">The entered monthly subscription must be between 6% and 100% of the reference pay under the cited Sikkim GPF rule. The State does not make an employer matching contribution to GPF in this calculator.</p>
+    {/if}
+    <label class="text-sm font-semibold">Professional Tax treatment<select value={input.professionalTaxMode} onchange={(e)=>update('professionalTaxMode',e.currentTarget.value)} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700"><option value="unselected">Not selected</option><option value="auto">Reference estimate — pay-level band</option><option value="manual">Manual override</option><option value="none">Not applicable</option></select></label>
+    {#if input.professionalTaxMode==='auto'}<p class="text-xs leading-5 text-amber-700 dark:text-amber-300">This is an optional project reference estimate, not a verified statutory calculation. The current official salary/wage schedule lists income-based ranges whose boundary wording needs clarification. Prefer the manual amount from the employee’s current payslip / DDO unless the pay-level rule is confirmed for this employee.</p><label class="text-sm font-semibold">Professional Tax pay-level band<select value={input.professionalTaxLevelBand} onchange={(e)=>update('professionalTaxLevelBand',e.currentTarget.value)} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700"><option value="unselected">Select pay-level band</option><option value="below-level-15">Below Level 15 — ₹150</option><option value="level-15-and-above">Level 15 and above — ₹200</option></select></label>{/if}
+   </div>
+   {#if model.valid}
+   <div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <div class="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800"><p class="text-xs text-slate-500">Gross salary</p><p class="mt-1 text-2xl font-black">{fmt(model.salary.gross)}</p></div>
+    <div class="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800"><p class="text-xs text-slate-500">Total deductions</p><p class="mt-1 text-2xl font-black">{fmt(model.salary.totalDeductions)}</p></div>
+    <div class="rounded-2xl bg-emerald-950 p-4 text-white"><p class="text-xs text-emerald-200">Net take-home</p><p class="mt-1 text-2xl font-black">{fmt(model.salary.takeHome)}</p></div>
+   </div>
+   {:else}
+    <p class="mt-5 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm leading-6 text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100" role="alert">Gross pay, deductions and take-home are withheld until the salary inputs pass validation. Review the errors below.</p>
+   {/if}
+  </section>
+  <section id="print-slip" class="print-report rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
+   <div class="flex flex-wrap items-center justify-between gap-3"><div><h2 class="text-lg font-black">Salary statement preview</h2><p class="text-xs text-slate-500">{month} · {employee.department||'Department not entered'}</p></div><span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900">Draft · For verification</span></div>
+   <div class="mt-4 grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-4">{#each fields as field}<p><span class="text-slate-500">{field[1]}: </span><strong>{employee[field[0]]||'—'}</strong></p>{/each}</div>
+   {#if model.valid}
+   <div class="mt-5 grid gap-5 md:grid-cols-2">
+    <div><h3 class="mb-2 font-extrabold">Earnings</h3><table class="w-full text-sm"><tbody>{#each [['Basic pay',model.salary.basicPay],['DA',model.salary.da],['HRA',model.salary.hra],['SBCA',model.salary.sbca],['Transport allowance',model.salary.transportAllowance],['Other earnings',model.salary.otherEarnings]] as row}<tr class="border-b border-slate-100 dark:border-slate-800"><td class="py-2">{row[0]}</td><td class="py-2 text-right tabular-nums">{fmt(Number(row[1]))}</td></tr>{/each}</tbody></table></div>
+    <div><h3 class="mb-2 font-extrabold">Deductions</h3><table class="w-full text-sm"><tbody>{#each [['Employee pension / GPF',model.salary.employeePension],['Professional Tax',model.salary.professionalTax],['GIS',model.salary.gis],['Stamp / fixed fee',model.salary.stampFee],['Other deductions',model.salary.otherDeductions]] as row}<tr class="border-b border-slate-100 dark:border-slate-800"><td class="py-2">{row[0]}</td><td class="py-2 text-right tabular-nums">{fmt(Number(row[1]))}</td></tr>{/each}</tbody></table></div>
+   </div>
+   <div class="mt-4 flex flex-wrap justify-between gap-3 border-t border-slate-200 pt-4 text-sm dark:border-slate-700"><p>Gross: <strong>{fmt(model.salary.gross)}</strong></p><p>Total deductions: <strong>{fmt(model.salary.totalDeductions)}</strong></p><p class="text-lg font-black">Net pay: {fmt(model.salary.takeHome)}</p></div>
+   <p class="mt-3 text-xs text-slate-500">Employer / State matching CPS contribution (informational only; never deducted from employee take-home): {model.salary.employerCpsContribution>0?fmt(model.salary.employerCpsContribution):'—'}</p>
+   <div class="mt-6 grid gap-8 sm:grid-cols-2"><div class="border-t border-slate-400 pt-2 text-xs">Employee signature / date</div><div class="border-t border-slate-400 pt-2 text-xs">DDO / Accounts verification / seal</div></div>
+   {:else}
+    <div class="mt-5 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm leading-6 text-amber-950" role="alert">
+     <strong>Salary statement withheld.</strong>
+     <p class="mt-1">Correct the following issues before a salary breakdown can be displayed or printed:</p>
+     <ul class="mt-2 list-disc pl-5">{#each model.errors as issue}<li>{issue}</li>{/each}</ul>
+    </div>
+   {/if}
+  </section>
+  <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
+   <div class="flex flex-wrap items-center justify-between gap-3"><div><h2 class="text-lg font-black">Annual summary and month comparison</h2><p class="mt-1 text-xs text-slate-500">Add monthly snapshots to this session's annual summary. Previously recorded months are not inferred from bank or payroll data.</p></div><button type="button" onclick={addMonth} disabled={!model.valid} class="rounded-xl bg-emerald-800 px-4 py-2 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40">Add / update this month</button></div>
+   {#if model.valid}
+   <div class="mt-4 grid gap-3 sm:grid-cols-3"><div class="rounded-xl bg-slate-50 p-4 dark:bg-slate-800"><p class="text-xs text-slate-500">{model.annual.year} gross</p><p class="text-xl font-black">{fmt(model.annual.gross)}</p></div><div class="rounded-xl bg-slate-50 p-4 dark:bg-slate-800"><p class="text-xs text-slate-500">Annual deductions</p><p class="text-xl font-black">{fmt(model.annual.deductions)}</p></div><div class="rounded-xl bg-slate-50 p-4 dark:bg-slate-800"><p class="text-xs text-slate-500">Annual net pay</p><p class="text-xl font-black">{fmt(model.annual.net)}</p></div></div>
+   <h3 class="mt-5 font-extrabold">Compared with previous recorded month</h3>
+   {#if model.previousMonth}<p class="mt-1 text-xs text-slate-500">Previous record: {model.previousMonth.month}</p><div class="mt-3 grid gap-3 sm:grid-cols-3">{#each [['Gross change',model.monthComparison.gross],['Deduction change',model.monthComparison.deductions],['Net pay change',model.monthComparison.net]] as row}<div class="rounded-xl border border-slate-200 p-3 dark:border-slate-700"><p class="text-xs text-slate-500">{row[0]}</p><p class="text-lg font-black">{Number(row[1])>=0?'+':''}{fmt(Number(row[1]))}</p></div>{/each}</div>{:else}<p class="mt-2 text-sm text-slate-500">Add a previous month record to enable month-to-month comparison.</p>{/if}
+
+   {:else}
+    <p class="mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-950" role="status">Annual totals and month comparison are withheld until the current month passes validation.</p>
+   {/if}
+   {#if history.length}<div class="mt-5 overflow-x-auto"><table class="w-full min-w-[560px] text-sm"><thead><tr class="border-b text-left dark:border-slate-700"><th class="py-2">Month</th><th class="py-2 text-right">Gross</th><th class="py-2 text-right">Deductions</th><th class="py-2 text-right">Net</th></tr></thead><tbody>{#each history as item}<tr class="border-b border-slate-100 dark:border-slate-800"><td class="py-2">{item.month}</td><td class="py-2 text-right">{fmt(item.gross)}</td><td class="py-2 text-right">{fmt(item.deductions)}</td><td class="py-2 text-right">{fmt(item.net)}</td></tr>{/each}</tbody></table></div>{/if}
+   {#if notice}<p class="mt-3 text-sm" role="status">{notice}</p>{/if}
+  </section>
+  {#if !model.valid}<section class="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950" role="alert"><strong>History needs attention</strong><ul class="mt-2 list-disc pl-5">{#each model.errors as error}<li>{error}</li>{/each}</ul></section>{/if}
+  <div class="flex flex-wrap gap-3 print:hidden"><button type="button" onclick={()=>window.print()} disabled={!model.valid} class="rounded-xl bg-emerald-800 px-4 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40">Print / Save salary slip as PDF</button><button type="button" onclick={exportCsv} class="rounded-xl border border-slate-300 px-4 py-3 text-sm font-bold dark:border-slate-700">Export salary slip CSV</button></div>
+  <section class="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100"><h2 class="font-extrabold">Important verification note</h2><p class="mt-2">This is a draft calculation statement, not an official pay certificate. Confirm pay, allowance eligibility, effective rates, the employee’s actual CPS / OPS / GPF option and all applicable contribution bases, Professional Tax, GIS, recoveries and other deductions against current Government orders, service records and DDO / Accounts records before issue. CPS figures are not calculated until CPS membership and the contribution basis are explicitly confirmed. The State matching share is informational and is not part of employee deductions. Annual totals include only the months entered in this session.</p></section>
+ </div>
+</main>
+<style>
+ @media print {
+   @page { size: A4 portrait; margin: 12mm; }
+   :global(body) { background: #fff !important; color: #111 !important; }
+   main { min-height: 0 !important; padding: 0 !important; background: #fff !important; color: #111 !important; }
+   main > div { max-width: none !important; }
+   :global(main > div > *:not(#print-slip)) { display: none !important; }
+   :global(#print-slip) { display: block !important; border: 0 !important; padding: 0 !important; }
+   :global(button), :global(a), :global(select), :global(input) { display: none !important; }
+   :global(#print-slip table) { break-inside: auto; }
+   :global(#print-slip tr) { break-inside: avoid; }
+   :global(#print-slip th), :global(#print-slip td) { padding: 4px 6px !important; }
+ }
+</style>

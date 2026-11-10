@@ -2,17 +2,21 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_SALARY_INPUT, type SalaryInput } from './salary';
 import {
   calculateArrears,
+  createArrearsAuditCsv,
   createArrearsCsv,
   getArrearsMonthKeys,
   type ArrearsInput
 } from './arrears';
+import type { HistoricalRateEntry } from './historical-rates';
 
 const baseSalary: SalaryInput = {
   ...DEFAULT_SALARY_INPUT,
   basicPay: 56_000,
   daRate: 58,
   pensionMode: 'cps',
-  professionalTaxMode: 'auto'
+  cpsMembershipConfirmed: true,
+  professionalTaxMode: 'auto',
+  professionalTaxLevelBand: 'level-15-and-above'
 };
 
 function makeInput(overrides: Partial<ArrearsInput> = {}): ArrearsInput {
@@ -29,6 +33,122 @@ function makeInput(overrides: Partial<ArrearsInput> = {}): ArrearsInput {
     ...overrides
   };
 }
+
+describe('Professional Tax pay-level safeguards in arrears', () => {
+
+
+  it('withholds arrears when period totals exceed the safe rupee range', () => {
+    const hugeBasis = {
+      ...makeInput(),
+      endMonth: '2026-02',
+      baseSalary: {
+        ...makeInput().baseSalary,
+        basicPay: 5_000_000_000_000_000,
+        daRate: 0,
+        hraEligible: false,
+        hraRate: 0,
+        sbcaRate: 0,
+        transportAllowance: 0,
+        otherEarnings: 0,
+        pensionMode: 'none' as const,
+        professionalTaxMode: 'none' as const
+      },
+      monthlyRecords: [
+        { month: '2026-01', actualTakeHome: null, recovery: 0 },
+        { month: '2026-02', actualTakeHome: null, recovery: 0 }
+      ]
+    };
+    const result = calculateArrears(hugeBasis);
+    expect(result.valid).toBe(false);
+    expect(result.rows).toHaveLength(0);
+    expect(result.errors.join(' ')).toContain('totals outside the supported safe');
+  });
+
+  it('blocks arrears calculations when salary bases exceed the safe amount range', () => {
+    const result = calculateArrears({
+      ...makeInput(),
+      baseSalary: { ...makeInput().baseSalary, basicPay: Number.MAX_VALUE }
+    });
+    expect(result.valid).toBe(false);
+    expect(result.rows).toHaveLength(0);
+    expect(result.errors.join(' ')).toContain('supported calculation range');
+  });
+
+  it('blocks automatic Professional Tax when the pay-level band is missing', () => {
+    const result = calculateArrears(makeInput({ baseSalary: { ...baseSalary, professionalTaxLevelBand: 'unselected' } }));
+    expect(result.valid).toBe(false);
+    expect(result.errors.join(' ')).toContain('pay-level band');
+  });
+  it('applies the lower-level band across arrears months when selected', () => {
+    const result = calculateArrears(makeInput({ baseSalary: { ...baseSalary, basicPay: 15_200, professionalTaxLevelBand: 'below-level-15' } }));
+    expect(result.valid).toBe(true);
+    expect(result.rows.every(row => row.professionalTax === 150)).toBe(true);
+  });
+});
+
+describe('CPS membership safeguards in arrears', () => {
+  it('blocks a CPS opening basis without explicit membership confirmation', () => {
+    const result = calculateArrears(makeInput({ baseSalary: { ...baseSalary, cpsMembershipConfirmed: false } }));
+    expect(result.valid).toBe(false);
+    expect(result.errors.join(' ')).toContain('Confirm the employee CPS membership');
+  });
+
+  it('requires an effective-dated CPS change to carry explicit confirmation', () => {
+    const result = calculateArrears(makeInput({
+      baseSalary: { ...baseSalary, pensionMode: 'none', cpsMembershipConfirmed: false },
+      changes: [{
+        effectiveMonth: '2026-02', type: 'allowance-deduction', description: 'CPS option confirmed',
+        salaryUpdates: { pensionMode: 'cps' }
+      }]
+    }));
+    expect(result.valid).toBe(false);
+    expect(result.errors.join(' ')).toContain('effective-dated change');
+  });
+});
+
+describe('GPF membership and contribution consistency in arrears', () => {
+  const confirmedGpf: SalaryInput = {
+    ...baseSalary,
+    pensionMode: 'gpf',
+    cpsMembershipConfirmed: false,
+    gpfMembershipConfirmed: true,
+    gpfReferencePay: 30_000,
+    manualPension: 2_000
+  };
+
+  it('calculates the confirmed GPF subscription as an employee deduction only', () => {
+    const result = calculateArrears(makeInput({ baseSalary: confirmedGpf }));
+    expect(result.valid).toBe(true);
+    expect(result.rows.every(row => row.employeePension === 2_000)).toBe(true);
+    expect(result.rows.every(row => row.employerCpsContribution === 0)).toBe(true);
+    expect(result.rows.every(row => row.employeeDeductions === 2_000 + row.professionalTax + row.gis + row.stampFee + row.otherDeductions)).toBe(true);
+  });
+
+  it('blocks GPF without membership confirmation or reference pay / valid range', () => {
+    expect(calculateArrears(makeInput({ baseSalary: { ...confirmedGpf, gpfMembershipConfirmed: false } })).valid).toBe(false);
+    expect(calculateArrears(makeInput({ baseSalary: { ...confirmedGpf, gpfReferencePay: 0 } })).valid).toBe(false);
+    expect(calculateArrears(makeInput({ baseSalary: { ...confirmedGpf, manualPension: 1_799 } })).valid).toBe(false);
+    expect(calculateArrears(makeInput({ baseSalary: { ...confirmedGpf, manualPension: 30_001 } })).valid).toBe(false);
+  });
+
+  it('requires full GPF basis when a dated change switches from CPS to GPF', () => {
+    const result = calculateArrears(makeInput({ changes: [{
+      effectiveMonth: '2026-02', type: 'allowance-deduction', description: 'GPF subscription starts',
+      salaryUpdates: { pensionMode: 'gpf', manualPension: 2_000 }
+    }] }));
+    expect(result.valid).toBe(false);
+    expect(result.errors.join(' ')).toContain('GPF account');
+  });
+
+  it('validates GPF changes that alter only the monthly subscription', () => {
+    const result = calculateArrears(makeInput({
+      baseSalary: confirmedGpf,
+      changes: [{ effectiveMonth: '2026-02', type: 'allowance-deduction', description: 'Subscription changed', salaryUpdates: { manualPension: 1_000 } }]
+    }));
+    expect(result.valid).toBe(false);
+    expect(result.errors.join(' ')).toContain('6%–100%');
+  });
+});
 
 describe('Sikkim salary arrears planner', () => {
   it('generates consecutive month keys and rejects invalid or overlong periods', () => {
@@ -47,6 +167,9 @@ describe('Sikkim salary arrears planner', () => {
     expect(result.valid).toBe(true);
     expect(result.rows.map((row) => row.daRate)).toEqual([58, 60, 60]);
     expect(result.rows[0].revisedTakeHome).toBeLessThan(result.rows[1].revisedTakeHome);
+    expect(result.rows.every(row => row.employerCpsContribution === row.employeePension)).toBe(true);
+    expect(result.rows.every(row => row.employeeDeductions === row.employeePension + row.professionalTax + row.gis + row.stampFee + row.otherDeductions)).toBe(true);
+    expect(result.totals.employerCpsContribution).toBe(result.rows.reduce((sum,row)=>sum+row.employeePension,0));
   });
 
   it('applies increments and promotion pay from their effective month forward', () => {
@@ -130,6 +253,8 @@ describe('Sikkim salary arrears planner', () => {
         description: 'Revised deductions as per payslip',
         salaryUpdates: {
           pensionMode: 'gpf',
+          gpfMembershipConfirmed: true,
+          gpfReferencePay: 30_000,
           manualPension: 2_500,
           professionalTaxMode: 'manual',
           manualProfessionalTax: 175,
@@ -143,6 +268,7 @@ describe('Sikkim salary arrears planner', () => {
     expect(result.valid).toBe(true);
     expect(result.rows[0].employeePension).toBe(baseSalary.basicPay * 0.1 + Math.round(baseSalary.basicPay * baseSalary.daRate / 100) * 0.1);
     expect(result.rows[1].employeePension).toBe(2_500);
+    expect(result.rows[1].employerCpsContribution).toBe(0);
     expect(result.rows[1].professionalTax).toBe(175);
     expect(result.rows[1].gis).toBe(20);
     expect(result.rows[1].stampFee).toBe(10);
@@ -208,5 +334,65 @@ describe('Sikkim salary arrears planner', () => {
     expect(csv).toContain('HRA (INR)');
     expect(csv).toContain('Professional Tax (INR)');
     expect(csv).toContain('Total Employee Deductions (INR)');
+    expect(csv).toContain('Employer / State CPS contribution (separate, INR)');
   });
+  it('uses verified historical DA rates month by month in arrears calculations', () => {
+    const historicalRateSchedule: HistoricalRateEntry[] = [
+      { component: 'daRate', effectiveFrom: '2026-01', effectiveTo: '2026-02', value: 58, unit: 'percent', sourceReference: 'Verified DA Order A', verified: true },
+      { component: 'daRate', effectiveFrom: '2026-03', value: 60, unit: 'percent', sourceReference: 'Verified DA Order B', verified: true }
+    ];
+    const result = calculateArrears(makeInput({
+      historicalRateSchedule,
+      historicalRateComponents: ['daRate']
+    }));
+    expect(result.valid).toBe(true);
+    expect(result.rows.map((row) => row.daRate)).toEqual([58, 58, 60]);
+    expect(result.rows[2].appliedChanges).toContain('Historical daRate: 60% (Verified DA Order B)');
+  });
+
+  it('blocks arrears calculation when a selected historical rate is missing', () => {
+    const result = calculateArrears(makeInput({
+      historicalRateSchedule: [
+        { component: 'daRate', effectiveFrom: '2026-01', effectiveTo: '2026-02', value: 58, unit: 'percent', sourceReference: 'Verified DA Order A', verified: true }
+      ],
+      historicalRateComponents: ['daRate']
+    }));
+    expect(result.valid).toBe(false);
+    expect(result.rows).toHaveLength(0);
+    expect(result.errors.some((message) => message.includes('2026-03: missing verified historical rate(s): daRate'))).toBe(true);
+  });
+
+  it('requires the schedule and selected component list together', () => {
+    const result = calculateArrears(makeInput({
+      historicalRateComponents: ['daRate']
+    }));
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain('Provide both a historical rate schedule and its selected components.');
+  });
+
+  it('rejects duplicate historical component selections and overlapping source periods', () => {
+    const result = calculateArrears(makeInput({
+      historicalRateSchedule: [
+        { component: 'daRate', effectiveFrom: '2026-01', value: 58, unit: 'percent', sourceReference: 'Order A', verified: true },
+        { component: 'daRate', effectiveFrom: '2026-02', value: 60, unit: 'percent', sourceReference: 'Order B', verified: true }
+      ],
+      historicalRateComponents: ['daRate', 'daRate']
+    }));
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain('Historical rate components must not contain duplicates.');
+    expect(result.errors.some((message) => message.includes('Overlapping effective periods'))).toBe(true);
+  });
+
+  it('rejects a manual DA change when DA is controlled by the historical schedule', () => {
+    const result = calculateArrears(makeInput({
+      historicalRateSchedule: [
+        { component: 'daRate', effectiveFrom: '2026-01', value: 58, unit: 'percent', sourceReference: 'Verified DA Order', verified: true }
+      ],
+      historicalRateComponents: ['daRate'],
+      changes: [{ effectiveMonth: '2026-02', type: 'da-revision', daRate: 60, description: 'Conflicting manual DA revision' }]
+    }));
+    expect(result.valid).toBe(false);
+    expect(result.errors.some((message) => message.includes('DA is controlled by the historical rate schedule'))).toBe(true);
+  });
+
 });

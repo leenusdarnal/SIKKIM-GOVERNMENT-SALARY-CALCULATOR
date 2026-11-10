@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import {
     calculateArrears,
+    createArrearsAuditCsv,
     createArrearsCsv,
     getArrearsMonthKeys,
     type ArrearChange,
@@ -10,6 +11,9 @@
     type ArrearsInput
   } from '../../lib/arrears';
   import { DEFAULT_SALARY_INPUT, type SalaryInput } from '../../lib/salary';
+  import { buildArrearsStatement, type ArrearsStatementMetadata } from '../../lib/arrears-statement';
+  import HistoricalRateEditor from '../../lib/HistoricalRateEditor.svelte';
+  import type { HistoricalRateComponent, HistoricalRateEntry } from '../../lib/historical-rates';
   import {
     createArrearsEntryTemplateCsv,
     createArrearsScenario,
@@ -26,11 +30,14 @@
   let endMonth = $state('2026-11');
   let baseSalary = $state<SalaryInput>({ ...DEFAULT_SALARY_INPUT, daRate: 0 });
   let changes = $state<ArrearChange[]>([]);
+  let historicalRateSchedule = $state<HistoricalRateEntry[]>([]);
+  let historicalRateComponents = $state<HistoricalRateComponent[]>([]);
   let eventMonth = $state('2026-01');
   let eventType = $state<ArrearChangeType>('da-revision');
   let eventBasicPay = $state('');
   let eventDaRate = $state('');
   let eventDescription = $state('');
+  let editingChangeIndex = $state<number | null>(null);
   let componentEvent = $state({
     hraEligible: '',
     hraRate: '',
@@ -39,8 +46,12 @@
     transportAllowance: '',
     otherEarnings: '',
     pensionMode: '',
+    cpsMembershipConfirmed: '',
+    gpfMembershipConfirmed: '',
+    gpfReferencePay: '',
     manualPension: '',
     professionalTaxMode: '',
+    professionalTaxLevelBand: '',
     manualProfessionalTax: '',
     gis: '',
     stampFee: '',
@@ -52,6 +63,8 @@
   let storageReady = $state(false);
   let storageBlocked = $state(false);
   let storageStatus = $state('Loading saved draft…');
+  // Session-only metadata: deliberately excluded from autosaved drafts and backups.
+  let statementMetadata = $state<ArrearsStatementMetadata>({ employeeName: '', employeeId: '', designation: '', department: '', office: '', district: '', payLevel: '', cell: '' });
 
   function currentInput(): ArrearsInput {
     return {
@@ -62,7 +75,9 @@
         ...change,
         ...(change.salaryUpdates ? { salaryUpdates: { ...change.salaryUpdates } } : {})
       })),
-      monthlyRecords: monthlyRecords.map((record) => ({ ...record }))
+      monthlyRecords: monthlyRecords.map((record) => ({ ...record })),
+      historicalRateSchedule: historicalRateSchedule.map((entry) => ({ ...entry })),
+      historicalRateComponents: [...historicalRateComponents]
     };
   }
 
@@ -70,6 +85,8 @@
     startMonth = scenario.startMonth;
     endMonth = scenario.endMonth;
     baseSalary = { ...scenario.baseSalary };
+    historicalRateSchedule = (scenario.historicalRateSchedule ?? []).map((entry) => ({ ...entry }));
+    historicalRateComponents = [...(scenario.historicalRateComponents ?? [])];
     changes = scenario.changes.map((change) => ({
       ...change,
       ...(change.salaryUpdates ? { salaryUpdates: { ...change.salaryUpdates } } : {})
@@ -216,9 +233,28 @@
     endMonth,
     baseSalary: { ...baseSalary },
     changes,
-    monthlyRecords
+    monthlyRecords,
+    ...(historicalRateComponents.length ? {
+      historicalRateSchedule,
+      historicalRateComponents
+    } : {})
   }));
   const missingPaidMonths = $derived(result.rows.filter((row) => row.actualTakeHome === null).length);
+  const printableStatement = $derived(buildArrearsStatement(result, statementMetadata));
+  const historicalCoverage = $derived(months.flatMap((month) =>
+    historicalRateComponents.map((component) => {
+      const matches = historicalRateSchedule.filter((entry) =>
+        entry.component === component && entry.effectiveFrom <= month &&
+        (entry.effectiveTo === undefined || entry.effectiveTo >= month)
+      );
+      const label = component === 'daRate' ? 'DA' : component === 'hraRate' ? 'HRA' :
+        component === 'sbcaRate' ? 'SBCA' : 'Transport allowance';
+      const status = matches.length > 1 ? 'Conflict' :
+        matches.length === 0 ? 'Missing' : matches[0].verified ? 'Covered' : 'Unverified';
+      return { month, component, label, status, source: matches.length === 1 ? matches[0].sourceReference : '' };
+    })
+  ));
+  const historicalCoverageIssues = $derived(historicalCoverage.filter((item) => item.status !== 'Covered').length);
   const fmt = (value: number | null | undefined) =>
     value === null || value === undefined || !Number.isFinite(value)
       ? '—'
@@ -247,8 +283,12 @@
     if (componentEvent.transportAllowance.trim() !== '') update.transportAllowance = Number(componentEvent.transportAllowance);
     if (componentEvent.otherEarnings.trim() !== '') update.otherEarnings = Number(componentEvent.otherEarnings);
     if (componentEvent.pensionMode !== '') update.pensionMode = componentEvent.pensionMode as SalaryInput['pensionMode'];
+    if (componentEvent.cpsMembershipConfirmed === 'yes') update.cpsMembershipConfirmed = true;
+    if (componentEvent.gpfMembershipConfirmed === 'yes') update.gpfMembershipConfirmed = true;
+    if (componentEvent.gpfReferencePay.trim() !== '') update.gpfReferencePay = Number(componentEvent.gpfReferencePay);
     if (componentEvent.manualPension.trim() !== '') update.manualPension = Number(componentEvent.manualPension);
     if (componentEvent.professionalTaxMode !== '') update.professionalTaxMode = componentEvent.professionalTaxMode as SalaryInput['professionalTaxMode'];
+    if (componentEvent.professionalTaxLevelBand !== '') update.professionalTaxLevelBand = componentEvent.professionalTaxLevelBand as SalaryInput['professionalTaxLevelBand'];
     if (componentEvent.manualProfessionalTax.trim() !== '') update.manualProfessionalTax = Number(componentEvent.manualProfessionalTax);
     if (componentEvent.gis.trim() !== '') update.gis = Number(componentEvent.gis);
     if (componentEvent.stampFee.trim() !== '') update.stampFee = Number(componentEvent.stampFee);
@@ -290,15 +330,29 @@
       formError = 'Enter at least one allowance or deduction value for this effective month.';
       return;
     }
+    if (componentEvent.pensionMode === 'cps' && componentEvent.cpsMembershipConfirmed !== 'yes') {
+      formError = 'Confirm CPS membership and the applicable contribution basis for the effective month before adding this change.';
+      return;
+    }
+    if (componentEvent.pensionMode === 'gpf') {
+      const gpfReferencePay = Number(componentEvent.gpfReferencePay);
+      const manualPension = Number(componentEvent.manualPension);
+      if (componentEvent.gpfMembershipConfirmed !== 'yes' || !componentEvent.gpfReferencePay.trim() || !componentEvent.manualPension.trim() || !Number.isFinite(gpfReferencePay) || !Number.isFinite(manualPension) || manualPension < Math.round(gpfReferencePay * 0.06) || manualPension > Math.round(gpfReferencePay)) {
+        formError = 'For an effective-dated GPF change, confirm the GPF account, enter the applicable reference pay and monthly subscription within 6%–100% of that reference pay.';
+        return;
+      }
+    }
 
-    changes = [...changes, candidate];
+    if (editingChangeIndex === null) changes = [...changes, candidate];
+    else changes = changes.map((change, index) => index === editingChangeIndex ? candidate : change);
+    editingChangeIndex = null;
     eventBasicPay = '';
     eventDaRate = '';
     eventDescription = '';
     componentEvent = {
       hraEligible: '', hraRate: '', hraMinimum: '', sbcaRate: '',
-      transportAllowance: '', otherEarnings: '', pensionMode: '',
-      manualPension: '', professionalTaxMode: '', manualProfessionalTax: '',
+      transportAllowance: '', otherEarnings: '', pensionMode: '', cpsMembershipConfirmed: '',
+      gpfMembershipConfirmed: '', gpfReferencePay: '', manualPension: '', professionalTaxMode: '', professionalTaxLevelBand: '', manualProfessionalTax: '',
       gis: '', stampFee: '', otherDeductions: ''
     };
     formError = '';
@@ -312,7 +366,10 @@
       sbcaRate: 'SBCA rate',
       transportAllowance: 'Transport',
       otherEarnings: 'Other earnings',
-      pensionMode: 'Pension',
+      pensionMode: 'Pension arrangement',
+      cpsMembershipConfirmed: 'CPS membership / basis confirmed',
+      gpfMembershipConfirmed: 'GPF account / subscription confirmed',
+      gpfReferencePay: 'GPF reference pay',
       manualPension: 'GPF / manual pension',
       professionalTaxMode: 'Professional Tax mode',
       manualProfessionalTax: 'Professional Tax',
@@ -321,15 +378,71 @@
       otherDeductions: 'Other deductions'
     };
     return Object.entries(change.salaryUpdates ?? {}).map(([key, value]) => {
-      const display = typeof value === 'boolean'
-        ? value ? 'Eligible' : 'Not eligible'
-        : String(value) + (key.endsWith('Rate') ? '%' : '');
+      const display = ['cpsMembershipConfirmed', 'gpfMembershipConfirmed'].includes(key) && value === true
+        ? 'Confirmed'
+        : typeof value === 'boolean'
+          ? value ? 'Eligible' : 'Not eligible'
+          : String(value) + (key.endsWith('Rate') ? '%' : '');
       return (labels[key] ?? key) + ': ' + display;
     }).join(' · ') || '—';
   }
 
+  function editChange(index: number) {
+    const change = changes[index];
+    if (!change) return;
+    editingChangeIndex = index;
+    eventMonth = change.effectiveMonth;
+    eventType = change.type;
+    eventBasicPay = change.basicPay === undefined ? '' : String(change.basicPay);
+    eventDaRate = change.daRate === undefined ? '' : String(change.daRate);
+    eventDescription = change.description;
+    const update = change.salaryUpdates ?? {};
+    componentEvent = {
+      hraEligible: update.hraEligible === undefined ? '' : update.hraEligible ? 'yes' : 'no',
+      hraRate: update.hraRate === undefined ? '' : String(update.hraRate),
+      hraMinimum: update.hraMinimum === undefined ? '' : String(update.hraMinimum),
+      sbcaRate: update.sbcaRate === undefined ? '' : String(update.sbcaRate),
+      transportAllowance: update.transportAllowance === undefined ? '' : String(update.transportAllowance),
+      otherEarnings: update.otherEarnings === undefined ? '' : String(update.otherEarnings),
+      pensionMode: update.pensionMode ?? '',
+      cpsMembershipConfirmed: update.cpsMembershipConfirmed === true ? 'yes' : '',
+      gpfMembershipConfirmed: update.gpfMembershipConfirmed === true ? 'yes' : '',
+      gpfReferencePay: update.gpfReferencePay === undefined ? '' : String(update.gpfReferencePay),
+      manualPension: update.manualPension === undefined ? '' : String(update.manualPension),
+      professionalTaxMode: update.professionalTaxMode ?? '',
+      professionalTaxLevelBand: update.professionalTaxLevelBand ?? '',
+      manualProfessionalTax: update.manualProfessionalTax === undefined ? '' : String(update.manualProfessionalTax),
+      gis: update.gis === undefined ? '' : String(update.gis),
+      stampFee: update.stampFee === undefined ? '' : String(update.stampFee),
+      otherDeductions: update.otherDeductions === undefined ? '' : String(update.otherDeductions)
+    };
+    formError = '';
+  }
+
+  function cancelChangeEdit() {
+    editingChangeIndex = null;
+    eventBasicPay = '';
+    eventDaRate = '';
+    eventDescription = '';
+    componentEvent = {
+      hraEligible: '', hraRate: '', hraMinimum: '', sbcaRate: '',
+      transportAllowance: '', otherEarnings: '', pensionMode: '', cpsMembershipConfirmed: '',
+      gpfMembershipConfirmed: '', gpfReferencePay: '', manualPension: '', professionalTaxMode: '', professionalTaxLevelBand: '', manualProfessionalTax: '',
+      gis: '', stampFee: '', otherDeductions: ''
+    };
+    formError = '';
+  }
+
   function removeChange(index: number) {
     changes = changes.filter((_, itemIndex) => itemIndex !== index);
+    if (editingChangeIndex === index) cancelChangeEdit();
+    else if (editingChangeIndex !== null && index < editingChangeIndex) editingChangeIndex -= 1;
+  }
+
+  function exportAuditCsv() {
+    const filename = 'sikkim-arrears-audit-' + startMonth + '-to-' + endMonth + '.csv';
+    downloadText(filename, createArrearsAuditCsv(currentInput(), result), 'text/csv;charset=utf-8');
+    formError = '';
   }
 
   function exportCsv() {
@@ -360,7 +473,7 @@
   <meta name="description" content="Prepare a month-by-month Sikkim Government salary arrears estimate using verified basic pay, DA changes, increments, promotion fixation, actual credited salary and recoveries." />
 </svelte:head>
 
-<main class="min-h-screen bg-[#f4f6f3] px-4 py-8 text-slate-900 dark:bg-[#0b1411] dark:text-slate-100 sm:px-8">
+<main data-client-ready={storageReady ? 'true' : 'false'} class="min-h-screen bg-[#f4f6f3] px-4 py-8 text-slate-900 dark:bg-[#0b1411] dark:text-slate-100 sm:px-8">
   <div class="mx-auto max-w-7xl space-y-6">
     <div class="no-print flex flex-wrap items-center justify-between gap-3">
       <a href="/" class="text-sm font-bold text-emerald-800 hover:underline dark:text-emerald-400">← Back to salary calculator</a>
@@ -413,6 +526,17 @@
       <p class="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Local browser storage is not encrypted. Avoid shared or public devices and keep a separate JSON backup. Imported CSV rows must use the selected month range; duplicate months and negative amounts are rejected.</p>
     </section>
 
+    <HistoricalRateEditor bind:entries={historicalRateSchedule} bind:selected={historicalRateComponents} />
+
+    {#if historicalRateComponents.length}
+      <section class="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+        <div class="flex flex-wrap items-start justify-between gap-3"><div><h2 class="font-extrabold">Historical rate coverage</h2><p class="mt-1 text-xs text-slate-500">Month-by-month source coverage for selected components.</p></div>
+          <span class={historicalCoverageIssues === 0 && result.valid ? "rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800" : "rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900"}>{historicalCoverageIssues === 0 && result.valid ? "Coverage complete" : historicalCoverageIssues + " coverage issue(s)"}</span></div>
+        <div class="mt-4 overflow-x-auto"><table class="w-full min-w-[620px] text-left text-xs"><thead><tr class="border-b text-[10px] uppercase tracking-wide text-slate-500"><th class="py-2">Month</th><th>Component</th><th>Status</th><th>Source reference</th></tr></thead>
+          <tbody>{#each historicalCoverage as item}<tr class="border-b border-slate-100 dark:border-slate-800"><td class="py-2 font-semibold">{item.month}</td><td>{item.label}</td><td><span class={item.status === "Covered" ? "font-bold text-emerald-700 dark:text-emerald-300" : "font-bold text-amber-700 dark:text-amber-300"}>{item.status}</span></td><td>{item.source || "—"}</td></tr>{/each}</tbody></table></div>
+        <p class="mt-3 text-xs text-slate-500">A covered month has exactly one verified matching entry. The calculation engine performs authoritative schedule validation.</p>
+      </section>
+    {/if}
     <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
       <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
@@ -467,26 +591,51 @@
         <h3 class="text-base font-extrabold">Opening deductions and pension arrangement</h3>
         <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <label class="text-sm font-bold">Pension arrangement
-            <select bind:value={baseSalary.pensionMode} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700">
+            <select value={baseSalary.pensionMode} onchange={(event) => { baseSalary.pensionMode = (event.currentTarget as HTMLSelectElement).value as SalaryInput['pensionMode']; baseSalary.cpsMembershipConfirmed = false; baseSalary.gpfMembershipConfirmed = false; }} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700">
               <option value="unselected">Select arrangement</option>
               <option value="cps">CPS / CPF</option>
               <option value="gpf">GPF</option>
               <option value="manual">Other manual pension</option>
-              <option value="none">No employee pension deduction</option>
+              <option value="none">OPS / no employee contribution (where confirmed)</option>
             </select>
           </label>
+          {#if baseSalary.pensionMode === 'gpf'}
+            <label class="text-sm font-bold">GPF reference pay for subscription year (₹)
+              <input type="number" min="1" step="1" bind:value={baseSalary.gpfReferencePay} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
+            </label>
+            <label class="text-sm font-bold">Monthly GPF subscription (₹)
+              <input type="number" min="0" step="1" bind:value={baseSalary.manualPension} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
+            </label>
+            <label class="col-span-full flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-5 text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
+              <input type="checkbox" checked={baseSalary.gpfMembershipConfirmed === true} onchange={(event) => (baseSalary.gpfMembershipConfirmed = (event.currentTarget as HTMLInputElement).checked)} class="mt-1 size-4 shrink-0" />
+              <span>I verified the employee’s GPF account / membership and subscription authority against the service record and DDO / Accounts confirmation.</span>
+            </label>
+            <p class="col-span-full text-xs text-slate-500">Monthly subscription must be between 6% and 100% of the rule-defined reference pay for the relevant subscription year. Confirm the reference pay with Accounts / DDO; it is not automatically today's Basic Pay.</p>
+          {/if}
+          {#if baseSalary.pensionMode === 'cps'}
+            <label class="col-span-full flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-5 text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
+              <input type="checkbox" checked={baseSalary.cpsMembershipConfirmed === true} onchange={(event) => (baseSalary.cpsMembershipConfirmed = (event.currentTarget as HTMLInputElement).checked)} class="mt-1 size-4 shrink-0" />
+              <span>I verified this employee’s CPS / CPF membership and applicable contribution basis from the signed pension option / service record and DDO / Accounts confirmation. The 09.02.2024 DOP notification announced OPS restoration for employees appointed on or after 01.04.2006; individual option / implementation status must be checked. <a class="underline" href="https://dop.sikkim.gov.in/notificationdoc/23.pdf" target="_blank" rel="noreferrer">Notification No. 23/GEN/DOP</a>.</span>
+            </label>
+          {/if}
           <label class="text-sm font-bold">Professional Tax treatment
             <select bind:value={baseSalary.professionalTaxMode} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700">
               <option value="unselected">Select treatment</option>
-              <option value="auto">Use calculator's indicative slab</option>
+              <option value="auto">Reference estimate — pay-level band</option>
               <option value="manual">Manual payslip amount</option>
               <option value="none">Not applicable / exempt</option>
             </select>
           </label>
-          {#if baseSalary.pensionMode === 'gpf' || baseSalary.pensionMode === 'manual'}
-            <label class="text-sm font-bold">Monthly pension / GPF (₹)
+          {#if baseSalary.pensionMode === 'manual'}
+            <label class="text-sm font-bold">Monthly other pension (₹)
               <input type="number" min="0" step="1" bind:value={baseSalary.manualPension} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
             </label>
+          {/if}
+          {#if baseSalary.professionalTaxMode === 'auto'}
+            <label class="text-sm font-bold">Professional Tax pay-level band
+              <select bind:value={baseSalary.professionalTaxLevelBand} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700"><option value="unselected">Select pay-level band</option><option value="below-level-15">Below Level 15 — ₹150</option><option value="level-15-and-above">Level 15 and above — ₹200</option></select>
+            </label>
+            <p class="col-span-full text-xs leading-5 text-amber-700 dark:text-amber-300">This is an optional project reference estimate, not a verified statutory calculation. The current official salary/wage schedule lists income-based ranges whose boundary wording needs clarification. Prefer the manual amount from the employee’s payslip / DDO unless the pay-level rule is confirmed for this arrears period.</p>
           {/if}
           {#if baseSalary.professionalTaxMode === 'manual'}
             <label class="text-sm font-bold">Monthly Professional Tax (₹)
@@ -503,7 +652,7 @@
             <input type="number" min="0" step="1" bind:value={baseSalary.otherDeductions} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
           </label>
         </div>
-        <p class="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">CPS/CPF is recalculated as 10% of Basic Pay + DA under the existing salary engine. Historical changes to GPF/manual pension, HRA, SBCA, Professional Tax and other entered components can be scheduled in the effective-dated changes section below.</p>
+        <p class="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">CPS / CPF is calculated as 10% of Basic Pay + DA with an equal State matching share only when individual membership and the contribution basis are confirmed. Otherwise the calculator does not calculate CPS. Historical changes to GPF / manual pension, HRA, SBCA, Professional Tax and other entered components can be scheduled below.</p>
       </div>
     </section>
 
@@ -557,18 +706,46 @@
               <input type="number" min="0" step="1" value={componentEvent.otherEarnings} oninput={(event) => (componentEvent.otherEarnings = (event.currentTarget as HTMLInputElement).value)} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
             </label>
             <label class="text-sm font-bold">Pension arrangement
-              <select bind:value={componentEvent.pensionMode} class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
-                <option value="">Unchanged</option><option value="cps">CPS / CPF</option><option value="gpf">GPF</option><option value="manual">Manual pension</option><option value="none">No pension deduction</option>
+              <select value={componentEvent.pensionMode} onchange={(event) => { componentEvent.pensionMode = (event.currentTarget as HTMLSelectElement).value; componentEvent.cpsMembershipConfirmed = ''; componentEvent.gpfMembershipConfirmed = ''; }} class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+                <option value="">Unchanged</option><option value="cps">CPS / CPF</option><option value="gpf">GPF</option><option value="manual">Manual pension</option><option value="none">OPS / no employee contribution</option>
               </select>
             </label>
-            <label class="text-sm font-bold">Manual pension / GPF (₹)
-              <input type="number" min="0" step="1" value={componentEvent.manualPension} oninput={(event) => (componentEvent.manualPension = (event.currentTarget as HTMLInputElement).value)} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
-            </label>
+            {#if componentEvent.pensionMode === 'gpf'}
+              <label class="text-sm font-bold">GPF reference pay for subscription year (₹)
+                <input type="number" min="1" step="1" value={componentEvent.gpfReferencePay} oninput={(event) => (componentEvent.gpfReferencePay = (event.currentTarget as HTMLInputElement).value)} placeholder="Enter Accounts-confirmed reference pay" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
+              </label>
+              <label class="text-sm font-bold">Monthly GPF subscription (₹)
+                <input type="number" min="0" step="1" value={componentEvent.manualPension} oninput={(event) => (componentEvent.manualPension = (event.currentTarget as HTMLInputElement).value)} placeholder="Enter revised subscription" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
+              </label>
+              <label class="col-span-full flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-5 text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
+                <input type="checkbox" checked={componentEvent.gpfMembershipConfirmed === 'yes'} onchange={(event) => (componentEvent.gpfMembershipConfirmed = (event.currentTarget as HTMLInputElement).checked ? 'yes' : '')} class="mt-1 size-4 shrink-0" />
+                <span>I verified the GPF account and subscription authority for this effective month against the service record and DDO / Accounts confirmation.</span>
+              </label>
+            {/if}
+            {#if componentEvent.pensionMode === 'cps'}
+              <label class="col-span-full flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-5 text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
+                <input type="checkbox" checked={componentEvent.cpsMembershipConfirmed === 'yes'} onchange={(event) => (componentEvent.cpsMembershipConfirmed = (event.currentTarget as HTMLInputElement).checked ? 'yes' : '')} class="mt-1 size-4 shrink-0" />
+                <span>I verified CPS / CPF membership and the applicable contribution basis for this effective month against the employee’s service record and DDO / Accounts confirmation.</span>
+              </label>
+            {/if}
+            {#if componentEvent.pensionMode === 'manual'}
+              <label class="text-sm font-bold">Monthly other pension (₹)
+                <input type="number" min="0" step="1" value={componentEvent.manualPension} oninput={(event) => (componentEvent.manualPension = (event.currentTarget as HTMLInputElement).value)} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
+              </label>
+            {/if}
             <label class="text-sm font-bold">Professional Tax treatment
               <select bind:value={componentEvent.professionalTaxMode} class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
-                <option value="">Unchanged</option><option value="auto">Indicative automatic slab</option><option value="manual">Manual payslip amount</option><option value="none">Not applicable / exempt</option>
+                <option value="">Unchanged</option><option value="auto">Reference estimate — pay-level band</option><option value="manual">Manual payslip amount</option><option value="none">Not applicable / exempt</option>
               </select>
             </label>
+            {#if componentEvent.professionalTaxMode === 'auto'}
+              <p class="col-span-full text-xs leading-5 text-amber-700 dark:text-amber-300">This is an optional project reference estimate, not a verified statutory calculation. The current official salary/wage schedule lists income-based ranges whose boundary wording needs clarification. Prefer the manual amount from the employee’s payslip / DDO unless the pay-level rule is confirmed for this effective month.</p>
+            {/if}
+            {#if componentEvent.professionalTaxMode === 'auto'}
+              <label class="text-sm font-bold">Professional Tax pay-level band
+                <select bind:value={componentEvent.professionalTaxLevelBand} class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900"><option value="">Select pay-level band</option><option value="below-level-15">Below Level 15 — ₹150</option><option value="level-15-and-above">Level 15 and above — ₹200</option></select>
+              </label>
+            {/if}
             <label class="text-sm font-bold">Manual Professional Tax (₹)
               <input type="number" min="0" step="1" value={componentEvent.manualProfessionalTax} oninput={(event) => (componentEvent.manualProfessionalTax = (event.currentTarget as HTMLInputElement).value)} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
             </label>
@@ -593,7 +770,10 @@
           </label>
         </div>
       {/if}
-      <button type="button" onclick={addChange} class="mt-4 rounded-xl bg-emerald-800 px-5 py-3 text-sm font-extrabold text-white hover:bg-emerald-700">Add effective-dated change</button>
+      <div class="mt-4 flex flex-wrap gap-2">
+        <button type="button" onclick={addChange} class="rounded-xl bg-emerald-800 px-5 py-3 text-sm font-extrabold text-white hover:bg-emerald-700">{editingChangeIndex === null ? 'Add effective-dated change' : 'Save change'}</button>
+        {#if editingChangeIndex !== null}<button type="button" onclick={cancelChangeEdit} class="rounded-xl border border-slate-300 px-5 py-3 text-sm font-bold dark:border-slate-700">Cancel edit</button>{/if}
+      </div>
       {#if changes.length}
         <div class="mt-5 overflow-x-auto">
           <table class="w-full min-w-[1050px] text-left text-sm">
@@ -607,7 +787,7 @@
                   <td>{change.daRate === undefined ? '—' : change.daRate + '%'}</td>
                   <td class="max-w-[280px] whitespace-normal text-xs">{componentChangeSummary(change)}</td>
                   <td>{change.description}</td>
-                  <td class="text-right"><button type="button" onclick={() => removeChange(index)} class="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-950/40">Remove</button></td>
+                  <td class="whitespace-nowrap text-right"><button type="button" onclick={() => editChange(index)} class="mr-1 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-bold dark:border-slate-700">Edit</button><button type="button" onclick={() => removeChange(index)} class="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-950/40">Remove</button></td>
                 </tr>
               {/each}
             </tbody>
@@ -626,7 +806,8 @@
           <p class="mt-1 max-w-3xl text-sm leading-6 text-slate-500 dark:text-slate-400">The revised take-home is calculated for each month. Fill in the net amount actually credited and any additional recovery to be deducted from this arrears settlement.</p>
         </div>
         <div class="no-print flex flex-wrap gap-2">
-          <button type="button" onclick={printStatement} class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold dark:border-slate-700">Print statement</button>
+          <button type="button" onclick={printStatement} disabled={!printableStatement} class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold disabled:opacity-40 dark:border-slate-700">Print salary / arrears statement</button>
+          <button type="button" onclick={exportAuditCsv} class="rounded-lg border border-emerald-800 px-3 py-2 text-xs font-bold text-emerald-900 dark:border-emerald-500 dark:text-emerald-300">Download audit report</button>
           <button type="button" onclick={exportCsv} disabled={!result.valid || !result.complete} class="rounded-lg bg-emerald-800 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40">Download CSV</button>
         </div>
       </div>
@@ -639,10 +820,11 @@
           </ul>
         </div>
       {:else}
-        <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <div class="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800"><p class="text-xs text-slate-500">Revised take-home total</p><p class="mt-1 text-xl font-black">{fmt(result.totals.revisedTakeHome)}</p></div>
           <div class="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800"><p class="text-xs text-slate-500">Actual credited total</p><p class="mt-1 text-xl font-black">{result.complete ? fmt(result.totals.actualTakeHome) : 'Pending'}</p></div>
           <div class="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800"><p class="text-xs text-slate-500">Additional recoveries</p><p class="mt-1 text-xl font-black">{fmt(result.totals.recoveries)}</p></div>
+          <div class="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800"><p class="text-xs text-slate-500">Employer / State CPS share (separate)</p><p class="mt-1 text-xl font-black">{fmt(result.totals.employerCpsContribution)}</p></div>
           <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900 dark:bg-emerald-950/30"><p class="text-xs text-emerald-800 dark:text-emerald-300">{result.complete ? 'Net arrears / balance' : 'Net arrears estimate'}</p><p class="mt-1 text-xl font-black text-emerald-950 dark:text-emerald-100">{result.complete ? fmt(result.totals.netArrears) : 'Incomplete'}</p></div>
         </div>
         {#if !result.complete}
@@ -659,7 +841,7 @@
           <table class="w-full min-w-[2100px] text-left text-sm">
             <thead>
               <tr class="border-b border-slate-200 text-[10px] uppercase tracking-wide text-slate-500 dark:border-slate-700">
-                <th class="py-3">Month</th><th>Basic pay</th><th>DA rate</th><th>DA</th><th>HRA</th><th>SBCA</th><th>Transport</th><th>Other earnings</th><th>Revised gross</th><th>CPS / GPF</th><th>Professional Tax</th><th>GIS</th><th>Stamp fee</th><th>Other deductions</th><th>Total deductions</th><th>Revised take-home</th><th>Actual net paid (₹)</th><th>Recovery (₹)</th><th>Net difference</th>
+                <th class="py-3">Month</th><th>Basic pay</th><th>DA rate</th><th>DA</th><th>HRA</th><th>SBCA</th><th>Transport</th><th>Other earnings</th><th>Revised gross</th><th>Employee CPS / GPF</th><th>Employer CPS share (separate)</th><th>Professional Tax</th><th>GIS</th><th>Stamp fee</th><th>Other deductions</th><th>Total deductions</th><th>Revised take-home</th><th>Actual net paid (₹)</th><th>Recovery (₹)</th><th>Net difference</th>
               </tr>
             </thead>
             <tbody>
@@ -675,6 +857,7 @@
                   <td>{fmt(row.otherEarnings)}</td>
                   <td>{fmt(row.grossEntitlement)}</td>
                   <td>{fmt(row.employeePension)}</td>
+                  <td>{fmt(row.employerCpsContribution)}</td>
                   <td>{fmt(row.professionalTax)}</td>
                   <td>{fmt(row.gis)}</td>
                   <td>{fmt(row.stampFee)}</td>
@@ -686,7 +869,7 @@
                   <td class="font-bold">{fmt(row.netArrears)}</td>
                 </tr>
                 {#if row.appliedChanges.length}
-                  <tr class="border-b border-slate-100 bg-emerald-50/60 dark:border-slate-800 dark:bg-emerald-950/20"><td colspan="19" class="px-3 py-2 text-xs text-emerald-900 dark:text-emerald-200">Applied from this month: {row.appliedChanges.join(' · ')}</td></tr>
+                  <tr class="border-b border-slate-100 bg-emerald-50/60 dark:border-slate-800 dark:bg-emerald-950/20"><td colspan="20" class="px-3 py-2 text-xs text-emerald-900 dark:text-emerald-200">Applied from this month: {row.appliedChanges.join(' · ')}</td></tr>
                 {/if}
               {/each}
             </tbody>
@@ -694,6 +877,68 @@
         </div>
       {/if}
     </section>
+
+    <section class="no-print rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
+      <p class="text-xs font-extrabold uppercase tracking-[0.15em] text-emerald-800 dark:text-emerald-400">04 · Printable statement</p>
+      <h2 class="mt-1 text-xl font-black">Employee and office details</h2>
+      <p class="mt-1 text-sm text-slate-500">Optional metadata is session-only and is not stored in your arrears draft.</p>
+      <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <label class="text-sm font-bold">Employee name<input bind:value={statementMetadata.employeeName} class="mt-1 w-full rounded-xl border p-3 dark:border-slate-700 dark:bg-transparent" /></label>
+        <label class="text-sm font-bold">Employee ID (optional)<input bind:value={statementMetadata.employeeId} class="mt-1 w-full rounded-xl border p-3 dark:border-slate-700 dark:bg-transparent" /></label>
+        <label class="text-sm font-bold">Designation<input bind:value={statementMetadata.designation} class="mt-1 w-full rounded-xl border p-3 dark:border-slate-700 dark:bg-transparent" /></label>
+        <label class="text-sm font-bold">Department<input bind:value={statementMetadata.department} class="mt-1 w-full rounded-xl border p-3 dark:border-slate-700 dark:bg-transparent" /></label>
+        <label class="text-sm font-bold">Office / establishment<input bind:value={statementMetadata.office} class="mt-1 w-full rounded-xl border p-3 dark:border-slate-700 dark:bg-transparent" /></label>
+        <label class="text-sm font-bold">District<input bind:value={statementMetadata.district} class="mt-1 w-full rounded-xl border p-3 dark:border-slate-700 dark:bg-transparent" /></label>
+        <label class="text-sm font-bold">Pay level<input bind:value={statementMetadata.payLevel} placeholder="As per pay matrix" class="mt-1 w-full rounded-xl border p-3 dark:border-slate-700 dark:bg-transparent" /></label>
+        <label class="text-sm font-bold">Cell / stage<input bind:value={statementMetadata.cell} placeholder="As per pay matrix" class="mt-1 w-full rounded-xl border p-3 dark:border-slate-700 dark:bg-transparent" /></label>
+      </div>
+      <p class="mt-3 text-xs text-slate-500">Use the browser Print dialog and select Save as PDF. A statement is available only after validation succeeds and actual credited pay is entered for every month.</p>
+      {#if !printableStatement}<p class="mt-2 text-sm font-semibold text-amber-800">Complete validation and monthly actual-pay entries to enable the statement. The audit CSV remains available for incomplete scenarios.</p>{:else}<p class="mt-2 text-sm font-semibold text-emerald-800">Ready for print preview. Verify all figures and source orders before submission.</p>{/if}
+    </section>
+    {#if printableStatement}
+      <section class="print-statement rounded-2xl border border-slate-300 bg-white p-6 text-slate-950">
+        <header class="border-b-2 border-slate-800 pb-4 text-center">
+          <p class="text-xs font-bold uppercase tracking-widest">Sikkim Government · Employee salary calculation</p>
+          <h2 class="mt-2 text-2xl font-black">Salary / Arrears Calculation Statement</h2>
+          <p class="mt-1 text-xs">Draft for verification · {startMonth} to {endMonth}</p>
+        </header>
+        <div class="mt-4 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+          <p><strong>Employee:</strong> {statementMetadata.employeeName || 'Not provided'}</p><p><strong>Employee ID:</strong> {statementMetadata.employeeId || 'Not provided'}</p>
+          <p><strong>Designation:</strong> {statementMetadata.designation || 'Not provided'}</p><p><strong>Department:</strong> {statementMetadata.department || 'Not provided'}</p>
+          <p><strong>Office:</strong> {statementMetadata.office || 'Not provided'}</p><p><strong>District:</strong> {statementMetadata.district || 'Not provided'}</p>
+          <p><strong>Pay level:</strong> {statementMetadata.payLevel || 'Not provided'}</p><p><strong>Cell / stage:</strong> {statementMetadata.cell || 'Not provided'}</p>
+        </div>
+        <div class="mt-5 overflow-x-auto"><table class="w-full min-w-[1100px] border-collapse text-xs">
+          <thead><tr class="border-y border-slate-400 text-left"><th class="py-2">Month</th><th>Basic</th><th>DA</th><th>HRA</th><th>SBCA</th><th>Transport</th><th>Other</th><th>Gross</th><th>Employee deductions</th><th>Employer CPS share (separate)</th><th>Revised net</th><th>Actual paid</th><th>Recovery</th><th>Difference</th></tr></thead>
+          <tbody>{#each printableStatement.rows as row}<tr class="border-b border-slate-200"><td class="py-2">{row.month}</td><td>{fmt(row.basicPay)}</td><td>{fmt(row.da)}</td><td>{fmt(row.hra)}</td><td>{fmt(row.sbca)}</td><td>{fmt(row.transportAllowance)}</td><td>{fmt(row.otherEarnings)}</td><td>{fmt(row.grossEntitlement)}</td><td>{fmt(row.employeeDeductions)}</td><td>{fmt(row.employerCpsContribution)}</td><td>{fmt(row.revisedTakeHome)}</td><td>{fmt(row.actualTakeHome)}</td><td>{fmt(row.recovery)}</td><td>{fmt(row.netArrears)}</td></tr>{/each}</tbody>
+        </table></div>
+        <div class="mt-5 grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
+          <p><strong>Revised gross</strong><br />{fmt(printableStatement.totals.grossEntitlement)}</p><p><strong>Employee deductions</strong><br />{fmt(printableStatement.totals.employeeDeductions)}</p><p><strong>Employer / State CPS share (separate)</strong><br />{fmt(printableStatement.totals.employerCpsContribution)}</p>
+          <p><strong>Revised take-home</strong><br />{fmt(printableStatement.totals.revisedTakeHome)}</p><p><strong>Actual credited</strong><br />{fmt(printableStatement.totals.actualTakeHome)}</p>
+          <p><strong>Additional recoveries</strong><br />{fmt(printableStatement.totals.recoveries)}</p><p><strong>Positive arrears</strong><br />{fmt(printableStatement.totals.positiveArrears)}</p>
+          <p><strong>Negative balance</strong><br />{fmt(Math.abs(printableStatement.totals.negativeBalance))}</p><p><strong>Net arrears / balance</strong><br /><strong>{fmt(printableStatement.totals.netArrears)}</strong></p>
+        </div>
+        <div class="mt-4 border-t pt-3 text-xs"><strong>Applied changes / order references</strong><ul class="mt-1 list-disc pl-5">{#each printableStatement.appliedChanges as ref}<li>{ref}</li>{:else}<li>No effective-dated change reference entered.</li>{/each}</ul></div>
+        <p class="mt-4 border border-amber-500 bg-amber-50 p-3 text-xs font-semibold">This is a draft calculation from user-entered inputs, not an official pay certificate, pay-fixation approval or arrears sanction. Verify service records, applicable orders, eligibility, payslips, deductions and rounding with DDO / Accounts before payment or submission.</p>
+        <div class="mt-8 grid grid-cols-2 gap-10 text-xs">
+          <div class="border-t border-slate-500 pt-2"><strong>Employee declaration</strong><p class="mt-1">I have checked the details and supporting records entered above.</p><p class="mt-8">Signature: ____________________</p><p class="mt-2">Date: ________________________</p></div>
+          <div class="border-t border-slate-500 pt-2"><strong>DDO / Accounts verification</strong><p class="mt-1">Verified with relevant service, order and payroll records.</p><p class="mt-8">Name / designation: ___________</p><p class="mt-2">Signature / seal: ______________</p><p class="mt-2">Date: ________________________</p></div>
+        </div>
+      </section>
+    {:else}
+      <section class="print-statement rounded-2xl border border-amber-300 bg-white p-6 text-slate-950">
+        <header class="border-b-2 border-slate-800 pb-4 text-center">
+          <p class="text-xs font-bold uppercase tracking-widest">Sikkim Government · Employee salary calculation</p>
+          <h2 class="mt-2 text-2xl font-black">Salary / Arrears Statement — Withheld</h2>
+          <p class="mt-1 text-xs">Draft status · Not ready for calculation or submission</p>
+        </header>
+        <div class="mt-5 rounded-xl border border-amber-400 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
+          <strong>No printable arrears statement is available.</strong>
+          <p class="mt-2">Complete the salary and historical-rate validation, enter actual credited take-home pay for every month in the selected period, and resolve all validation issues before generating the official-looking draft statement.</p>
+          <p class="mt-2">The audit CSV remains available for reviewing incomplete or blocked scenarios. This notice is not a pay certificate, arrears calculation, sanction or payment authority.</p>
+        </div>
+      </section>
+    {/if}
 
     <section class="rounded-2xl border border-slate-200 bg-white p-5 text-sm leading-6 dark:border-slate-800 dark:bg-slate-900">
       <h2 class="font-extrabold">Government references and limitations</h2>
@@ -706,3 +951,20 @@
     </section>
   </div>
 </main>
+<style>
+@media print {
+  @page { size: A4 landscape; margin: 12mm; }
+  :global(body) { background: #fff !important; color: #000 !important; }
+  .no-print { display: none !important; }
+  :global(main > div > *:not(.print-statement)) { display: none !important; }
+  main { min-height: 0 !important; padding: 0 !important; background: #fff !important; color: #000 !important; }
+  main > div { max-width: none !important; }
+  :global(.print-statement) { display: block !important; border: 0 !important; box-shadow: none !important; padding: 0 !important; break-inside: auto !important; }
+  :global(.print-statement tr) { break-inside: avoid; }
+  :global(.print-statement thead) { display: table-header-group; }
+  :global(.print-statement th), :global(.print-statement td) { vertical-align: top; }
+  .print-statement table { min-width: 0 !important; width: 100% !important; font-size: 7pt !important; }
+  .print-statement th, .print-statement td { padding: 2px 3px !important; }
+  .print-statement p, .print-statement li { color: #000 !important; }
+}
+</style>

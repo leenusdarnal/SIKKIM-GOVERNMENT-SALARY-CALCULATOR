@@ -1,0 +1,40 @@
+<script lang="ts">
+import type { HistoricalRateComponent, HistoricalRateEntry } from './historical-rates';
+let { entries = $bindable([]), selected = $bindable([]) }: { entries: HistoricalRateEntry[]; selected: HistoricalRateComponent[] } = $props();
+let component = $state<HistoricalRateComponent>('daRate'), effectiveFrom = $state(''), effectiveTo = $state(''), value = $state(''), sourceReference = $state(''), applicability = $state(''), verified = $state(false), editingIndex = $state<number | null>(null), error = $state('');
+const components: { value: HistoricalRateComponent; label: string; unit: 'percent' | 'inr' }[] = [
+{ value:'daRate',label:'Dearness Allowance (DA)',unit:'percent' },{ value:'hraRate',label:'House Rent Allowance (HRA)',unit:'percent' },{ value:'sbcaRate',label:'SBCA',unit:'percent' },{ value:'transportAllowance',label:'Transport allowance',unit:'inr' }];
+const unit = $derived(components.find(x=>x.value===component)?.unit ?? 'percent');
+function resetForm(){component='daRate';effectiveFrom='';effectiveTo='';value='';sourceReference='';applicability='';verified=false;editingIndex=null;error='';}
+function saveEntry(){
+const amount=Number(value), validMonth=(v:string)=>/^\d{4}-(0[1-9]|1[0-2])$/.test(v);
+if(!validMonth(effectiveFrom)){error='Enter a valid effective-from month (YYYY-MM).';return;}
+if(effectiveTo&&(!validMonth(effectiveTo)||effectiveTo<effectiveFrom)){error='Effective-to must be on or after effective-from.';return;}
+const max=component==='daRate'?200:component==='transportAllowance'?Number.MAX_SAFE_INTEGER:100;
+if(value.trim()===''||!Number.isFinite(amount)||amount<0||amount>max){error='Enter a valid non-negative value within the component limit.';return;}
+if(!sourceReference.trim()){error='Enter the Government order / circular reference.';return;}
+const entry:HistoricalRateEntry={component,effectiveFrom,...(effectiveTo?{effectiveTo}:{}),value:amount,unit,sourceReference:sourceReference.trim(),verified,...(applicability.trim()?{applicability:applicability.trim()}:{})};
+const next=[...entries];if(editingIndex===null)next.push(entry);else next[editingIndex]=entry;entries=next;resetForm();
+}
+function editEntry(i:number){const e=entries[i];component=e.component;effectiveFrom=e.effectiveFrom;effectiveTo=e.effectiveTo??'';value=String(e.value);sourceReference=e.sourceReference;applicability=e.applicability??'';verified=e.verified;editingIndex=i;error='';}
+function removeEntry(i:number){entries=entries.filter((_,j)=>j!==i);if(editingIndex===i)resetForm();else if(editingIndex!==null&&editingIndex>i)editingIndex-=1;}
+function toggle(item:HistoricalRateComponent,checked:boolean){selected=checked?[...selected,item]:selected.filter(x=>x!==item);}
+function label(item:HistoricalRateComponent){return components.find(x=>x.value===item)?.label??item;}
+</script>
+<section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
+<div><p class="text-xs font-extrabold uppercase tracking-widest text-emerald-800 dark:text-emerald-400">Source-backed history</p><h2 class="mt-1 text-xl font-black">Historical rate schedule</h2><p class="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">Maintain rates prescribed by Government orders. Select which components override the arrears salary basis. Each selected component needs a verified rate for every month.</p></div>
+<div class="mt-5 grid gap-3 sm:grid-cols-2">{#each components as item}<label class="flex gap-3 rounded-xl border border-slate-200 p-3 text-sm dark:border-slate-700"><input type="checkbox" checked={selected.includes(item.value)} onchange={e=>toggle(item.value,e.currentTarget.checked)} class="mt-1"/><span><strong class="block">{item.label}</strong><span class="text-xs text-slate-500">Use in arrears calculation</span></span></label>{/each}</div>
+<div class="mt-6 rounded-2xl bg-slate-50 p-4 dark:bg-slate-800/60"><h3 class="font-bold">{editingIndex===null?'Add rate entry':'Edit rate entry'}</h3>
+<div class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+<label class="text-xs font-semibold">Component<select bind:value={component} class="mt-1 w-full rounded-lg border bg-white p-2.5 text-sm dark:bg-slate-900">{#each components as item}<option value={item.value}>{item.label}</option>{/each}</select></label>
+<label class="text-xs font-semibold">Effective from<input type="month" bind:value={effectiveFrom} class="mt-1 w-full rounded-lg border bg-white p-2.5 text-sm dark:bg-slate-900"/></label>
+<label class="text-xs font-semibold">Effective to (optional)<input type="month" bind:value={effectiveTo} class="mt-1 w-full rounded-lg border bg-white p-2.5 text-sm dark:bg-slate-900"/></label>
+<label class="text-xs font-semibold">Rate / amount ({unit==='percent'?'%':'INR'})<input type="number" min="0" step="0.01" bind:value={value} class="mt-1 w-full rounded-lg border bg-white p-2.5 text-sm dark:bg-slate-900"/></label>
+<label class="text-xs font-semibold sm:col-span-2">Government order / circular reference<input bind:value={sourceReference} placeholder="Order number, date or circular reference" class="mt-1 w-full rounded-lg border bg-white p-2.5 text-sm dark:bg-slate-900"/></label>
+<label class="text-xs font-semibold sm:col-span-2 lg:col-span-3">Applicability notes (optional)<textarea bind:value={applicability} rows="2" placeholder="Employee category, cadre, posting or eligibility scope" class="mt-1 w-full rounded-lg border bg-white p-2.5 text-sm dark:bg-slate-900"></textarea></label>
+<label class="flex gap-2 text-xs sm:col-span-2 lg:col-span-3"><input type="checkbox" bind:checked={verified} class="mt-0.5"/><span><strong>Verified for this employee</strong><span class="block font-normal text-slate-500">Confirm the order, effective date and employee applicability. Unverified entries can be saved but cannot be used.</span></span></label>
+</div>
+{#if error}<p role="alert" class="mt-3 text-sm font-semibold text-red-700">{error}</p>{/if}<div class="mt-3 flex gap-2"><button type="button" onclick={saveEntry} class="rounded-lg bg-emerald-800 px-4 py-2.5 text-xs font-bold text-white">{editingIndex===null?'Add rate entry':'Save changes'}</button>{#if editingIndex!==null}<button type="button" onclick={resetForm} class="rounded-lg border px-4 py-2.5 text-xs font-bold">Cancel edit</button>{/if}</div></div>
+<div class="mt-5"><h3 class="font-bold">Saved entries ({entries.length})</h3>{#if entries.length===0}<p class="mt-2 rounded-xl border border-dashed p-4 text-sm text-slate-500">No historical rates entered. Nothing is assumed or pre-filled.</p>{:else}<div class="mt-3 space-y-2">{#each entries as entry,i}<div class="flex flex-wrap items-start justify-between gap-3 rounded-xl border p-3"><div class="min-w-0 flex-1 text-sm"><div class="flex flex-wrap items-center gap-2"><strong>{label(entry.component)}</strong><b>{entry.value}{entry.unit==='percent'?'%':' INR'}</b><span class={entry.verified?'rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800':'rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-900'}>{entry.verified?'Verified':'Not verified'}</span></div><p class="mt-1 text-xs text-slate-500">{entry.effectiveFrom} to {entry.effectiveTo??'open-ended'} · {entry.sourceReference}</p>{#if entry.applicability}<p class="mt-1 text-xs text-slate-500">{entry.applicability}</p>{/if}</div><div class="flex gap-2"><button type="button" onclick={()=>editEntry(i)} class="rounded-lg border px-3 py-2 text-xs font-bold">Edit</button><button type="button" onclick={()=>removeEntry(i)} class="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-700">Delete</button></div></div>{/each}</div>{/if}</div>
+<p class="mt-4 text-xs leading-5 text-slate-500">HRA rate verification does not establish HRA eligibility. Confirm eligibility separately. Overlapping periods or missing verified months block the calculation.</p>
+</section>

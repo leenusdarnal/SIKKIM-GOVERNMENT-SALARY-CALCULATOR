@@ -221,3 +221,40 @@ input[type="number"], input[type="date"] { cursor: text; }
   .result-card { background: #14532d !important; print-color-adjust: exact; }
   main { max-width: 100% !important; padding: 0 !important; }
 }
+
+
+/* Accessibility and narrow-screen safeguards */
+html { scroll-padding-top: 1rem; }
+:where(button, a, input, select, textarea, summary) { touch-action: manipulation; }
+:where(button, a, input, select, textarea) { scroll-margin-block: .5rem; }
+button, [role="button"] { min-height: 40px; }
+input[type="checkbox"], input[type="radio"] { min-width: 18px; min-height: 18px; }
+.field-help, .eyebrow { color: #64736b; }
+.dark .field-help, .dark .eyebrow { color: #a8b8ae; }
+:where(input, select, textarea) { max-width: 100%; }
+:where(table) { border-collapse: collapse; }
+:where(th, td) { vertical-align: top; }
+:where(th) { font-weight: 800; }
+:where(a, button, input, select, textarea) { -webkit-tap-highlight-color: transparent; }
+@media (max-width: 639px) {
+  .section-heading { align-items: flex-start; flex-wrap: wrap; padding: 16px; }
+  .button-primary, .button-secondary { min-height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+@media print {
+  @page { margin: 12mm; }
+  html, body { min-width: 0 !important; background: #fff !important; color: #111 !important; font-size: 9pt !important; }
+  body { margin: 0 !important; }
+  * { box-shadow: none !important; text-shadow: none !important; }
+  a { color: #111 !important; text-decoration: none !important; }
+  table { width: 100% !important; border-collapse: collapse !important; }
+  thead { display: table-header-group; }
+  tfoot { display: table-footer-group; }
+  tr, img, svg { break-inside: avoid; }
+  th, td { color: #111 !important; }
+  input, select, textarea, button, .no-print { display: none !important; }
+  .print-statement, .print-report { display: block !important; }
+  .print-statement { break-inside: auto !important; }
+}

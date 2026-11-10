@@ -4,11 +4,11 @@
   import {
     calculateSalary,
     DEFAULT_SALARY_INPUT,
+    validateSalaryInput,
     type SalaryInput,
     type SalaryResult
   } from '../salary';
   import { SALARY_SOURCES } from '../sources';
-  import { getTemporaryPay, TEMPORARY_PAY_OPTIONS } from '../temporary-pay';
 
   let selectedLevel = $state<number | ''>('');
   let selectedCell = $state<number | ''>('');
@@ -17,15 +17,10 @@
   let salaryMonth = $state('2026-11');
   let calculationError = $state('');
   let hasCalculated = $state(false);
+  let clientReady = $state(false);
   let dark = $state(false);
   let matrixOpen = $state(false);
   let showSources = $state(false);
-  let temporaryOptionId = $state('');
-  let temporaryDailyRate = $state(0);
-  let temporaryPayableDays = $state(0);
-  const temporaryOption = $derived(TEMPORARY_PAY_OPTIONS.find((option) => option.id === temporaryOptionId));
-  const temporaryAmount = $derived(temporaryOptionId ? getTemporaryPay(temporaryOptionId, temporaryPayableDays, temporaryDailyRate) : null);
-
   const currentCells = $derived(selectedLevel !== '' ? PAY_MATRIX[selectedLevel] ?? [] : []);
   const daNeedsManualVerification = $derived(
     salaryMonth !== '' && (salaryMonth < '2026-01' || salaryMonth > '2026-11')
@@ -48,10 +43,18 @@
     }).format(Math.round(value));
 
   onMount(() => {
-    dark = localStorage.getItem('sikkim-salary-theme') === 'dark';
+    try {
+      dark = localStorage.getItem('sikkim-salary-theme') === 'dark';
+    } catch {
+      // Theme persistence is optional; a restricted browser still gets the light theme.
+      dark = false;
+    }
+    clientReady = true;
   });
 
-  function changeLevel() {
+  function changeLevel(event: Event) {
+    const value = (event.currentTarget as HTMLSelectElement).value;
+    selectedLevel = value === '' ? '' : Number(value);
     selectedCell = '';
     hasCalculated = false;
   }
@@ -62,16 +65,18 @@
       calculationError = 'Choose a pay level and cell before calculating.';
       return;
     }
-    if (form.pensionMode === 'unselected') {
+
+    form.professionalTaxLevelBand = Number(selectedLevel) >= 15
+      ? 'level-15-and-above'
+      : 'below-level-15';
+
+    const errors = validateSalaryInput({ ...form, basicPay: selectedBasic });
+    if (errors.length) {
       hasCalculated = false;
-      calculationError = 'Select the pension arrangement applicable to your service before calculating.';
+      calculationError = errors[0];
       return;
     }
-    if (form.professionalTaxMode === 'unselected') {
-      hasCalculated = false;
-      calculationError = 'Select a Professional Tax treatment, enter the amount from your payslip, or mark it not applicable where exempt.';
-      return;
-    }
+
     calculationError = '';
     hasCalculated = true;
   }
@@ -99,21 +104,20 @@
 
   function toggleTheme() {
     dark = !dark;
-    localStorage.setItem('sikkim-salary-theme', dark ? 'dark' : 'light');
+    try {
+      localStorage.setItem('sikkim-salary-theme', dark ? 'dark' : 'light');
+    } catch {
+      // Keep the in-memory theme toggle usable when browser storage is unavailable.
+    }
   }
 
   function printStatement() {
     window.print();
   }
 
-  const preCpsCutoff = $derived(
-    form.pensionMode === 'cps' &&
-    appointmentDate !== '' &&
-    appointmentDate < '2006-04-01'
-  );
 </script>
 
-<div class:dark class="app-shell min-h-screen bg-[#f4f6f3] text-slate-900 transition-colors dark:bg-[#0b1411] dark:text-slate-100">
+<div data-client-ready={clientReady ? 'true' : 'false'} class:dark class="app-shell min-h-screen bg-[#f4f6f3] text-slate-900 transition-colors dark:bg-[#0b1411] dark:text-slate-100">
   <div class="mx-auto flex min-h-screen max-w-[1600px]">
     <aside class="no-print hidden w-[250px] shrink-0 border-r border-slate-200/80 bg-white/80 px-5 py-6 dark:border-slate-800 dark:bg-[#0e1915] lg:flex lg:flex-col">
       <a href="#top" class="flex items-center gap-3 rounded-2xl">
@@ -167,7 +171,8 @@
           </div>
           <div class="min-w-0 flex-1">
             <p class="text-[10px] font-extrabold uppercase tracking-[0.2em] text-emerald-800 dark:text-emerald-400">Government of Sikkim · Employee utility</p>
-            <p class="mt-0.5 truncate text-sm font-extrabold tracking-tight">Salary estimation workspace</p>
+            <p class="mt-0.5 text-sm font-extrabold tracking-tight sm:hidden">Sikkim Salary</p>
+            <p class="mt-0.5 hidden truncate text-sm font-extrabold tracking-tight sm:block">Salary estimation workspace</p>
           </div>
           <span class="hidden items-center gap-2 rounded-full border border-emerald-200 bg-white px-3 py-1.5 text-[11px] font-bold text-emerald-800 sm:inline-flex dark:border-emerald-900 dark:bg-slate-900 dark:text-emerald-300">
             <span class="size-1.5 rounded-full bg-emerald-500"></span>
@@ -224,74 +229,13 @@
           </article>
         </section>
 
-        <section id="temporary-pay" class="mb-7 scroll-mt-28 surface-card p-5 sm:p-6">
-          <div class="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <p class="eyebrow">Separate pay pathway · Temporary appointments</p>
-              <h2 class="mt-1 text-xl font-black tracking-tight">Temporary employee & training pay</h2>
-              <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-400">Uses the Department of Personnel notification dated 12 August 2026 for temporary consolidated pay and the 25 July 2024 amendment for direct-recruit training allowances. This is separate from the regular pay-matrix calculator.</p>
-            </div>
-            <span class="rounded-full bg-amber-50 px-3 py-1.5 text-[10px] font-bold text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">Not regular pay</span>
+        <section id="temporary-pay" class="mb-7 scroll-mt-28 surface-card flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+          <div class="min-w-0">
+            <p class="eyebrow">Separate pay pathway · Temporary appointments</p>
+            <h2 class="mt-1 text-xl font-black tracking-tight">Temporary employee & training pay</h2>
+            <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-400">Use the dedicated notification-based calculator for effective-date checks, employee/post applicability confirmation and the Labour Department daily-wage evidence required for temporary drivers. No unverified temporary-pay amount is calculated in this regular salary form.</p>
           </div>
-          <div class="mt-5 grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(240px,0.65fr)]">
-            <div>
-              <label for="temporaryPayOption" class="field-label">Appointment / post category</label>
-              <select id="temporaryPayOption" bind:value={temporaryOptionId} class="field-control">
-                <option value="">Select the applicable notification category</option>
-                <optgroup label="Temporary Group C / D — equivalent grade pay">
-                  {#each TEMPORARY_PAY_OPTIONS.filter((option) => option.id.startsWith('gp-')) as option}
-                    <option value={option.id}>{option.label}</option>
-                  {/each}
-                </optgroup>
-                <optgroup label="Temporary — specific posts">
-                  {#each TEMPORARY_PAY_OPTIONS.filter((option) => option.category === 'specific-post') as option}
-                    <option value={option.id}>{option.label}</option>
-                  {/each}
-                </optgroup>
-                <optgroup label="Direct recruitment — first-year training allowance">
-                  {#each TEMPORARY_PAY_OPTIONS.filter((option) => option.category === 'training') as option}
-                    <option value={option.id}>{option.label}</option>
-                  {/each}
-                </optgroup>
-                <optgroup label="Temporary driver">
-                  <option value="driver-daily-wage">Driver — enter Labour Department daily wage rate</option>
-                </optgroup>
-              </select>
-            </div>
-            {#if temporaryOption?.category === 'driver-manual'}
-              <div class="grid grid-cols-2 gap-3">
-                <div>
-                  <label for="driverDailyRate" class="field-label">Daily rate (₹)</label>
-                  <input id="driverDailyRate" type="number" min="0" bind:value={temporaryDailyRate} class="field-control" />
-                </div>
-                <div>
-                  <label for="driverDays" class="field-label">Payable days</label>
-                  <input id="driverDays" type="number" min="0" max="31" bind:value={temporaryPayableDays} class="field-control" />
-                </div>
-              </div>
-            {/if}
-          </div>
-          {#if temporaryOption}
-            <div class="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 dark:border-emerald-900/60 dark:bg-emerald-950/20">
-              <p class="text-[10px] font-extrabold uppercase tracking-[0.16em] text-emerald-800 dark:text-emerald-300">Monthly consolidated / training amount</p>
-              {#if temporaryAmount !== null}
-                <p class="mt-1 text-3xl font-black tracking-tight text-emerald-950 dark:text-emerald-100">{fmt(temporaryAmount)}</p>
-                <p class="mt-1 text-xs text-emerald-900/70 dark:text-emerald-200/70">{temporaryOption.category === 'driver-manual' ? 'Calculated as daily rate × payable days.' : 'Amount prescribed by the selected notification row.'}</p>
-              {:else}
-                <p class="mt-1 text-sm font-bold text-amber-800 dark:text-amber-300">Enter a valid daily rate and payable days.</p>
-              {/if}
-            </div>
-            {#if temporaryOption.note}
-              <p class="mt-3 text-xs leading-5 text-slate-600 dark:text-slate-400">{temporaryOption.note}</p>
-            {/if}
-          {/if}
-          <div class="mt-4 rounded-xl bg-slate-50 p-4 text-xs leading-5 text-slate-600 dark:bg-slate-800/60 dark:text-slate-300">
-            <strong>Important:</strong> Consolidated pay is not Basic Pay in the regular pay matrix. Do not add DA, HRA, SBCA or CPS/GPF automatically to this amount. The 2026 notification specifies a separate daily-wage basis for temporary drivers. Deductions, arrears, leave salary and employee-specific terms are not calculated in this first increment; confirm the appointment order and DDO bill.
-          </div>
-          <div class="mt-4 border-t border-slate-100 pt-4 dark:border-slate-800">
-            <p class="text-sm font-extrabold">Regularisation transition — reference only</p>
-            <p class="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-400">The Department of Personnel notification dated 25 July 2024 states that certain employees regularised after completing 8 or 4 years of service as on 31 December 2023 would draw their previous temporary consolidated pay for the first year from the effective regularisation date, then be placed in Level 1/2/3 for the next four years, with pay regulated after five years under Notification No. 99/GEN/DOP dated 6 February 2020. This is a specific transition provision, not a general guarantee of regularisation. Verify later orders and the employee's individual regularisation order before using it for a pay-fixation calculation.</p>
-          </div>
+          <a href="/temporary-pay" class="button-primary shrink-0">Open temporary pay calculator</a>
         </section>
 
         <div class="grid items-start gap-6 xl:grid-cols-[minmax(0,1.02fr)_minmax(390px,0.98fr)]">
@@ -436,7 +380,7 @@
                   <p class="mb-3 text-xs font-extrabold uppercase tracking-[0.15em] text-slate-500">Pension and provident fund</p>
                   <div>
                     <label for="pensionMode" class="field-label">Pension deduction scheme</label>
-                    <select id="pensionMode" bind:value={form.pensionMode} class="field-control">
+                    <select id="pensionMode" value={form.pensionMode} onchange={(event) => { form.pensionMode = (event.currentTarget as HTMLSelectElement).value as SalaryInput['pensionMode']; form.cpsMembershipConfirmed = false; form.gpfMembershipConfirmed = false; hasCalculated = false; }} class="field-control">
                       <option value="unselected" disabled>Select applicable pension arrangement</option>
                       <option value="cps">Sikkim CPS / CPF — 10% employee contribution (where covered)</option>
                       <option value="gpf">GPF — enter monthly amount</option>
@@ -444,10 +388,35 @@
                       <option value="none">OPS / no employee contribution (only where applicable)</option>
                     </select>
                   </div>
-                  <p class="field-help">Choose the scheme supported by your appointment/service records or latest DDO confirmation. Do not infer CPS/CPF or OPS eligibility from appointment date alone.</p>
-                  {#if form.pensionMode === 'gpf' || form.pensionMode === 'manual'}
+                  <p class="field-help">Choose the arrangement shown in the employee’s applicable pension option, service records and DDO / Accounts confirmation. Do not infer CPS/CPF or OPS eligibility from appointment date alone.</p>
+                  {#if form.pensionMode === 'cps'}
+                    <label class="mt-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
+                      <input type="checkbox" checked={form.cpsMembershipConfirmed === true} onchange={(event) => { form.cpsMembershipConfirmed = (event.currentTarget as HTMLInputElement).checked; hasCalculated = false; }} class="mt-1 size-4 shrink-0" />
+                      <span>I have verified this employee’s CPS / CPF membership and the applicable contribution basis against the signed pension option / order, service record and DDO / Accounts confirmation.</span>
+                    </label>
+                    <p class="field-help">The 9 February 2024 DOP notification announced restoration of OPS for employees appointed on or after 1 April 2006 and said detailed reversion modalities would follow. Confirm the employee’s actual option / implementation status; appointment date alone is not sufficient. <a class="underline" href="https://dop.sikkim.gov.in/notificationdoc/23.pdf" target="_blank" rel="noreferrer">Notification No. 23/GEN/DOP</a>.</p>
+                  {/if}
+                  {#if form.pensionMode === 'gpf'}
+                    <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label for="gpfReferencePay" class="field-label">GPF reference pay for subscription year (₹)</label>
+                        <input id="gpfReferencePay" type="number" min="1" step="1" bind:value={form.gpfReferencePay} class="field-control" />
+                        <p class="field-help">Enter the rule-defined reference pay for the relevant subscription year, confirmed by Accounts / DDO. Do not automatically use current Basic Pay.</p>
+                      </div>
+                      <div>
+                        <label for="manualPension" class="field-label">Monthly GPF subscription (₹)</label>
+                        <input id="manualPension" type="number" min="0" step="1" bind:value={form.manualPension} class="field-control" />
+                        <p class="field-help">Must be within 6%–100% of the reference pay under the cited Sikkim GPF rule.</p>
+                      </div>
+                    </div>
+                    <label class="mt-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
+                      <input type="checkbox" checked={form.gpfMembershipConfirmed === true} onchange={(event) => { form.gpfMembershipConfirmed = (event.currentTarget as HTMLInputElement).checked; hasCalculated = false; }} class="mt-1 size-4 shrink-0" />
+                      <span>I have verified the employee’s GPF account / membership and authority to subscribe against the service record and DDO / Accounts confirmation.</span>
+                    </label>
+                    <p class="field-help">GPF is an employee subscription only. No employer matching contribution is added.</p>
+                  {:else if form.pensionMode === 'manual'}
                     <div class="mt-4">
-                      <label for="manualPension" class="field-label">Monthly GPF / pension amount (₹)</label>
+                      <label for="manualPension" class="field-label">Monthly other pension amount (₹)</label>
                       <input id="manualPension" type="number" min="0" bind:value={form.manualPension} class="field-control" />
                     </div>
                   {/if}
@@ -460,10 +429,10 @@
                     <select id="ptMode" bind:value={form.professionalTaxMode} class="field-control">
                       <option value="unselected" disabled>Select Professional Tax treatment</option>
                       <option value="manual">Manual amount from payslip (recommended)</option>
-                      <option value="auto">Automatic estimate — based on gross monthly earnings</option>
+                      <option value="auto">Reference estimate — based on selected pay level</option>
                       <option value="none">Not applicable / exempt</option>
                     </select>
-                    <p class="field-help">Automatic mode is an estimate using gross monthly earnings. The exact statutory assessment base, exclusions and employee-specific exemptions need confirmation. Use the amount on your payslip or confirm with your DDO / Accounts section.</p>
+                    <p class="field-help">This is an optional project reference estimate using ₹150 below Level 15 and ₹200 at Level 15 and above. The current official salary/wage schedule lists income-based ranges, and its published boundary wording needs clarification. Do not treat this estimate as a verified statutory rule; use the manual amount from the employee’s current payslip / DDO unless the pay-level rule is confirmed for that employee.</p>
                   </div>
                   {#if form.professionalTaxMode === 'manual'}
                     <div class="mt-4">
@@ -525,10 +494,8 @@
                   <span>Calculation updates when you edit an input after calculating.</span>
                   <button type="button" onclick={printStatement} class="rounded-lg border border-white/20 px-3 py-2 font-bold text-white transition hover:bg-white/10">Print result</button>
                 </div>
-                {#if preCpsCutoff}
-                  <p class="mt-4 rounded-xl border border-amber-200/40 bg-amber-100/10 p-3 text-xs leading-5 text-amber-50">The appointment date entered is before 1 April 2006. Check CPS coverage and applicable exclusions before using the selected scheme.</p>
-                {:else if form.pensionMode === 'cps'}
-                  <p class="mt-4 rounded-xl border border-white/15 bg-white/5 p-3 text-xs leading-5 text-emerald-50/80">CPS coverage depends on the post and service category, not only the appointment date. Confirm eligibility under the Sikkim Government Servants (Contributory Pension) Rules, 2006.</p>
+                {#if form.pensionMode === 'cps'}
+                  <p class="mt-4 rounded-xl border border-white/15 bg-white/5 p-3 text-xs leading-5 text-emerald-50/80">After CPS membership is explicitly confirmed, this calculator applies the configured 10% employee share on Basic Pay + DA and shows an equal State share separately. Verify the applicable base and current scheme treatment against the employee’s option and Finance / DDO records.</p>
                 {/if}
               </section>
 
@@ -598,8 +565,9 @@
               <div class="mt-4 space-y-3">
                 <div class="flex gap-3"><span class="number-dot">1</span><p class="text-xs leading-5 text-slate-600 dark:text-slate-400"><strong class="text-slate-900 dark:text-slate-200">DA</strong> is the selected percentage of Basic Pay.</p></div>
                 <div class="flex gap-3"><span class="number-dot">2</span><p class="text-xs leading-5 text-slate-600 dark:text-slate-400"><strong class="text-slate-900 dark:text-slate-200">HRA and SBCA</strong> use editable reference rates; HRA can be switched off.</p></div>
-                <div class="flex gap-3"><span class="number-dot">3</span><p class="text-xs leading-5 text-slate-600 dark:text-slate-400"><strong class="text-slate-900 dark:text-slate-200">CPS</strong> uses the configured employee contribution; confirm coverage and contribution base.</p></div>
-                <div class="flex gap-3"><span class="number-dot">4</span><p class="text-xs leading-5 text-slate-600 dark:text-slate-400"><strong class="text-slate-900 dark:text-slate-200">Professional Tax</strong> uses monthly salary slabs, not the pay level.</p></div>
+                <div class="flex gap-3"><span class="number-dot">3</span><p class="text-xs leading-5 text-slate-600 dark:text-slate-400"><strong class="text-slate-900 dark:text-slate-200">CPS</strong> is calculated only after individual membership and the applicable contribution basis are confirmed; the State share is shown separately.</p></div>
+                <div class="flex gap-3"><span class="number-dot">4</span><p class="text-xs leading-5 text-slate-600 dark:text-slate-400"><strong class="text-slate-900 dark:text-slate-200">GPF</strong> requires confirmed account membership, the Accounts-confirmed reference pay for the subscription year, and a monthly subscription within the 6%–100% range.</p></div>
+                <div class="flex gap-3"><span class="number-dot">5</span><p class="text-xs leading-5 text-slate-600 dark:text-slate-400"><strong class="text-slate-900 dark:text-slate-200">Professional Tax</strong> offers a project reference estimate of ₹150 / ₹200 by pay level, but the user should prefer a manually verified payslip amount unless the current rule is confirmed with DDO / Accounts.</p></div>
               </div>
             </section>
           </section>

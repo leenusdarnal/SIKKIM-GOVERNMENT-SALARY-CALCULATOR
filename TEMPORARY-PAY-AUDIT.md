@@ -41,3 +41,14 @@ Review date: 9 November 2026
 - Six first-year training allowance amounts by group and location.
 - Manual driver daily-wage calculation and invalid inputs.
 - Unknown category handling.
+
+
+## Integration QA update — 10 November 2026
+
+- Every schedule option now carries its notification reference, official URL, effective date and monthly/daily basis.
+- New `calculateTemporaryPay()` requires the user to confirm that the notification applies to the selected employee, post/category and salary month.
+- The calculator rejects salary months before a schedule's effective date. For monthly schedules, a month whose first day precedes the effective date is blocked; the app does not infer a partial-month formula.
+- Monthly consolidated amounts cannot be prorated. If payable days are entered, they must equal the actual calendar days in the selected month.
+- Temporary-driver calculations require a positive Labour Department daily rate, source notification reference, effective date, payable days, calendar-day validation and a separate applicability confirmation. No daily amount is prefilled.
+- A dedicated responsive `/temporary-pay` route was added and linked from the home page.
+- Tests cover notification effective dates, applicability attestation, partial-month rejection, invalid calendar dates, zero/over-month days, missing daily-rate evidence and rounding.

@@ -1,4 +1,5 @@
-import { calculateSalary, type SalaryInput } from './salary';
+import { calculateSalary, validateGpfSubscription, validateSalaryInput, type SalaryInput } from './salary';
+import { resolveHistoricalRates, validateHistoricalRateSchedule, type HistoricalRateComponent, type HistoricalRateEntry } from './historical-rates';
 
 export type ArrearChangeType =
   | 'da-revision'
@@ -36,6 +37,9 @@ export interface ArrearsInput {
   baseSalary: SalaryInput;
   changes: ArrearChange[];
   monthlyRecords: MonthlyPaidRecord[];
+  /** Optional verified historical schedule. Only the explicitly selected components are overridden. */
+  historicalRateSchedule?: HistoricalRateEntry[];
+  historicalRateComponents?: HistoricalRateComponent[];
 }
 
 export interface ArrearMonthRow {
@@ -49,6 +53,8 @@ export interface ArrearMonthRow {
   otherEarnings: number;
   grossEntitlement: number;
   employeePension: number;
+  /** State matching contribution; displayed separately and excluded from employee deductions. */
+  employerCpsContribution: number;
   professionalTax: number;
   gis: number;
   stampFee: number;
@@ -64,6 +70,7 @@ export interface ArrearMonthRow {
 export interface ArrearsTotals {
   grossEntitlement: number;
   employeeDeductions: number;
+  employerCpsContribution: number;
   revisedTakeHome: number;
   actualTakeHome: number;
   recoveries: number;
@@ -117,34 +124,13 @@ export function getArrearsMonthKeys(startMonth: string, endMonth: string): strin
 }
 
 function validateSalaryBasis(input: SalaryInput): string[] {
-  const errors: string[] = [];
-
-  for (const field of NUMERIC_SALARY_FIELDS) {
-    const value = input[field];
-    if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
-      errors.push(field + ' must be a valid non-negative number.');
-    }
-  }
-
-  if (!(input.basicPay > 0)) errors.push('Enter a basic pay greater than zero.');
-  if (input.daRate > 200) errors.push('DA rate must be between 0% and 200%.');
-  if (input.hraRate > 100 || input.sbcaRate > 100) {
-    errors.push('HRA and SBCA rates must be between 0% and 100%.');
-  }
-  if (!['cps', 'gpf', 'manual', 'none'].includes(input.pensionMode)) {
-    errors.push('Select the applicable pension arrangement before calculating arrears.');
-  }
-  if (!['auto', 'manual', 'none'].includes(input.professionalTaxMode)) {
-    errors.push('Select a Professional Tax treatment before calculating arrears.');
-  }
-
-  return errors;
+  return validateSalaryInput(input);
 }
 
 const ALLOWED_SALARY_UPDATE_KEYS = new Set([
   'hraEligible', 'hraRate', 'hraMinimum', 'sbcaRate',
-  'transportAllowance', 'otherEarnings', 'pensionMode', 'manualPension',
-  'professionalTaxMode', 'manualProfessionalTax', 'gis', 'stampFee', 'otherDeductions'
+  'transportAllowance', 'otherEarnings', 'pensionMode', 'cpsMembershipConfirmed', 'gpfMembershipConfirmed', 'gpfReferencePay', 'manualPension',
+  'professionalTaxMode', 'professionalTaxLevelBand', 'manualProfessionalTax', 'gis', 'stampFee', 'otherDeductions'
 ]);
 
 function validateSalaryUpdate(update: ArrearSalaryUpdate, index: number): string[] {
@@ -170,6 +156,14 @@ function validateSalaryUpdate(update: ArrearSalaryUpdate, index: number): string
       if (!['cps', 'gpf', 'manual', 'none'].includes(String(value))) {
         errors.push('Change ' + (index + 1) + ': invalid pension arrangement.');
       }
+      continue;
+    }
+    if (key === 'cpsMembershipConfirmed' || key === 'gpfMembershipConfirmed') {
+      if (value !== true) errors.push('Change ' + (index + 1) + ': pension-fund membership can only be marked confirmed after verification.');
+      continue;
+    }
+    if (key === 'professionalTaxLevelBand') {
+      if (!['below-level-15', 'level-15-and-above', 'unselected'].includes(String(value))) errors.push('Change ' + (index + 1) + ': invalid Professional Tax pay-level band.');
       continue;
     }
     if (key === 'professionalTaxMode') {
@@ -220,6 +214,17 @@ function validateChange(change: ArrearChange, index: number, months: string[]): 
       change.basicPay === undefined && change.daRate === undefined) {
     errors.push('Change ' + (index + 1) + ': enter a new basic pay and/or DA rate.');
   }
+  if (change.salaryUpdates?.pensionMode === 'cps' && change.salaryUpdates.cpsMembershipConfirmed !== true) {
+    errors.push('Change ' + (index + 1) + ': confirm CPS membership and contribution basis in the effective-dated change before applying CPS.');
+  }
+  if (change.salaryUpdates?.pensionMode === 'gpf') {
+    const gpfErrors = validateGpfSubscription(
+      change.salaryUpdates.gpfReferencePay ?? 0,
+      change.salaryUpdates.manualPension ?? 0,
+      change.salaryUpdates.gpfMembershipConfirmed
+    );
+    errors.push(...gpfErrors.map((message) => 'Change ' + (index + 1) + ': ' + message));
+  }
   if (change.type === 'allowance-deduction') {
     if (change.salaryUpdates === undefined) {
       errors.push('Change ' + (index + 1) + ': add at least one allowance or deduction value.');
@@ -248,7 +253,65 @@ export function calculateArrears(input: ArrearsInput): ArrearsResult {
   errors.push(...validateSalaryBasis(input.baseSalary));
   input.changes.forEach((change, index) => {
     errors.push(...validateChange(change, index, months));
+    const scheduled = input.historicalRateComponents ?? [];
+    if (change.daRate !== undefined && scheduled.includes('daRate')) {
+      errors.push('Change ' + (index + 1) + ': DA is controlled by the historical rate schedule; remove the duplicate manual DA rate.');
+    }
+    for (const component of scheduled) {
+      if (component !== 'daRate' && change.salaryUpdates &&
+          Object.prototype.hasOwnProperty.call(change.salaryUpdates, component)) {
+        errors.push('Change ' + (index + 1) + ': ' + component + ' is controlled by the historical rate schedule; remove the duplicate manual value.');
+      }
+    }
   });
+
+  if ((input.historicalRateSchedule === undefined) !== (input.historicalRateComponents === undefined)) {
+    errors.push('Provide both a historical rate schedule and its selected components.');
+  }
+  const selectedHistoricalComponents = input.historicalRateComponents ?? [];
+  if (new Set(selectedHistoricalComponents).size !== selectedHistoricalComponents.length) {
+    errors.push('Historical rate components must not contain duplicates.');
+  }
+  const selectedHistoricalSchedule = (input.historicalRateSchedule ?? []).filter((entry) =>
+    selectedHistoricalComponents.includes(entry.component)
+  );
+  if (input.historicalRateSchedule !== undefined) {
+    errors.push(...validateHistoricalRateSchedule(selectedHistoricalSchedule));
+  }
+  const historicalByMonth = new Map<string, ReturnType<typeof resolveHistoricalRates>>();
+  if (input.historicalRateSchedule !== undefined && input.historicalRateComponents !== undefined) {
+    for (const month of months) {
+      const resolution = resolveHistoricalRates(month, selectedHistoricalSchedule, selectedHistoricalComponents);
+      if (resolution.errors.length) errors.push(...resolution.errors.map((message) => month + ': ' + message));
+      if (!resolution.complete) {
+        errors.push(month + ': missing verified historical rate(s): ' + resolution.missing.join(', ') + '.');
+      }
+      historicalByMonth.set(month, resolution);
+    }
+  }
+
+  const orderedChanges = input.changes
+    .map((change, originalIndex) => ({ change, originalIndex }))
+    .sort((a, b) =>
+      a.change.effectiveMonth.localeCompare(b.change.effectiveMonth) ||
+      a.originalIndex - b.originalIndex
+    );
+
+  // Validate the complete effective-dated pension state month by month before producing any rows.
+  let validationState: SalaryInput = { ...input.baseSalary };
+  let validationNextChange = 0;
+  for (const month of months) {
+    while (validationNextChange < orderedChanges.length && orderedChanges[validationNextChange].change.effectiveMonth <= month) {
+      const change = orderedChanges[validationNextChange].change;
+      if (change.basicPay !== undefined) validationState.basicPay = change.basicPay;
+      if (change.daRate !== undefined) validationState.daRate = change.daRate;
+      if (change.salaryUpdates) validationState = { ...validationState, ...change.salaryUpdates };
+      validationNextChange += 1;
+    }
+    const historical = historicalByMonth.get(month);
+    if (historical) validationState = { ...validationState, ...historical.values };
+    errors.push(...validateSalaryBasis(validationState).map((message) => month + ': ' + message));
+  }
 
   const paidByMonth = new Map<string, MonthlyPaidRecord>();
   for (const [index, record] of input.monthlyRecords.entries()) {
@@ -261,10 +324,10 @@ export function calculateArrears(input: ArrearsInput): ArrearsResult {
       continue;
     }
     if (record.actualTakeHome !== null &&
-        (!Number.isFinite(record.actualTakeHome) || record.actualTakeHome < 0)) {
+        (!Number.isFinite(record.actualTakeHome) || record.actualTakeHome < 0 || record.actualTakeHome > Number.MAX_SAFE_INTEGER)) {
       errors.push('Paid record ' + (index + 1) + ': actual credited salary must be non-negative.');
     }
-    if (!Number.isFinite(record.recovery) || record.recovery < 0) {
+    if (!Number.isFinite(record.recovery) || record.recovery < 0 || record.recovery > Number.MAX_SAFE_INTEGER) {
       errors.push('Paid record ' + (index + 1) + ': recovery must be non-negative.');
     }
     paidByMonth.set(record.month, record);
@@ -279,6 +342,7 @@ export function calculateArrears(input: ArrearsInput): ArrearsResult {
       totals: {
         grossEntitlement: 0,
         employeeDeductions: 0,
+        employerCpsContribution: 0,
         revisedTakeHome: 0,
         actualTakeHome: 0,
         recoveries: 0,
@@ -288,13 +352,6 @@ export function calculateArrears(input: ArrearsInput): ArrearsResult {
       }
     };
   }
-
-  const orderedChanges = input.changes
-    .map((change, originalIndex) => ({ change, originalIndex }))
-    .sort((a, b) =>
-      a.change.effectiveMonth.localeCompare(b.change.effectiveMonth) ||
-      a.originalIndex - b.originalIndex
-    );
 
   let salaryState: SalaryInput = { ...input.baseSalary };
   let nextChange = 0;
@@ -316,6 +373,15 @@ export function calculateArrears(input: ArrearsInput): ArrearsResult {
       nextChange += 1;
     }
 
+    const historicalResolution = historicalByMonth.get(month);
+    if (historicalResolution) {
+      salaryState = { ...salaryState, ...historicalResolution.values };
+      for (const entry of historicalResolution.applied) {
+        const unit = entry.unit === 'percent' ? '%' : ' INR';
+        appliedChanges.push('Historical ' + entry.component + ': ' + entry.value + unit + ' (' + entry.sourceReference + ')');
+      }
+    }
+
     const salary = calculateSalary(salaryState);
     const paid = paidByMonth.get(month);
     const actualTakeHome = paid?.actualTakeHome ?? null;
@@ -332,6 +398,7 @@ export function calculateArrears(input: ArrearsInput): ArrearsResult {
       otherEarnings: salary.otherEarnings,
       grossEntitlement: salary.gross,
       employeePension: salary.employeePension,
+      employerCpsContribution: salary.employerCpsContribution,
       professionalTax: salary.professionalTax,
       gis: salary.gis,
       stampFee: salary.stampFee,
@@ -351,6 +418,7 @@ export function calculateArrears(input: ArrearsInput): ArrearsResult {
   const totals: ArrearsTotals = rows.reduce<ArrearsTotals>((sum, row) => ({
     grossEntitlement: sum.grossEntitlement + row.grossEntitlement,
     employeeDeductions: sum.employeeDeductions + row.employeeDeductions,
+    employerCpsContribution: sum.employerCpsContribution + row.employerCpsContribution,
     revisedTakeHome: sum.revisedTakeHome + row.revisedTakeHome,
     actualTakeHome: sum.actualTakeHome + (row.actualTakeHome ?? 0),
     recoveries: sum.recoveries + row.recovery,
@@ -362,6 +430,7 @@ export function calculateArrears(input: ArrearsInput): ArrearsResult {
   }), {
     grossEntitlement: 0,
     employeeDeductions: 0,
+    employerCpsContribution: 0,
     revisedTakeHome: 0,
     actualTakeHome: 0,
     recoveries: 0,
@@ -370,7 +439,62 @@ export function calculateArrears(input: ArrearsInput): ArrearsResult {
     netArrears: 0
   });
 
+  const totalAmounts = [
+    totals.grossEntitlement, totals.employeeDeductions, totals.employerCpsContribution,
+    totals.revisedTakeHome, totals.actualTakeHome, totals.recoveries,
+    totals.positiveArrears, Math.abs(totals.negativeBalance),
+    totals.netArrears === null ? 0 : Math.abs(totals.netArrears)
+  ];
+  if (totalAmounts.some((value) => !Number.isFinite(value) || value > Number.MAX_SAFE_INTEGER)) {
+    return {
+      valid: false, complete: false,
+      errors: ['The selected arrears period produces totals outside the supported safe whole-rupee range. Reduce or review the entered amounts and period.'],
+      rows: [],
+      totals: {
+        grossEntitlement: 0, employeeDeductions: 0, employerCpsContribution: 0,
+        revisedTakeHome: 0, actualTakeHome: 0, recoveries: 0,
+        positiveArrears: 0, negativeBalance: 0, netArrears: null
+      }
+    };
+  }
+
   return { valid: true, complete, errors: [], rows, totals };
+}
+
+
+/**
+ * Creates a review-oriented audit CSV. Unlike the final arrears statement, this
+ * report can be exported while monthly actual-paid figures are still incomplete
+ * or when validation has blocked the calculation.
+ */
+export function createArrearsAuditCsv(input: ArrearsInput, result: ArrearsResult): string {
+  const headers = [
+    'Report status', 'Month', 'Validation issue', 'Basic pay (INR)', 'DA rate (%)',
+    'DA (INR)', 'HRA (INR)', 'SBCA (INR)', 'Transport allowance (INR)',
+    'Revised gross (INR)', 'Employee deductions (INR)', 'Employer / State CPS share (separate, INR)', 'Revised take-home (INR)',
+    'Actual credited (INR)', 'Recovery (INR)', 'Net difference (INR)',
+    'Applied changes and source references'
+  ];
+  const status = !result.valid ? 'BLOCKED - validation required' : result.complete
+    ? 'Complete - ready for review' : 'Calculation valid - actual credited amounts incomplete';
+  const rows: (string | number)[][] = [headers];
+  if (result.rows.length) {
+    for (const row of result.rows) {
+      rows.push([
+        status, row.month, '', row.basicPay, row.daRate, row.da, row.hra, row.sbca,
+        row.transportAllowance, row.grossEntitlement, row.employeeDeductions,
+        row.employerCpsContribution, row.revisedTakeHome, row.actualTakeHome ?? '', row.recovery,
+        row.netArrears ?? '', row.appliedChanges.join(' | ')
+      ]);
+    }
+  }
+  if (result.errors.length) {
+    for (const issue of result.errors) rows.push([status, '', issue, ...Array(headers.length - 3).fill('')]);
+  } else if (!result.complete) {
+    rows.push([status, '', 'Enter actual credited salary for every month before final arrears export.', ...Array(headers.length - 3).fill('')]);
+  }
+  rows.push(['Selected historical components', '', (input.historicalRateComponents ?? []).join(', ') || 'None', ...Array(headers.length - 3).fill('')]);
+  return '\\uFEFF' + rows.map((row) => row.map(csvCell).join(',')).join('\\r\\n') + '\\r\\n';
 }
 
 export function createArrearsCsv(result: ArrearsResult): string {
@@ -379,7 +503,7 @@ export function createArrearsCsv(result: ArrearsResult): string {
   }
 
   const rows = [
-    ['Month', 'Basic Pay (INR)', 'DA Rate (%)', 'DA (INR)', 'HRA (INR)', 'SBCA (INR)', 'Transport Allowance (INR)', 'Other Earnings (INR)', 'Revised Gross (INR)', 'Employee Pension / GPF (INR)', 'Professional Tax (INR)', 'GIS (INR)', 'Stamp / Fixed Fee (INR)', 'Other Deductions (INR)', 'Total Employee Deductions (INR)', 'Revised Take-home (INR)', 'Actual Credited (INR)', 'Recovery from Arrears (INR)', 'Net Difference (INR)', 'Effective change / order reference'],
+    ['Month', 'Basic Pay (INR)', 'DA Rate (%)', 'DA (INR)', 'HRA (INR)', 'SBCA (INR)', 'Transport Allowance (INR)', 'Other Earnings (INR)', 'Revised Gross (INR)', 'Employee Pension / GPF (INR)', 'Employer / State CPS contribution (separate, INR)', 'Professional Tax (INR)', 'GIS (INR)', 'Stamp / Fixed Fee (INR)', 'Other Deductions (INR)', 'Total Employee Deductions (INR)', 'Revised Take-home (INR)', 'Actual Credited (INR)', 'Recovery from Arrears (INR)', 'Net Difference (INR)', 'Effective change / order reference'],
     ...result.rows.map((row) => [
       row.month,
       row.basicPay,
@@ -391,6 +515,7 @@ export function createArrearsCsv(result: ArrearsResult): string {
       row.otherEarnings,
       row.grossEntitlement,
       row.employeePension,
+      row.employerCpsContribution,
       row.professionalTax,
       row.gis,
       row.stampFee,

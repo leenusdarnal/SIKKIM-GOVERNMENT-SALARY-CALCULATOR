@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calculateSalary, DEFAULT_SALARY_INPUT, getSikkimProfessionalTax } from './salary';
+import { calculateSalary, DEFAULT_SALARY_INPUT, getSikkimProfessionalTax, validateGpfSubscription, validateSalaryInput } from './salary';
 import { PAY_LEVELS, PAY_MATRIX, PAY_MATRIX_CELL_COUNTS, PAY_MATRIX_TOTAL_CELLS } from './data/pay-matrix';
 
 describe('Sikkim pay matrix', () => {
@@ -53,36 +53,72 @@ describe('Sikkim pay matrix', () => {
   });
 });
 
-describe('Sikkim Professional Tax slabs', () => {
-  it.each([
-    [20_000, 0], [20_001, 125], [30_000, 125],
-    [30_001, 150], [40_000, 150], [40_001, 200]
-  ])('calculates ₹%i as ₹%i tax', (salary, expected) => {
-    expect(getSikkimProfessionalTax(salary).amount).toBe(expected);
+describe('Sikkim Professional Tax pay-level bands', () => {
+  it('applies ₹150 below Level 15 regardless of gross salary', () => {
+    expect(getSikkimProfessionalTax('below-level-15').amount).toBe(150);
+  });
+  it('applies ₹200 at Level 15 and above regardless of gross salary', () => {
+    expect(getSikkimProfessionalTax('level-15-and-above').amount).toBe(200);
+  });
+  it('does not infer a band when the pay level is not selected', () => {
+    expect(getSikkimProfessionalTax('unselected').amount).toBe(0);
   });
 });
 
 describe('salary calculation', () => {
   it('does not assume a pension scheme or allowance eligibility by default', () => {
     expect(DEFAULT_SALARY_INPUT.pensionMode).toBe('unselected');
+    expect(DEFAULT_SALARY_INPUT.cpsMembershipConfirmed).toBe(false);
     expect(DEFAULT_SALARY_INPUT.hraEligible).toBe(false);
     expect(DEFAULT_SALARY_INPUT.sbcaRate).toBe(0);
     expect(DEFAULT_SALARY_INPUT.professionalTaxMode).toBe('unselected');
+    expect(DEFAULT_SALARY_INPUT.professionalTaxLevelBand).toBe('unselected');
   });
 
   const base = {
     basicPay: 56_000, daRate: 60, hraEligible: true,
     hraRate: 12, hraMinimum: 0, sbcaRate: 8,
     transportAllowance: 0, otherEarnings: 0,
-    pensionMode: 'cps' as const, manualPension: 0,
-    professionalTaxMode: 'auto' as const, manualProfessionalTax: 0,
+    pensionMode: 'cps' as const, cpsMembershipConfirmed: true, manualPension: 0,
+    professionalTaxMode: 'auto' as const, professionalTaxLevelBand: 'level-15-and-above' as const, manualProfessionalTax: 0,
     gis: 0, stampFee: 0, otherDeductions: 0
   };
+
+
+  it('validates every regular salary field before presenting a calculation', () => {
+    const validInput = {
+      ...DEFAULT_SALARY_INPUT,
+      ...base,
+      pensionMode: 'none' as const,
+      cpsMembershipConfirmed: false,
+      professionalTaxMode: 'auto' as const
+    };
+    expect(validateSalaryInput(validInput)).toEqual([]);
+    expect(validateSalaryInput({ ...validInput, transportAllowance: -1 })).toContain('transportAllowance must be a finite, non-negative number.');
+    expect(validateSalaryInput({ ...validInput, daRate: 201 })).toContain('DA rate must be between 0% and 200%.');
+    expect(validateSalaryInput({ ...validInput, hraRate: 101 })).toContain('HRA and SBCA rates must be between 0% and 100%.');
+    expect(validateSalaryInput({ ...validInput, professionalTaxLevelBand: 'unselected' })).toContain('Select the employee pay-level band for Sikkim Professional Tax.');
+    expect(validateSalaryInput({ ...validInput, otherDeductions: Number.MAX_VALUE })).toContain('otherDeductions exceeds the supported calculation range.');
+  });
 
   it('does not calculate Professional Tax until the treatment is selected', () => {
     const result = calculateSalary({ ...base, professionalTaxMode: 'unselected' });
     expect(result.professionalTax).toBe(0);
     expect(result.professionalTaxBand).toContain('Not selected');
+  });
+
+  it('does not apply automatic Professional Tax without a pay-level band', () => {
+    const result = calculateSalary({ ...base, professionalTaxLevelBand: 'unselected' });
+    expect(result.professionalTax).toBe(0);
+    expect(result.professionalTaxBand).toContain('not selected');
+  });
+
+  it('does not calculate CPS when membership and contribution basis are not confirmed', () => {
+    const result = calculateSalary({ ...base, cpsMembershipConfirmed: false });
+    expect(result.employeePension).toBe(0);
+    expect(result.employerCpsContribution).toBe(0);
+    expect(result.pensionLabel).toContain('confirm individual membership');
+    expect(result.totalDeductions).toBe(result.professionalTax + result.gis + result.stampFee + result.otherDeductions);
   });
 
   it('does not deduct CPS when the scheme has not been selected', () => {
@@ -107,12 +143,12 @@ describe('salary calculation', () => {
 
   it('calculates Level 1 Cell 1', () => {
     const result = calculateSalary({
-      ...base, basicPay: 15_200
+      ...base, basicPay: 15_200, professionalTaxLevelBand: 'below-level-15'
     });
     expect(result.gross).toBe(27_360);
     expect(result.employeePension).toBe(2_432);
-    expect(result.professionalTax).toBe(125);
-    expect(result.takeHome).toBe(24_803);
+    expect(result.professionalTax).toBe(150);
+    expect(result.takeHome).toBe(24_778);
   });
 
   it('omits HRA when the employee is not eligible', () => {
@@ -141,9 +177,25 @@ describe('salary calculation', () => {
     expect(result.professionalTaxBand).toBe('Manual override');
   });
 
-  it('uses manual GPF without creating an employer CPS match', () => {
-    const result = calculateSalary({ ...base, pensionMode: 'gpf', manualPension: 2_000 });
+  it('uses a confirmed GPF amount within the reference-pay range without creating an employer match', () => {
+    const result = calculateSalary({ ...base, pensionMode: 'gpf', gpfMembershipConfirmed: true, gpfReferencePay: 30_000, manualPension: 2_000 });
     expect(result.employeePension).toBe(2_000);
     expect(result.employerCpsContribution).toBe(0);
+    expect(result.totalDeductions).toBe(2_000 + result.professionalTax);
+  });
+
+  it('does not calculate GPF when membership is unconfirmed or amount is outside the rule range', () => {
+    expect(calculateSalary({ ...base, pensionMode: 'gpf', gpfMembershipConfirmed: false, gpfReferencePay: 30_000, manualPension: 2_000 }).employeePension).toBe(0);
+    expect(calculateSalary({ ...base, pensionMode: 'gpf', gpfMembershipConfirmed: true, gpfReferencePay: 30_000, manualPension: 1_799 }).employeePension).toBe(0);
+    expect(calculateSalary({ ...base, pensionMode: 'gpf', gpfMembershipConfirmed: true, gpfReferencePay: 30_000, manualPension: 30_001 }).employeePension).toBe(0);
+  });
+
+  it('validates GPF boundaries and requires membership and reference pay', () => {
+    expect(validateGpfSubscription(30_000, 1_800, true)).toEqual([]);
+    expect(validateGpfSubscription(30_000, 30_000, true)).toEqual([]);
+    expect(validateGpfSubscription(30_000, 1_799, true).join(' ')).toContain('6%–100%');
+    expect(validateGpfSubscription(30_000, 30_001, true).join(' ')).toContain('6%–100%');
+    expect(validateGpfSubscription(0, 2_000, true).join(' ')).toContain('reference pay');
+    expect(validateGpfSubscription(30_000, 2_000, false).join(' ')).toContain('GPF account');
   });
 });
