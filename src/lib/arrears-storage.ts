@@ -39,6 +39,8 @@ function isSalaryInput(value: unknown): value is SalaryInput {
   ) &&
     typeof value.hraEligible === 'boolean' &&
     (value.cpsMembershipConfirmed === undefined || typeof value.cpsMembershipConfirmed === 'boolean') &&
+    (value.gpfMembershipConfirmed === undefined || typeof value.gpfMembershipConfirmed === 'boolean') &&
+    (value.gpfReferencePay === undefined || (typeof value.gpfReferencePay === 'number' && Number.isFinite(value.gpfReferencePay) && value.gpfReferencePay >= 0)) &&
     ['unselected', 'cps', 'gpf', 'manual', 'none'].includes(String(value.pensionMode)) &&
     ['unselected', 'auto', 'manual', 'none'].includes(String(value.professionalTaxMode)) &&
     ['unselected', 'below-level-15', 'level-15-and-above'].includes(String(value.professionalTaxLevelBand));
@@ -51,7 +53,7 @@ const CHANGE_TYPES = new Set([
 
 const SALARY_UPDATE_KEYS = new Set([
   'hraEligible', 'hraRate', 'hraMinimum', 'sbcaRate',
-  'transportAllowance', 'otherEarnings', 'pensionMode', 'cpsMembershipConfirmed', 'manualPension',
+  'transportAllowance', 'otherEarnings', 'pensionMode', 'cpsMembershipConfirmed', 'gpfMembershipConfirmed', 'gpfReferencePay', 'manualPension',
   'professionalTaxMode', 'professionalTaxLevelBand', 'manualProfessionalTax', 'gis', 'stampFee', 'otherDeductions'
 ]);
 
@@ -61,7 +63,7 @@ function isSalaryUpdate(value: unknown): boolean {
     if (!SALARY_UPDATE_KEYS.has(key)) return false;
     if (key === 'hraEligible') return typeof item === 'boolean';
     if (key === 'pensionMode') return ['cps', 'gpf', 'manual', 'none'].includes(String(item));
-    if (key === 'cpsMembershipConfirmed') return item === true;
+    if (key === 'cpsMembershipConfirmed' || key === 'gpfMembershipConfirmed') return item === true;
     if (key === 'professionalTaxMode') return ['auto', 'manual', 'none'].includes(String(item));
     if (key === 'professionalTaxLevelBand') return ['unselected', 'below-level-15', 'level-15-and-above'].includes(String(item));
     return typeof item === 'number' && Number.isFinite(item) && item >= 0 &&
