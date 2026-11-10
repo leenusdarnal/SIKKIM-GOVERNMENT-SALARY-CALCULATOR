@@ -21,6 +21,11 @@ describe('monthly payslip',()=>{
   expect(buildPayslipModel('2026-11',employee,input,[{month:'2026-10',gross:-1,deductions:0,net:0}]).valid).toBe(false);
   expect(buildPayslipModel('2026-11',employee,input,[{month:'2026-10',gross:1,deductions:0,net:1},{month:'2026-10',gross:1,deductions:0,net:1}]).valid).toBe(false);
  });
+ it('requires a Sikkim pay-level band for automatic Professional Tax',()=>{
+  const m=buildPayslipModel('2026-11',employee,{...input,professionalTaxMode:'auto',professionalTaxLevelBand:'unselected'});
+  expect(m.valid).toBe(false);
+  expect(m.errors.join(' ')).toContain('pay-level band');
+ });
  it('exports a CSV statement with earnings, deductions and annual totals',()=>{
   const m=buildPayslipModel('2026-11',employee,input,[{month:'2026-10',gross:49000,deductions:1000,net:48000}]);
   const csv=createPayslipCsv(m);expect(csv).toContain('Net take-home');expect(csv).toContain('Annual gross to date');expect(csv).toContain('Test Employee');
