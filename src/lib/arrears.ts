@@ -141,6 +141,9 @@ function validateSalaryBasis(input: SalaryInput): string[] {
   if (!['auto', 'manual', 'none'].includes(input.professionalTaxMode)) {
     errors.push('Select a Professional Tax treatment before calculating arrears.');
   }
+  if (input.professionalTaxMode === 'auto' && !['below-level-15', 'level-15-and-above'].includes(input.professionalTaxLevelBand)) {
+    errors.push('Select the employee pay-level band for Sikkim Professional Tax before calculating arrears.');
+  }
 
   return errors;
 }
@@ -148,7 +151,7 @@ function validateSalaryBasis(input: SalaryInput): string[] {
 const ALLOWED_SALARY_UPDATE_KEYS = new Set([
   'hraEligible', 'hraRate', 'hraMinimum', 'sbcaRate',
   'transportAllowance', 'otherEarnings', 'pensionMode', 'manualPension',
-  'professionalTaxMode', 'manualProfessionalTax', 'gis', 'stampFee', 'otherDeductions'
+  'professionalTaxMode', 'professionalTaxLevelBand', 'manualProfessionalTax', 'gis', 'stampFee', 'otherDeductions'
 ]);
 
 function validateSalaryUpdate(update: ArrearSalaryUpdate, index: number): string[] {
@@ -174,6 +177,10 @@ function validateSalaryUpdate(update: ArrearSalaryUpdate, index: number): string
       if (!['cps', 'gpf', 'manual', 'none'].includes(String(value))) {
         errors.push('Change ' + (index + 1) + ': invalid pension arrangement.');
       }
+      continue;
+    }
+    if (key === 'professionalTaxLevelBand') {
+      if (!['below-level-15', 'level-15-and-above', 'unselected'].includes(String(value))) errors.push('Change ' + (index + 1) + ': invalid Professional Tax pay-level band.');
       continue;
     }
     if (key === 'professionalTaxMode') {
