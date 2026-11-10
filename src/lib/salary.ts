@@ -59,11 +59,11 @@ export function validateGpfSubscription(
 ): string[] {
   const errors: string[] = [];
   if (membershipConfirmed !== true) errors.push('Confirm the employee GPF account / membership and subscription authority with the service record and DDO / Accounts.');
-  if (typeof referencePay !== 'number' || !Number.isFinite(referencePay) || referencePay <= 0) {
+  if (typeof referencePay !== 'number' || !Number.isFinite(referencePay) || referencePay <= 0 || referencePay > Math.floor(Number.MAX_SAFE_INTEGER / 12)) {
     errors.push('Enter the GPF reference pay applicable to the subscription year, as confirmed by Accounts / DDO.');
     return errors;
   }
-  if (!Number.isFinite(monthlyAmount) || monthlyAmount < 0) {
+  if (!Number.isFinite(monthlyAmount) || monthlyAmount < 0 || monthlyAmount > Number.MAX_SAFE_INTEGER) {
     errors.push('Enter a valid non-negative monthly GPF subscription.');
     return errors;
   }
