@@ -20,7 +20,7 @@ test.describe('Sikkim salary calculator browser workflows', () => {
     await expect(result).toBeVisible();
     await expect(result).toContainText('₹89,400');
     await expect(result).toContainText('₹89,600');
-    await expect(page.getByText('Professional Tax (Level 15 and above — ₹200)', { exact: false })).toBeVisible();
+    await expect(page.getByText('Professional Tax (Project reference estimate — Level 15 and above — ₹200)', { exact: false })).toBeVisible();
   });
 
   test('the payslip form calculates, records the month and updates the annual summary', async ({ page }) => {
