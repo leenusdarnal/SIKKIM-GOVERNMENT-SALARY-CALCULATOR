@@ -36,6 +36,34 @@ function makeInput(overrides: Partial<ArrearsInput> = {}): ArrearsInput {
 
 describe('Professional Tax pay-level safeguards in arrears', () => {
 
+
+  it('withholds arrears when period totals exceed the safe rupee range', () => {
+    const hugeBasis = {
+      ...input(),
+      endMonth: '2026-02',
+      baseSalary: {
+        ...input().baseSalary,
+        basicPay: 5_000_000_000_000_000,
+        daRate: 0,
+        hraEligible: false,
+        hraRate: 0,
+        sbcaRate: 0,
+        transportAllowance: 0,
+        otherEarnings: 0,
+        pensionMode: 'none' as const,
+        professionalTaxMode: 'none' as const
+      },
+      monthlyRecords: [
+        { month: '2026-01', actualTakeHome: null, recovery: 0 },
+        { month: '2026-02', actualTakeHome: null, recovery: 0 }
+      ]
+    };
+    const result = calculateArrears(hugeBasis);
+    expect(result.valid).toBe(false);
+    expect(result.rows).toHaveLength(0);
+    expect(result.errors.join(' ')).toContain('totals outside the supported safe');
+  });
+
   it('blocks arrears calculations when salary bases exceed the safe amount range', () => {
     const result = calculateArrears({
       ...input(),
