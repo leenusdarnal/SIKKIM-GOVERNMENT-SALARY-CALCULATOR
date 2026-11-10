@@ -199,3 +199,33 @@ This is a calculation safeguard, not an official GPF account verification or pay
 - Populated browser-form journeys, real-device viewport checks, populated statement print preview, and PDF output inspection remain outstanding.
 - Test employee details, paid salary amounts and illustrative order references are synthetic fixtures. No employee records or live payroll data were entered.
 - No PR was merged and no production deployment was triggered.
+
+
+## Browser-level workflow QA — 10 November 2026
+
+### Browser automation added
+- Added Playwright with Chromium and a local SvelteKit dev-server configuration in `playwright.config.ts`.
+- Added `e2e/salary-workflows.spec.ts` and `npm run test:e2e`.
+- Pull-request CI now runs the browser tests after the salary unit/integration tests and before the Vercel adapter build.
+- The interactive salary, payslip and arrears pages expose a small client-ready marker for the tests. Playwright waits for this marker before entering data, avoiding interactions before Svelte has completed client-side setup.
+- The main salary calculator now explicitly synchronizes its selected pay level in its level-change handler.
+
+### Populated browser scenarios
+- Main calculator: Level 17, Cell 1, DA 60%, no employee pension deduction, and Level-15-and-above Professional Tax. The browser test confirms gross ₹89,600 and take-home ₹89,400, and checks the PT band label in the salary breakdown.
+- Payslip generator: enters Basic Pay ₹56,000, DA 60%, no employee pension deduction and the Level-15-and-above PT band; confirms the ₹89,600 gross / ₹89,400 net statement, records the selected month and checks annual summary and print availability.
+- Arrears planner: checks a January–February 2026 example with Basic Pay ₹56,000, DA 60%, and a February effective-dated increment to ₹57,000; enters the corresponding actual credited amounts, verifies the complete statement and confirms the statement remains present in print media.
+- Mobile routes: checks the home calculator, payslip, arrears, pay progression, retirement, GPF and temporary-pay pages at a 390 × 844 viewport and asserts that the document does not overflow horizontally.
+
+### Latest CI result
+- Commit: `0359e67a3aa3334447e222d392a22ce8fdfce617`.
+- GitHub Actions [run 42819159234](https://github.com/leenusdarnal/SIKKIM-GOVERNMENT-SALARY-CALCULATOR/actions/runs/42819159234): **success**.
+- Unit and integration tests: **13 files / 151 tests passed**.
+- Playwright: **4 browser tests passed**.
+- Svelte / TypeScript: **0 errors / 0 warnings**.
+- Vercel adapter build: **passed**.
+
+### QA boundaries and privacy
+- All browser inputs are synthetic test fixtures. No employee personal data, payroll records or actual salary information were entered into the test run.
+- These browser tests run against a local development server in GitHub Actions; they do not bypass the Vercel SSO restriction.
+- The protected Vercel preview still requires authorized SSO access for manual browser inspection.
+- No production alias was changed and no pull request was merged as part of this browser-QA stage.
