@@ -67,6 +67,50 @@ describe('CPS membership safeguards in arrears', () => {
   });
 });
 
+describe('GPF membership and contribution consistency in arrears', () => {
+  const confirmedGpf: SalaryInput = {
+    ...baseSalary,
+    pensionMode: 'gpf',
+    cpsMembershipConfirmed: false,
+    gpfMembershipConfirmed: true,
+    gpfReferencePay: 30_000,
+    manualPension: 2_000
+  };
+
+  it('calculates the confirmed GPF subscription as an employee deduction only', () => {
+    const result = calculateArrears(makeInput({ baseSalary: confirmedGpf }));
+    expect(result.valid).toBe(true);
+    expect(result.rows.every(row => row.employeePension === 2_000)).toBe(true);
+    expect(result.rows.every(row => row.employerCpsContribution === 0)).toBe(true);
+    expect(result.rows.every(row => row.employeeDeductions === 2_000 + row.professionalTax + row.gis + row.stampFee + row.otherDeductions)).toBe(true);
+  });
+
+  it('blocks GPF without membership confirmation or reference pay / valid range', () => {
+    expect(calculateArrears(makeInput({ baseSalary: { ...confirmedGpf, gpfMembershipConfirmed: false } })).valid).toBe(false);
+    expect(calculateArrears(makeInput({ baseSalary: { ...confirmedGpf, gpfReferencePay: 0 } })).valid).toBe(false);
+    expect(calculateArrears(makeInput({ baseSalary: { ...confirmedGpf, manualPension: 1_799 } })).valid).toBe(false);
+    expect(calculateArrears(makeInput({ baseSalary: { ...confirmedGpf, manualPension: 30_001 } })).valid).toBe(false);
+  });
+
+  it('requires full GPF basis when a dated change switches from CPS to GPF', () => {
+    const result = calculateArrears(makeInput({ changes: [{
+      effectiveMonth: '2026-02', type: 'allowance-deduction', description: 'GPF subscription starts',
+      salaryUpdates: { pensionMode: 'gpf', manualPension: 2_000 }
+    }] }));
+    expect(result.valid).toBe(false);
+    expect(result.errors.join(' ')).toContain('GPF account');
+  });
+
+  it('validates GPF changes that alter only the monthly subscription', () => {
+    const result = calculateArrears(makeInput({
+      baseSalary: confirmedGpf,
+      changes: [{ effectiveMonth: '2026-02', type: 'allowance-deduction', description: 'Subscription changed', salaryUpdates: { manualPension: 1_000 } }]
+    }));
+    expect(result.valid).toBe(false);
+    expect(result.errors.join(' ')).toContain('6%–100%');
+  });
+});
+
 describe('Sikkim salary arrears planner', () => {
   it('generates consecutive month keys and rejects invalid or overlong periods', () => {
     expect(getArrearsMonthKeys('2026-11', '2027-02')).toEqual([
