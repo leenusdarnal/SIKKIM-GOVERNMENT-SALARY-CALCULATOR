@@ -32,7 +32,6 @@ function input(): ArrearsInput {
       { month: '2026-02', actualTakeHome: null, recovery: 0 },
       { month: '2026-03', actualTakeHome: 50_000, recovery: 0 }
     ],
-    interestSettings: { annualRate: 0, settlementDate: '' }
   };
 }
 
@@ -77,33 +76,33 @@ describe('arrears draft storage and import/export', () => {
   it('creates a consecutive monthly CSV template and imports editable payslip data', () => {
     const months = getArrearsMonthKeys('2026-01', '2026-03');
     const template = createArrearsEntryTemplateCsv(months);
-    expect(template).toContain('month,actualTakeHome,recovery,payableDays,salaryFactorPercent');
+    expect(template).toContain('month,actualTakeHome,recovery');
     const csv = [
       'month,actualTakeHome,recovery,payableDays,salaryFactorPercent',
-      '2026-01,50000,0,31,100',
-      '2026-02,49000,250,28,50',
-      '2026-03,51000,100,,100'
+      '2026-01,50000,0',
+      '2026-02,49000,250',
+      '2026-03,51000,100'
     ].join('\n');
     const imported = parseArrearsEntryCsv(csv, months);
     expect(imported).toEqual([
-      { month: '2026-01', actualTakeHome: 50_000, recovery: 0, payableDays: 31, salaryFactorPercent: 100 },
-      { month: '2026-02', actualTakeHome: 49_000, recovery: 250, payableDays: 28, salaryFactorPercent: 50 },
-      { month: '2026-03', actualTakeHome: 51_000, recovery: 100, payableDays: null, salaryFactorPercent: 100 }
+      { month: '2026-01', actualTakeHome: 50_000, recovery: 0 },
+      { month: '2026-02', actualTakeHome: 49_000, recovery: 250 },
+      { month: '2026-03', actualTakeHome: 51_000, recovery: 100 }
     ]);
   });
 
   it('rejects CSV rows with duplicate months, out-of-period months and negative numbers', () => {
     const months = getArrearsMonthKeys('2026-01', '2026-02');
     expect(() => parseArrearsEntryCsv(
-      'month,actualTakeHome,recovery,payableDays,salaryFactorPercent\n2026-01,50000,0,,100\n2026-01,50000,0,,100',
+      'month,actualTakeHome,recovery\n2026-01,50000,0\n2026-01,50000,0',
       months
     )).toThrow(/duplicate month/);
     expect(() => parseArrearsEntryCsv(
-      'month,actualTakeHome,recovery,payableDays,salaryFactorPercent\n2026-03,50000,0,,100',
+      'month,actualTakeHome,recovery\n2026-03,50000,0',
       months
     )).toThrow(/outside the selected/);
     expect(() => parseArrearsEntryCsv(
-      'month,actualTakeHome,recovery,payableDays,salaryFactorPercent\n2026-01,-1,0,,100',
+      'month,actualTakeHome,recovery\n2026-01,-1,0',
       months
     )).toThrow(/non-negative/);
   });
