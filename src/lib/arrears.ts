@@ -421,6 +421,42 @@ export function calculateArrears(input: ArrearsInput): ArrearsResult {
   return { valid: true, complete, errors: [], rows, totals };
 }
 
+
+/**
+ * Creates a review-oriented audit CSV. Unlike the final arrears statement, this
+ * report can be exported while monthly actual-paid figures are still incomplete
+ * or when validation has blocked the calculation.
+ */
+export function createArrearsAuditCsv(input: ArrearsInput, result: ArrearsResult): string {
+  const headers = [
+    'Report status', 'Month', 'Validation issue', 'Basic pay (INR)', 'DA rate (%)',
+    'DA (INR)', 'HRA (INR)', 'SBCA (INR)', 'Transport allowance (INR)',
+    'Revised gross (INR)', 'Employee deductions (INR)', 'Revised take-home (INR)',
+    'Actual credited (INR)', 'Recovery (INR)', 'Net difference (INR)',
+    'Applied changes and source references'
+  ];
+  const status = !result.valid ? 'BLOCKED - validation required' : result.complete
+    ? 'Complete - ready for review' : 'Calculation valid - actual credited amounts incomplete';
+  const rows: (string | number)[][] = [headers];
+  if (result.rows.length) {
+    for (const row of result.rows) {
+      rows.push([
+        status, row.month, '', row.basicPay, row.daRate, row.da, row.hra, row.sbca,
+        row.transportAllowance, row.grossEntitlement, row.employeeDeductions,
+        row.revisedTakeHome, row.actualTakeHome ?? '', row.recovery,
+        row.netArrears ?? '', row.appliedChanges.join(' | ')
+      ]);
+    }
+  }
+  if (result.errors.length) {
+    for (const issue of result.errors) rows.push([status, '', issue, '', '', '', '', '', '', '', '', '', '', '', '', '']);
+  } else if (!result.complete) {
+    rows.push([status, '', 'Enter actual credited salary for every month before final arrears export.', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+  }
+  rows.push(['Selected historical components', '', (input.historicalRateComponents ?? []).join(', ') || 'None', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+  return '\\uFEFF' + rows.map((row) => row.map(csvCell).join(',')).join('\\r\\n') + '\\r\\n';
+}
+
 export function createArrearsCsv(result: ArrearsResult): string {
   if (!result.valid || !result.complete || result.totals.netArrears === null) {
     throw new Error('Complete all actual credited salary entries before exporting the arrears statement.');
