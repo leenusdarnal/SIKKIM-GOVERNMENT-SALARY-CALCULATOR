@@ -19,7 +19,11 @@ jobs:
         run: npm install
       - name: Check Svelte and TypeScript
         run: npm run check
-      - name: Run salary tests
+      - name: Run salary unit and integration tests
         run: npm test
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run browser workflow tests
+        run: npm run test:e2e
       - name: Build for Vercel
         run: npm run build
