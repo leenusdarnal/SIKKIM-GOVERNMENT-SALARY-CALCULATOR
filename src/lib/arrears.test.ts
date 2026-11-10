@@ -90,7 +90,7 @@ describe('CPS membership safeguards in arrears', () => {
   it('blocks a CPS opening basis without explicit membership confirmation', () => {
     const result = calculateArrears(makeInput({ baseSalary: { ...baseSalary, cpsMembershipConfirmed: false } }));
     expect(result.valid).toBe(false);
-    expect(result.errors.join(' ')).toContain('Confirm CPS membership');
+    expect(result.errors.join(' ')).toContain('Confirm the employee CPS membership');
   });
 
   it('requires an effective-dated CPS change to carry explicit confirmation', () => {
