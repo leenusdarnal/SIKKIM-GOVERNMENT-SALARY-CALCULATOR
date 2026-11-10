@@ -33,6 +33,19 @@ function makeInput(overrides: Partial<ArrearsInput> = {}): ArrearsInput {
   };
 }
 
+describe('Professional Tax pay-level safeguards in arrears', () => {
+  it('blocks automatic Professional Tax when the pay-level band is missing', () => {
+    const result = calculateArrears(makeInput({ baseSalary: { ...baseSalary, professionalTaxLevelBand: 'unselected' } }));
+    expect(result.valid).toBe(false);
+    expect(result.errors.join(' ')).toContain('pay-level band');
+  });
+  it('applies the lower-level band across arrears months when selected', () => {
+    const result = calculateArrears(makeInput({ baseSalary: { ...baseSalary, basicPay: 15_200, professionalTaxLevelBand: 'below-level-15' } }));
+    expect(result.valid).toBe(true);
+    expect(result.rows.every(row => row.professionalTax === 150)).toBe(true);
+  });
+});
+
 describe('Sikkim salary arrears planner', () => {
   it('generates consecutive month keys and rejects invalid or overlong periods', () => {
     expect(getArrearsMonthKeys('2026-11', '2027-02')).toEqual([
