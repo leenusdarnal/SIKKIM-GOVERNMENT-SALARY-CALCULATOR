@@ -96,3 +96,24 @@ This is a calculation safeguard, not an official GPF account verification or pay
 - Derived calculations must fit within the safe whole-rupee numeric range. Overflow/unsafe results are rejected.
 - Tests cover percentage boundaries, residual pension, gratuity ceilings, leave divisors, rounding, missing formula values, negative/non-finite values and overflow.
 - No scheme eligibility, formula, service unit, ceiling or leave entitlement has been preloaded or inferred.
+
+
+## Mobile, accessibility and print QA — 10 November 2026
+
+### Shared responsive and accessibility safeguards
+- Added touch-friendly interaction sizing for buttons and checkbox/radio controls, manipulation touch-action, responsive wrapping for shared section headers, and reduced-motion support.
+- Improved contrast for shared eyebrow and field-help text in light and dark themes.
+- Added consistent table semantics defaults for vertical alignment and header emphasis; existing data tables retain their explicit horizontal-scroll wrappers where minimum widths are required.
+- Kept visible keyboard focus treatment and native input labels; no visual browser/device audit is claimed by this code-level pass.
+
+### Print output corrections
+- Monthly payslip print now isolates the payslip statement, excluding the input form, annual history, navigation and export controls.
+- Retirement print now isolates the validated result section; the invalid-result state still disables the print action.
+- Arrears print now isolates the generated statement, repeats table headers across pages, avoids splitting individual rows and allows the statement to flow across pages rather than forcing the entire report onto one page.
+- Shared print defaults now normalize page colors, table layout and print controls.
+
+### Verification boundary
+- Changes are committed on `feature/historical-rate-schedule-engine` under PR #17.
+- GitHub Actions must complete against the new branch head before this stage is considered CI-verified.
+- Visual viewport testing with real mobile devices / browser emulation and physical/PDF print-preview inspection remain part of final end-to-end QA; they are not claimed as completed here.
+- No merge or production deployment has been performed.
