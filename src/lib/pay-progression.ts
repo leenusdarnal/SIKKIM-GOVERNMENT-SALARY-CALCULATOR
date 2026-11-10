@@ -49,3 +49,60 @@ export function validatePayHistory(entries: PayHistoryEntry[]) {
   }
   return { valid: errors.length === 0, errors, rows };
 }
+
+
+export interface MatrixPlacementResult {
+  valid: boolean;
+  targetLevel: number;
+  enteredBasicPay: number;
+  cell: number | null;
+  matrixBasicPay: number | null;
+  differenceFromEntered: number | null;
+  message: string;
+}
+
+/**
+ * Finds the first published cell in a user-selected target level that is
+ * equal to or greater than a fixation amount already established by the
+ * competent authority. This is a matrix lookup only, not a pay-fixation rule.
+ */
+export function findNextMatrixCellAtOrAbove(
+  targetLevel: number,
+  enteredBasicPay: number
+): MatrixPlacementResult {
+  const invalid = (message: string): MatrixPlacementResult => ({
+    valid: false,
+    targetLevel,
+    enteredBasicPay,
+    cell: null,
+    matrixBasicPay: null,
+    differenceFromEntered: null,
+    message
+  });
+
+  if (!Number.isInteger(targetLevel) || !PAY_MATRIX[targetLevel]) {
+    return invalid('Select a valid Sikkim pay level from the published matrix.');
+  }
+  if (!Number.isFinite(enteredBasicPay) || enteredBasicPay <= 0) {
+    return invalid('Enter the fixation basic pay confirmed in the applicable order or by the DDO.');
+  }
+
+  const cells = PAY_MATRIX[targetLevel];
+  const index = cells.findIndex((amount) => amount >= enteredBasicPay);
+  if (index < 0) {
+    return invalid('The entered amount is above the final published cell for this level. No higher cell is available; do not extrapolate.');
+  }
+
+  const matrixBasicPay = cells[index];
+  return {
+    valid: true,
+    targetLevel,
+    enteredBasicPay,
+    cell: index + 1,
+    matrixBasicPay,
+    differenceFromEntered: matrixBasicPay - enteredBasicPay,
+    message: matrixBasicPay === enteredBasicPay
+      ? 'An exact published pay-matrix cell matches the entered amount.'
+      : 'The next published cell at or above the entered amount is shown for comparison. Confirm the prescribed placement with the DDO.'
+  };
+}
