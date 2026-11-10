@@ -1,13 +1,26 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import {
     calculateArrears,
     createArrearsCsv,
     getArrearsMonthKeys,
     type ArrearChange,
     type ArrearChangeType,
-    type ArrearSalaryUpdate
+    type ArrearSalaryUpdate,
+    type ArrearsInput
   } from '../../lib/arrears';
   import { DEFAULT_SALARY_INPUT, type SalaryInput } from '../../lib/salary';
+  import {
+    createArrearsEntryTemplateCsv,
+    createArrearsScenario,
+    loadArrearsScenario,
+    parseArrearsEntryCsv,
+    restoreArrearsScenario,
+    saveArrearsScenario,
+    serializeArrearsScenario,
+    ARREARS_SCENARIO_STORAGE_KEY,
+    type ArrearsScenario
+  } from '../../lib/arrears-storage';
 
   let startMonth = $state('2026-01');
   let endMonth = $state('2026-11');
@@ -36,6 +49,155 @@
   let actualPaid = $state<Record<string, string>>({});
   let recoveryAmounts = $state<Record<string, string>>({});
   let formError = $state('');
+  let storageReady = $state(false);
+  let storageBlocked = $state(false);
+  let storageStatus = $state('Loading saved draft…');
+
+  function currentInput(): ArrearsInput {
+    return {
+      startMonth,
+      endMonth,
+      baseSalary: { ...baseSalary },
+      changes: changes.map((change) => ({
+        ...change,
+        ...(change.salaryUpdates ? { salaryUpdates: { ...change.salaryUpdates } } : {})
+      })),
+      monthlyRecords: monthlyRecords.map((record) => ({ ...record }))
+    };
+  }
+
+  function applyScenario(scenario: ArrearsScenario) {
+    startMonth = scenario.startMonth;
+    endMonth = scenario.endMonth;
+    baseSalary = { ...scenario.baseSalary };
+    changes = scenario.changes.map((change) => ({
+      ...change,
+      ...(change.salaryUpdates ? { salaryUpdates: { ...change.salaryUpdates } } : {})
+    }));
+    actualPaid = Object.fromEntries(scenario.monthlyRecords.map((record) => [
+      record.month,
+      record.actualTakeHome === null ? '' : String(record.actualTakeHome)
+    ]));
+    recoveryAmounts = Object.fromEntries(scenario.monthlyRecords.map((record) => [
+      record.month,
+      String(record.recovery)
+    ]));
+    storageBlocked = false;
+  }
+
+  onMount(() => {
+    try {
+      const existing = window.localStorage.getItem(ARREARS_SCENARIO_STORAGE_KEY);
+      const saved = loadArrearsScenario(window.localStorage);
+      if (saved) {
+        applyScenario(saved);
+        storageStatus = 'Restored your last saved arrears draft from this browser.';
+      } else if (existing) {
+        storageBlocked = true;
+        storageStatus = 'A saved draft could not be validated. It has been left untouched; import a valid backup to continue saving.';
+      } else {
+        storageStatus = 'Your entries will be saved privately in this browser.';
+      }
+    } catch {
+      storageBlocked = true;
+      storageStatus = 'Browser storage is unavailable. Use the JSON backup controls to keep a copy.';
+    }
+    storageReady = true;
+  });
+
+  $effect(() => {
+    if (!storageReady || storageBlocked) return;
+    try {
+      saveArrearsScenario(currentInput(), window.localStorage);
+      storageStatus = 'Automatically saved in this browser.';
+    } catch {
+      storageStatus = 'Automatic saving is unavailable. Download a JSON backup to preserve your work.';
+    }
+  });
+
+  function saveDraft() {
+    try {
+      saveArrearsScenario(currentInput(), window.localStorage);
+      storageBlocked = false;
+      storageStatus = 'Draft saved in this browser.';
+    } catch (cause) {
+      storageStatus = cause instanceof Error ? cause.message : 'Unable to save this draft.';
+    }
+  }
+
+  function downloadText(filename: string, content: string, mime: string) {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+  }
+
+  function downloadJsonBackup() {
+    try {
+      const json = serializeArrearsScenario(createArrearsScenario(currentInput()));
+      downloadText('sikkim-arrears-backup-' + startMonth + '-to-' + endMonth + '.json', json, 'application/json');
+      storageStatus = 'JSON backup downloaded.';
+    } catch (cause) {
+      storageStatus = cause instanceof Error ? cause.message : 'Unable to create the JSON backup.';
+    }
+  }
+
+  async function importJsonBackup(event: Event) {
+    const input = event.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    try {
+      const scenario = restoreArrearsScenario(await file.text(), window.localStorage);
+      applyScenario(scenario);
+      storageStatus = 'JSON backup restored successfully.';
+      formError = '';
+    } catch (cause) {
+      storageStatus = cause instanceof Error ? cause.message : 'Unable to restore this JSON backup.';
+    } finally {
+      input.value = '';
+    }
+  }
+
+  async function importMonthlyCsv(event: Event) {
+    const input = event.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    try {
+      const imported = parseArrearsEntryCsv(await file.text(), months);
+      const paid = { ...actualPaid };
+      const recoveries = { ...recoveryAmounts };
+      for (const record of imported) {
+        paid[record.month] = record.actualTakeHome === null ? '' : String(record.actualTakeHome);
+        recoveries[record.month] = String(record.recovery);
+      }
+      actualPaid = paid;
+      recoveryAmounts = recoveries;
+      storageStatus = 'Imported ' + imported.length + ' monthly payslip row(s). Existing rows not included in the file were preserved.';
+      formError = '';
+    } catch (cause) {
+      storageStatus = cause instanceof Error ? cause.message : 'Unable to import this monthly CSV.';
+    } finally {
+      input.value = '';
+    }
+  }
+
+  function downloadCsvTemplate() {
+    try {
+      downloadText(
+        'sikkim-arrears-monthly-entry-' + startMonth + '-to-' + endMonth + '.csv',
+        createArrearsEntryTemplateCsv(months),
+        'text/csv;charset=utf-8'
+      );
+      storageStatus = 'Monthly payslip-entry CSV template downloaded.';
+    } catch (cause) {
+      storageStatus = cause instanceof Error ? cause.message : 'Unable to create the CSV template.';
+    }
+  }
 
   const months = $derived(getArrearsMonthKeys(startMonth, endMonth));
   const monthlyRecords = $derived(months.map((month) => ({
@@ -223,6 +385,32 @@
         <li>Enter the net take-home amount actually credited for each month. Recovery entered below is an additional recovery from this arrears settlement; do not enter an amount already deducted from the credited salary a second time.</li>
         <li>Periods are limited to 60 months. The planner uses the salary engine's current component rules; it does not reconstruct past rule changes automatically.</li>
       </ul>
+    </section>
+
+    <section class="no-print rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p class="text-xs font-extrabold uppercase tracking-[0.15em] text-emerald-800 dark:text-emerald-400">Draft tools</p>
+          <h2 class="mt-1 text-xl font-black">Save, restore and import payslip entries</h2>
+          <p class="mt-1 max-w-3xl text-sm leading-6 text-slate-500 dark:text-slate-400">Your arrears scenario is automatically saved in this browser. Use JSON backups to move a complete scenario between devices, or import monthly actual-pay figures from the CSV template.</p>
+        </div>
+        <span class="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">Browser-only storage</span>
+      </div>
+      <div class="mt-4 flex flex-wrap gap-2">
+        <button type="button" onclick={saveDraft} class="rounded-lg bg-emerald-800 px-4 py-2.5 text-xs font-extrabold text-white hover:bg-emerald-700">Save draft now</button>
+        <button type="button" onclick={downloadJsonBackup} class="rounded-lg border border-slate-300 px-4 py-2.5 text-xs font-bold dark:border-slate-700">Download JSON backup</button>
+        <button type="button" onclick={downloadCsvTemplate} disabled={!months.length} class="rounded-lg border border-slate-300 px-4 py-2.5 text-xs font-bold disabled:opacity-40 dark:border-slate-700">Download monthly CSV template</button>
+        <label class="cursor-pointer rounded-lg border border-slate-300 px-4 py-2.5 text-xs font-bold dark:border-slate-700">
+          Import JSON backup
+          <input type="file" accept=".json,application/json" onchange={importJsonBackup} class="mt-1 block max-w-[220px] text-[11px] font-normal" />
+        </label>
+        <label class="cursor-pointer rounded-lg border border-slate-300 px-4 py-2.5 text-xs font-bold dark:border-slate-700">
+          Import monthly CSV
+          <input type="file" accept=".csv,text/csv" onchange={importMonthlyCsv} disabled={!months.length} class="mt-1 block max-w-[220px] text-[11px] font-normal" />
+        </label>
+      </div>
+      <p class="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400" aria-live="polite">{storageStatus}</p>
+      <p class="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">Local browser storage is not encrypted. Avoid shared or public devices and keep a separate JSON backup. Imported CSV rows must use the selected month range; duplicate months and negative amounts are rejected.</p>
     </section>
 
     <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">

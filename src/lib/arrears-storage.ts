@@ -1,8 +1,7 @@
 import {
-  calculateArrears,
   getArrearsMonthKeys,
-  type ArrearsInterestSettings,
   type ArrearsInput,
+  type ArrearChange,
   type MonthlyPaidRecord
 } from './arrears';
 import type { SalaryInput } from './salary';
@@ -26,26 +25,66 @@ function isObject(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
+const NUMERIC_SALARY_FIELDS = [
+  'basicPay', 'daRate', 'hraRate', 'hraMinimum', 'sbcaRate',
+  'transportAllowance', 'otherEarnings', 'manualPension', 'manualProfessionalTax',
+  'gis', 'stampFee', 'otherDeductions'
+] as const;
+
 function isSalaryInput(value: unknown): value is SalaryInput {
   if (!isObject(value)) return false;
-  const required = [
-    'basicPay', 'daRate', 'hraRate', 'hraMinimum', 'sbcaRate', 'cpsRate',
-    'transportAllowance', 'otherEarnings', 'manualPension', 'manualProfessionalTax',
-    'gis', 'stampFee', 'incomeTaxTds', 'otherDeductions'
-  ];
-  return required.every((key) => typeof value[key] === 'number' && Number.isFinite(value[key])) &&
+  return NUMERIC_SALARY_FIELDS.every((key) =>
+    typeof value[key] === 'number' && Number.isFinite(value[key]) && value[key] >= 0
+  ) &&
     typeof value.hraEligible === 'boolean' &&
     ['unselected', 'cps', 'gpf', 'manual', 'none'].includes(String(value.pensionMode)) &&
     ['unselected', 'auto', 'manual', 'none'].includes(String(value.professionalTaxMode));
 }
 
-function isMonthlyRecord(value: unknown): value is MonthlyPaidRecord {
-  if (!isObject(value)) return false;
-  return typeof value.month === 'string' &&
-    (value.actualTakeHome === null || (typeof value.actualTakeHome === 'number' && Number.isFinite(value.actualTakeHome))) &&
-    typeof value.recovery === 'number' && Number.isFinite(value.recovery) &&
-    (value.payableDays === undefined || value.payableDays === null || (typeof value.payableDays === 'number' && Number.isFinite(value.payableDays))) &&
-    (value.salaryFactorPercent === undefined || (typeof value.salaryFactorPercent === 'number' && Number.isFinite(value.salaryFactorPercent)));
+const CHANGE_TYPES = new Set([
+  'da-revision', 'annual-increment', 'promotion', 'pay-fixation',
+  'manual-adjustment', 'allowance-deduction'
+]);
+
+const SALARY_UPDATE_KEYS = new Set([
+  'hraEligible', 'hraRate', 'hraMinimum', 'sbcaRate',
+  'transportAllowance', 'otherEarnings', 'pensionMode', 'manualPension',
+  'professionalTaxMode', 'manualProfessionalTax', 'gis', 'stampFee', 'otherDeductions'
+]);
+
+function isSalaryUpdate(value: unknown): boolean {
+  if (!isObject(value) || Object.keys(value).length === 0) return false;
+  return Object.entries(value).every(([key, item]) => {
+    if (!SALARY_UPDATE_KEYS.has(key)) return false;
+    if (key === 'hraEligible') return typeof item === 'boolean';
+    if (key === 'pensionMode') return ['cps', 'gpf', 'manual', 'none'].includes(String(item));
+    if (key === 'professionalTaxMode') return ['auto', 'manual', 'none'].includes(String(item));
+    return typeof item === 'number' && Number.isFinite(item) && item >= 0 &&
+      (!['hraRate', 'sbcaRate'].includes(key) || item <= 100);
+  });
+}
+
+function isChange(value: unknown, months: string[]): value is ArrearChange {
+  if (!isObject(value) || typeof value.effectiveMonth !== 'string' ||
+      !months.includes(value.effectiveMonth) || typeof value.type !== 'string' ||
+      !CHANGE_TYPES.has(value.type) || typeof value.description !== 'string' ||
+      !value.description.trim()) return false;
+  if (value.basicPay !== undefined &&
+      (typeof value.basicPay !== 'number' || !Number.isFinite(value.basicPay) || value.basicPay <= 0)) return false;
+  if (value.daRate !== undefined &&
+      (typeof value.daRate !== 'number' || !Number.isFinite(value.daRate) || value.daRate < 0 || value.daRate > 200)) return false;
+  if (value.type === 'da-revision' && value.daRate === undefined) return false;
+  if (['annual-increment', 'promotion', 'pay-fixation'].includes(value.type) && value.basicPay === undefined) return false;
+  if (value.type === 'manual-adjustment' && value.basicPay === undefined && value.daRate === undefined) return false;
+  if (value.type === 'allowance-deduction' && value.salaryUpdates === undefined) return false;
+  return value.salaryUpdates === undefined || isSalaryUpdate(value.salaryUpdates);
+}
+
+function isMonthlyRecord(value: unknown, months: string[]): value is MonthlyPaidRecord {
+  if (!isObject(value) || typeof value.month !== 'string' || !months.includes(value.month)) return false;
+  return (value.actualTakeHome === null ||
+    (typeof value.actualTakeHome === 'number' && Number.isFinite(value.actualTakeHome) && value.actualTakeHome >= 0)) &&
+    typeof value.recovery === 'number' && Number.isFinite(value.recovery) && value.recovery >= 0;
 }
 
 export function createArrearsScenario(input: ArrearsInput, savedAt = new Date().toISOString()): ArrearsScenario {
@@ -59,36 +98,22 @@ export function createArrearsScenario(input: ArrearsInput, savedAt = new Date().
       ...change,
       ...(change.salaryUpdates ? { salaryUpdates: { ...change.salaryUpdates } } : {})
     })),
-    monthlyRecords: input.monthlyRecords.map((record) => ({ ...record })),
-    interestSettings: { ...(input.interestSettings ?? { annualRate: 0, settlementDate: '' }) }
+    monthlyRecords: input.monthlyRecords.map((record) => ({ ...record }))
   };
 }
 
+/** Structural validation deliberately accepts incomplete salary drafts (for example, before pension mode is selected). */
 export function validateArrearsScenario(value: unknown): value is ArrearsScenario {
   if (!isObject(value) || value.version !== ARREARS_SCENARIO_VERSION) return false;
   if (typeof value.savedAt !== 'string' || !Number.isFinite(Date.parse(value.savedAt))) return false;
   if (typeof value.startMonth !== 'string' || typeof value.endMonth !== 'string') return false;
-  if (!isSalaryInput(value.baseSalary) || !Array.isArray(value.changes) || !Array.isArray(value.monthlyRecords)) return false;
-  if (!value.changes.every((change) => isObject(change) &&
-      typeof change.effectiveMonth === 'string' &&
-      typeof change.type === 'string' &&
-      typeof change.description === 'string')) return false;
-  if (!value.monthlyRecords.every(isMonthlyRecord)) return false;
-
-  const settings = value.interestSettings;
-  if (settings !== undefined && (!isObject(settings) ||
-      typeof settings.annualRate !== 'number' ||
-      typeof settings.settlementDate !== 'string')) return false;
-
-  const input: ArrearsInput = {
-    startMonth: value.startMonth,
-    endMonth: value.endMonth,
-    baseSalary: value.baseSalary,
-    changes: value.changes as ArrearsInput['changes'],
-    monthlyRecords: value.monthlyRecords,
-    interestSettings: (settings ?? { annualRate: 0, settlementDate: '' }) as ArrearsInterestSettings
-  };
-  return calculateArrears(input).valid;
+  const months = getArrearsMonthKeys(value.startMonth, value.endMonth);
+  if (!months.length || !isSalaryInput(value.baseSalary) ||
+      !Array.isArray(value.changes) || !Array.isArray(value.monthlyRecords)) return false;
+  if (!value.changes.every((change) => isChange(change, months))) return false;
+  if (!value.monthlyRecords.every((record) => isMonthlyRecord(record, months))) return false;
+  const paidMonths = (value.monthlyRecords as MonthlyPaidRecord[]).map((record) => record.month);
+  return new Set(paidMonths).size === paidMonths.length;
 }
 
 function encodedSize(text: string): number {
@@ -110,7 +135,6 @@ export function parseArrearsScenarioBackup(json: string): ArrearsScenario {
   if (encodedSize(json) > MAX_ARREARS_BACKUP_BYTES) {
     throw new Error('The selected backup exceeds the 2 MB size limit.');
   }
-
   let parsed: unknown;
   try {
     parsed = JSON.parse(json);
@@ -144,16 +168,20 @@ export function restoreArrearsScenario(json: string, storage: StorageLike): Arre
   return scenario;
 }
 
+function csvCell(value: string): string {
+  return /[",\r\n]/.test(value) ? '"' + value.replace(/"/g, '""') + '"' : value;
+}
+
 export function createArrearsEntryTemplateCsv(months: string[]): string {
   const allowed = getArrearsMonthKeys(months[0] ?? '', months[months.length - 1] ?? '');
   if (!months.length || allowed.length !== months.length || allowed.some((month, index) => month !== months[index])) {
     throw new Error('Provide a valid consecutive month list to create the CSV template.');
   }
   const rows = [
-    ['month', 'actualTakeHome', 'recovery', 'payableDays', 'salaryFactorPercent'],
-    ...months.map((month) => [month, '', '0', '', '100'])
+    ['month', 'actualTakeHome', 'recovery'],
+    ...months.map((month) => [month, '', '0'])
   ];
-  return '\uFEFF' + rows.map((row) => row.join(',')).join('\r\n') + '\r\n';
+  return '\uFEFF' + rows.map((row) => row.map(csvCell).join(',')).join('\r\n') + '\r\n';
 }
 
 function parseCsvLine(line: string): string[] {
@@ -187,18 +215,16 @@ export function parseArrearsEntryCsv(csv: string, allowedMonths: string[]): Mont
   }
   const lines = csv.replace(/^\uFEFF/, '').split(/\r?\n/).filter((line) => line.trim() !== '');
   if (lines.length < 2) throw new Error('The CSV must contain a header and at least one month row.');
-
   const header = parseCsvLine(lines[0]).map((key) => key.toLowerCase());
-  const required = ['month', 'actualtakehome', 'recovery', 'payabledays', 'salaryfactorpercent'];
+  const required = ['month', 'actualtakehome', 'recovery'];
   const indices = required.map((key) => header.indexOf(key));
   if (indices.some((index) => index < 0)) {
-    throw new Error('The CSV header must contain month, actualTakeHome, recovery, payableDays and salaryFactorPercent.');
+    throw new Error('The CSV header must contain month, actualTakeHome and recovery.');
   }
 
   const allowed = new Set(allowedMonths);
   const seen = new Set<string>();
   const result: MonthlyPaidRecord[] = [];
-
   for (const [lineIndex, line] of lines.slice(1).entries()) {
     const cells = parseCsvLine(line);
     const month = cells[indices[0]] ?? '';
@@ -215,13 +241,9 @@ export function parseArrearsEntryCsv(csv: string, allowedMonths: string[]): Mont
       }
       return parsed;
     };
-
     const actualTakeHome = numberAt(indices[1], 'actualTakeHome', null);
     const recovery = numberAt(indices[2], 'recovery', 0) ?? 0;
-    const payableDays = numberAt(indices[3], 'payableDays', null);
-    const salaryFactorPercent = numberAt(indices[4], 'salaryFactorPercent', 100) ?? 100;
-    result.push({ month, actualTakeHome, recovery, payableDays, salaryFactorPercent });
+    result.push({ month, actualTakeHome, recovery });
   }
-
   return result;
 }
