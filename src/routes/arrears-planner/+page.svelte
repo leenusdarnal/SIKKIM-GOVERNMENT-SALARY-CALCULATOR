@@ -28,6 +28,7 @@
   let eventBasicPay = $state('');
   let eventDaRate = $state('');
   let eventDescription = $state('');
+  let editingChangeIndex = $state<number | null>(null);
   let componentEvent = $state({
     hraEligible: '',
     hraRate: '',
@@ -179,7 +180,9 @@
       return;
     }
 
-    changes = [...changes, candidate];
+    if (editingChangeIndex === null) changes = [...changes, candidate];
+    else changes = changes.map((change, index) => index === editingChangeIndex ? candidate : change);
+    editingChangeIndex = null;
     eventBasicPay = '';
     eventDaRate = '';
     eventDescription = '';
@@ -216,8 +219,51 @@
     }).join(' · ') || '—';
   }
 
+  function editChange(index: number) {
+    const change = changes[index];
+    if (!change) return;
+    editingChangeIndex = index;
+    eventMonth = change.effectiveMonth;
+    eventType = change.type;
+    eventBasicPay = change.basicPay === undefined ? '' : String(change.basicPay);
+    eventDaRate = change.daRate === undefined ? '' : String(change.daRate);
+    eventDescription = change.description;
+    const update = change.salaryUpdates ?? {};
+    componentEvent = {
+      hraEligible: update.hraEligible === undefined ? '' : update.hraEligible ? 'yes' : 'no',
+      hraRate: update.hraRate === undefined ? '' : String(update.hraRate),
+      hraMinimum: update.hraMinimum === undefined ? '' : String(update.hraMinimum),
+      sbcaRate: update.sbcaRate === undefined ? '' : String(update.sbcaRate),
+      transportAllowance: update.transportAllowance === undefined ? '' : String(update.transportAllowance),
+      otherEarnings: update.otherEarnings === undefined ? '' : String(update.otherEarnings),
+      pensionMode: update.pensionMode ?? '',
+      manualPension: update.manualPension === undefined ? '' : String(update.manualPension),
+      professionalTaxMode: update.professionalTaxMode ?? '',
+      manualProfessionalTax: update.manualProfessionalTax === undefined ? '' : String(update.manualProfessionalTax),
+      gis: update.gis === undefined ? '' : String(update.gis),
+      stampFee: update.stampFee === undefined ? '' : String(update.stampFee),
+      otherDeductions: update.otherDeductions === undefined ? '' : String(update.otherDeductions)
+    };
+    formError = '';
+  }
+
+  function cancelChangeEdit() {
+    editingChangeIndex = null;
+    eventBasicPay = '';
+    eventDaRate = '';
+    eventDescription = '';
+    componentEvent = {
+      hraEligible: '', hraRate: '', hraMinimum: '', sbcaRate: '',
+      transportAllowance: '', otherEarnings: '', pensionMode: '',
+      manualPension: '', professionalTaxMode: '', manualProfessionalTax: '',
+      gis: '', stampFee: '', otherDeductions: ''
+    };
+  }
+
   function removeChange(index: number) {
     changes = changes.filter((_, itemIndex) => itemIndex !== index);
+    if (editingChangeIndex === index) cancelChangeEdit();
+    else if (editingChangeIndex !== null && index < editingChangeIndex) editingChangeIndex -= 1;
   }
 
   function exportCsv() {
@@ -527,7 +573,10 @@
           </label>
         </div>
       {/if}
-      <button type="button" onclick={addChange} class="mt-4 rounded-xl bg-emerald-800 px-5 py-3 text-sm font-extrabold text-white hover:bg-emerald-700">Add effective-dated change</button>
+      <div class="mt-4 flex flex-wrap gap-2">
+        <button type="button" onclick={addChange} class="rounded-xl bg-emerald-800 px-5 py-3 text-sm font-extrabold text-white hover:bg-emerald-700">{editingChangeIndex === null ? 'Add effective-dated change' : 'Save change'}</button>
+        {#if editingChangeIndex !== null}<button type="button" onclick={cancelChangeEdit} class="rounded-xl border border-slate-300 px-5 py-3 text-sm font-bold dark:border-slate-700">Cancel edit</button>{/if}
+      </div>
       {#if changes.length}
         <div class="mt-5 overflow-x-auto">
           <table class="w-full min-w-[1050px] text-left text-sm">
@@ -541,7 +590,7 @@
                   <td>{change.daRate === undefined ? '—' : change.daRate + '%'}</td>
                   <td class="max-w-[280px] whitespace-normal text-xs">{componentChangeSummary(change)}</td>
                   <td>{change.description}</td>
-                  <td class="text-right"><button type="button" onclick={() => removeChange(index)} class="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-950/40">Remove</button></td>
+                  <td class="whitespace-nowrap text-right"><button type="button" onclick={() => editChange(index)} class="mr-1 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-bold dark:border-slate-700">Edit</button><button type="button" onclick={() => removeChange(index)} class="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-950/40">Remove</button></td>
                 </tr>
               {/each}
             </tbody>
