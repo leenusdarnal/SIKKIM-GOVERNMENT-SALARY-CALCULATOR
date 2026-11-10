@@ -21,3 +21,11 @@
 
 ## Validation
 Run npm run check, npm test and npm run build in CI. Production deployment remains deferred until all planned implementation and final QA stages are complete.
+
+
+## Month-by-month review and audit export
+- The arrears planner now displays a coverage matrix for each selected historical component and each month in the requested period.
+- The matrix distinguishes covered, missing, unverified and conflicting entries, and displays the source reference where exactly one entry matches.
+- Added a separate monthly audit CSV export. It records calculation status, month-level pay components, actual credited amount, recovery, net difference and applied order/source references.
+- The audit report can be downloaded even when actual paid amounts are incomplete or validation blocks calculation. It clearly records missing actual-pay inputs or validation errors and is not presented as a final arrears statement.
+- The final arrears statement CSV remains gated on a valid calculation and complete actual credited salary records.
