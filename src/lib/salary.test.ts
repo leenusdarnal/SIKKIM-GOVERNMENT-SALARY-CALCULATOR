@@ -53,12 +53,15 @@ describe('Sikkim pay matrix', () => {
   });
 });
 
-describe('Sikkim Professional Tax slabs', () => {
-  it.each([
-    [20_000, 0], [20_001, 125], [30_000, 125],
-    [30_001, 150], [40_000, 150], [40_001, 200]
-  ])('calculates ₹%i as ₹%i tax', (salary, expected) => {
-    expect(getSikkimProfessionalTax(salary).amount).toBe(expected);
+describe('Sikkim Professional Tax pay-level bands', () => {
+  it('applies ₹150 below Level 15 regardless of gross salary', () => {
+    expect(getSikkimProfessionalTax('below-level-15').amount).toBe(150);
+  });
+  it('applies ₹200 at Level 15 and above regardless of gross salary', () => {
+    expect(getSikkimProfessionalTax('level-15-and-above').amount).toBe(200);
+  });
+  it('does not infer a band when the pay level is not selected', () => {
+    expect(getSikkimProfessionalTax('unselected').amount).toBe(0);
   });
 });
 
@@ -68,6 +71,7 @@ describe('salary calculation', () => {
     expect(DEFAULT_SALARY_INPUT.hraEligible).toBe(false);
     expect(DEFAULT_SALARY_INPUT.sbcaRate).toBe(0);
     expect(DEFAULT_SALARY_INPUT.professionalTaxMode).toBe('unselected');
+    expect(DEFAULT_SALARY_INPUT.professionalTaxLevelBand).toBe('unselected');
   });
 
   const base = {
@@ -75,7 +79,7 @@ describe('salary calculation', () => {
     hraRate: 12, hraMinimum: 0, sbcaRate: 8,
     transportAllowance: 0, otherEarnings: 0,
     pensionMode: 'cps' as const, manualPension: 0,
-    professionalTaxMode: 'auto' as const, manualProfessionalTax: 0,
+    professionalTaxMode: 'auto' as const, professionalTaxLevelBand: 'level-15-and-above' as const, manualProfessionalTax: 0,
     gis: 0, stampFee: 0, otherDeductions: 0
   };
 
@@ -111,8 +115,8 @@ describe('salary calculation', () => {
     });
     expect(result.gross).toBe(27_360);
     expect(result.employeePension).toBe(2_432);
-    expect(result.professionalTax).toBe(125);
-    expect(result.takeHome).toBe(24_803);
+    expect(result.professionalTax).toBe(150);
+    expect(result.takeHome).toBe(24_778);
   });
 
   it('omits HRA when the employee is not eligible', () => {
