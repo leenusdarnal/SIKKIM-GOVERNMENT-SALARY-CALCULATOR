@@ -40,3 +40,24 @@ The ₹150 / ₹200 amounts and Level 15 threshold are based on the user's previ
 - Integration review found that the GPF planner prefilled reference pay with ₹56,000, which could be mistaken for an employee-specific or recommended value.
 - The planner now starts with reference pay set to zero, displays no calculated contribution or limits until a valid reference-pay figure is entered, and explicitly states that no employee pay is pre-filled.
 - The employee must still confirm the correct reference-pay basis for the relevant subscription year with the service/pay record and Accounts/DDO section. The 6%–100% rule range and the planner's other limitations remain unchanged.
+
+
+## CPS / OPS integration QA — 10 November 2026
+
+### Government-reference context
+- The Finance Department's PGIPF Division information describes the State's Contributory Pension Scheme for covered employees appointed after 1 April 2006, with an employee contribution of 10% of Basic Pay plus DA and an equal State contribution. Reference: [Finance Department — Pension, Group Insurance Schemes, Contributory Pension Scheme and GPF (PGIPF Division)](https://www.sikkim.gov.in/department/departmentmenudetails?url=Menu%3Dfinance-revenue-expenditure-department%2Fpension-group-insurance-schemes-contributory-pension-scheme-and-general-provident-fund-pgipf-division).
+- Department of Personnel Notification No. 23/GEN/DOP dated 09.02.2024 announced restoration of the Old Pension System with a view to bring State Government employees appointed on or after 01.04.2006 under the Sikkim Services (Pension) Rules, 1990. The notification stated that detailed guidelines on reversion modalities would be issued separately. Reference: [Notification No. 23/GEN/DOP dated 09.02.2024](https://dop.sikkim.gov.in/notificationdoc/23.pdf).
+- Accordingly, appointment date is not used by this calculator to infer an individual's current CPS / OPS status. The signed pension option, service record, any later Government orders and DDO / Accounts implementation records must establish the applicable arrangement. The calculator does not claim to verify legal membership.
+
+### Code and cross-module safeguards
+- `src/lib/salary.ts`: added optional `cpsMembershipConfirmed` to `SalaryInput`. A selected CPS mode returns zero employee and State contributions until the flag is explicitly true. Once confirmed, the shared engine applies its configured 10% employee contribution on Basic Pay + DA and shows the equal State share separately.
+- `src/lib/components/SalaryCalculator.svelte`: selecting CPS exposes an attestation checkbox requiring confirmation against the employee-specific signed pension option / service records and DDO / Accounts. Changing the selected scheme clears the attestation. Calculation is blocked until confirmation.
+- `src/lib/payslip.ts` and `src/routes/payslip-generator/+page.svelte`: CPS payslip validation is blocked without confirmation. Changing the scheme clears the attestation. The employer / State matching share is informational only and is not included in employee deductions or take-home reduction.
+- `src/lib/arrears.ts` and `src/routes/arrears-planner/+page.svelte`: opening CPS basis requires explicit confirmation; a dated change to CPS must carry a separate confirmation for that effective month. Changing the selected arrangement clears the UI attestation.
+- Arrears month rows and totals now include the employer / State matching share as a separate reporting field. Arrears audit CSV, final CSV and print statement show it separately; it is not added to employee deductions or used to reduce revised take-home.
+- `src/lib/arrears-storage.ts`: the new flag is persisted. Older version-1 drafts without the optional field remain structurally loadable, but any draft that selects CPS without re-confirmation is blocked by arrears calculation.
+- Tests cover unconfirmed CPS blocking, successful confirmation, cross-module payslip / salary-engine consistency, State match separation, arrears dated-switch confirmation and legacy draft compatibility.
+
+### Formula and applicability limitation
+The 10% Basic Pay + DA employee / equal State contribution is the Finance Department's published scheme description used by this calculator. The individual's scheme coverage, option status, precise contribution base and any subsequent implementation instructions must still be confirmed against applicable orders and service / DDO records before payroll use. This change does not apply CPS universally, infer OPS automatically, or treat the checkbox as Government approval.
+
