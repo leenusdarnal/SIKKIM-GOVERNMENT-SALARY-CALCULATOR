@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { calculateCellProgression, getIncrementDateOptions, getPayAtCell, validatePayHistory } from './pay-progression';
+import { calculateCellProgression, findNextMatrixCellAtOrAbove, getIncrementDateOptions, getPayAtCell, validatePayHistory } from './pay-progression';
 
 describe('Sikkim pay progression helpers', () => {
   it('reads only published cells from the official pay matrix', () => {
@@ -18,6 +18,23 @@ describe('Sikkim pay progression helpers', () => {
   it('offers the two dates named in the Sikkim Revised Pay Rules', () => {
     expect(getIncrementDateOptions(2026)).toEqual(['2026-01-01', '2026-07-01']);
     expect(getIncrementDateOptions(2015)).toEqual([]);
+  });
+
+  it('finds the exact target-level cell for an authority-confirmed fixation amount', () => {
+    expect(findNextMatrixCellAtOrAbove(18, 65_000)).toMatchObject({
+      valid: true, cell: 1, matrixBasicPay: 65_000, differenceFromEntered: 0
+    });
+  });
+  it('finds the next published cell at or above the entered amount without inventing a cell', () => {
+    expect(findNextMatrixCellAtOrAbove(17, 56_100)).toMatchObject({
+      valid: true, cell: 2, matrixBasicPay: 57_700, differenceFromEntered: 1_600
+    });
+    expect(findNextMatrixCellAtOrAbove(23, 200_200).valid).toBe(false);
+  });
+  it('rejects invalid levels and non-positive or non-finite fixation amounts', () => {
+    expect(findNextMatrixCellAtOrAbove(24, 50_000).valid).toBe(false);
+    expect(findNextMatrixCellAtOrAbove(17, 0).valid).toBe(false);
+    expect(findNextMatrixCellAtOrAbove(17, Number.NaN).valid).toBe(false);
   });
   it('validates chronological pay history and rejects nonexistent cells', () => {
     const result = validatePayHistory([
