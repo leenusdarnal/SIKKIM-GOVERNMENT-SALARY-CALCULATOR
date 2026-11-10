@@ -47,6 +47,7 @@
     pensionMode: '',
     manualPension: '',
     professionalTaxMode: '',
+    professionalTaxLevelBand: '',
     manualProfessionalTax: '',
     gis: '',
     stampFee: '',
@@ -280,6 +281,7 @@
     if (componentEvent.pensionMode !== '') update.pensionMode = componentEvent.pensionMode as SalaryInput['pensionMode'];
     if (componentEvent.manualPension.trim() !== '') update.manualPension = Number(componentEvent.manualPension);
     if (componentEvent.professionalTaxMode !== '') update.professionalTaxMode = componentEvent.professionalTaxMode as SalaryInput['professionalTaxMode'];
+    if (componentEvent.professionalTaxLevelBand !== '') update.professionalTaxLevelBand = componentEvent.professionalTaxLevelBand as SalaryInput['professionalTaxLevelBand'];
     if (componentEvent.manualProfessionalTax.trim() !== '') update.manualProfessionalTax = Number(componentEvent.manualProfessionalTax);
     if (componentEvent.gis.trim() !== '') update.gis = Number(componentEvent.gis);
     if (componentEvent.stampFee.trim() !== '') update.stampFee = Number(componentEvent.stampFee);
