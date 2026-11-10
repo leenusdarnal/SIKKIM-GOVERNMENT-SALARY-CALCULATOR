@@ -254,7 +254,7 @@ input[type="checkbox"], input[type="radio"] { min-width: 18px; min-height: 18px;
   tfoot { display: table-footer-group; }
   tr, img, svg { break-inside: avoid; }
   th, td { color: #111 !important; }
-  input, select, textarea, button, .no-print, .print\\:hidden { display: none !important; }
+  input, select, textarea, button, .no-print { display: none !important; }
   .print-statement, .print-report { display: block !important; }
   .print-statement { break-inside: auto !important; }
 }
