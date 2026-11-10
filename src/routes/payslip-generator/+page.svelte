@@ -1,8 +1,8 @@
 <script lang="ts">
  import {DEFAULT_SALARY_INPUT,type SalaryInput} from '../../lib/salary';
  import {addOrReplacePayslipMonth,buildPayslipModel,createPayslipCsv,type PayslipEmployee,type PayslipMonthRecord} from '../../lib/payslip';
- let month='2026-11';
- let employee: PayslipEmployee={name:'',employeeId:'',designation:'',department:'',office:'',district:'',payLevel:'',cell:''};
+ let month=$state('2026-11');
+ let employee=$state<PayslipEmployee>({name:'',employeeId:'',designation:'',department:'',office:'',district:'',payLevel:'',cell:''};
  let input:SalaryInput={...DEFAULT_SALARY_INPUT,daRate:0,hraRate:0,sbcaRate:0,professionalTaxMode:'unselected',pensionMode:'unselected'};
  let history:PayslipMonthRecord[]=[];
  let notice='';
