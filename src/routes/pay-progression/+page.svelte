@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { PAY_LEVELS, PAY_MATRIX } from '../../lib/data/pay-matrix';
-  import { calculateCellProgression, getIncrementDateOptions, validatePayHistory, type PayHistoryEntry } from '../../lib/pay-progression';
+  import { calculateCellProgression, findNextMatrixCellAtOrAbove, getIncrementDateOptions, validatePayHistory, type PayHistoryEntry } from '../../lib/pay-progression';
   import {
     createPayHistoryBackup,
     createPayHistoryCsv,
@@ -15,6 +15,9 @@
   let increments = $state(1);
   let eligible = $state(false);
   let effectiveDate = $state('2026-01-01');
+  let targetLevel = $state(18);
+  let fixationBasis = $state('');
+  const matrixPlacement = $derived(findNextMatrixCellAtOrAbove(targetLevel, Number(fixationBasis)));
   let history = $state<PayHistoryEntry[]>([]);
   let historyReady = $state(false);
   let persistenceEnabled = $state(false);
@@ -258,6 +261,33 @@
       </div>
       <p class="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">{result.message} The date selector is a record field, not an automated eligibility decision.</p>
     </section>
+    <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
+      <h2 class="text-lg font-extrabold">Pay-matrix placement cross-check</h2>
+      <p class="mt-1 text-sm leading-6 text-slate-500 dark:text-slate-400">Enter the fixation basic pay already determined by a signed order, Accounts section or DDO. This tool only locates the exact or next higher published cell in the selected target level; it does not decide the applicable fixation formula, eligibility, option or effective date.</p>
+      <div class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div class="rounded-xl bg-slate-50 p-3 dark:bg-slate-800">
+          <p class="text-xs font-bold text-slate-500 dark:text-slate-400">Current scenario basic (reference)</p>
+          <p class="mt-1 text-lg font-black">{fmt(PAY_MATRIX[level][cell - 1] ?? null)}</p>
+          <p class="text-xs text-slate-500">Level {level}, Cell {cell}</p>
+        </div>
+        <label class="text-sm font-bold">Target pay level
+          <select bind:value={targetLevel} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700">
+            {#each PAY_LEVELS as item}<option value={item}>Level {item}</option>{/each}
+          </select>
+        </label>
+        <label class="text-sm font-bold">Authority-confirmed fixation basic (₹)
+          <input bind:value={fixationBasis} type="number" min="1" step="1" inputmode="numeric" placeholder="Enter amount from order / DDO" class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
+        </label>
+      </div>
+      <div class="mt-4 grid gap-3 rounded-2xl bg-slate-50 p-4 dark:bg-slate-800 sm:grid-cols-3">
+        <div><p class="text-xs text-slate-500">Matched matrix cell</p><p class="mt-1 text-xl font-black">{matrixPlacement.valid ? 'Cell ' + matrixPlacement.cell : '—'}</p></div>
+        <div><p class="text-xs text-slate-500">Published basic pay</p><p class="mt-1 text-xl font-black">{fmt(matrixPlacement.matrixBasicPay)}</p></div>
+        <div><p class="text-xs text-slate-500">Difference from entered basis</p><p class="mt-1 text-xl font-black">{matrixPlacement.valid ? fmt(matrixPlacement.differenceFromEntered) : '—'}</p></div>
+      </div>
+      <p class="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400" role="status">{matrixPlacement.message}</p>
+      <p class="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">No multiplication factor, increment, promotional benefit or financial-upgradation entitlement is assumed. A next-higher cell result is a comparison only—not an approved fixation. Keep the signed order and DDO calculation as the controlling record.</p>
+    </section>
+
     <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
       <h2 class="text-lg font-extrabold">Chronological service pay history</h2><p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Enter the effective pay level and cell from each signed order / service-book entry. Entries are saved in this browser only; they are not uploaded or shared with a payroll system.</p>
       <div class="mt-4 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/70 sm:flex-row sm:items-center sm:justify-between">
