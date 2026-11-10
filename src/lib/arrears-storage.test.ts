@@ -61,6 +61,18 @@ describe('arrears draft storage and import/export', () => {
     expect(validateArrearsScenario(invalid)).toBe(false);
   });
 
+  it('rejects negative salary values and unsupported dated component values in backups', () => {
+    const negative = createArrearsScenario(input());
+    negative.baseSalary.gis = -1;
+    expect(validateArrearsScenario(negative)).toBe(false);
+    const invalidChange = createArrearsScenario(input());
+    invalidChange.changes = [{
+      effectiveMonth: '2026-02', type: 'allowance-deduction', description: 'Bad order',
+      salaryUpdates: { hraRate: 150 }
+    }];
+    expect(validateArrearsScenario(invalidChange)).toBe(false);
+  });
+
   it('saves, loads and restores the scenario locally', () => {
     const store = new MemoryStorage();
     saveArrearsScenario(input(), store);
