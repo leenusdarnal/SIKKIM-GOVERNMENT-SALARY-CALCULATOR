@@ -78,7 +78,7 @@ export function calculateTemporaryPay(input: TemporaryPayCalculationInput): Temp
   const option = TEMPORARY_PAY_OPTIONS.find((item) => item.id === input.optionId) ?? null;
   const errors: string[] = [];
   if (!option) errors.push('Select a valid temporary-pay category or post.');
-  if (!validIsoDate(input.salaryMonth) || !/^\d{4}-\d{2}$/.test(input.salaryMonth)) {
+  if (!/^\d{4}-\d{2}$/.test(input.salaryMonth) || !validIsoDate(input.salaryMonth + '-01')) {
     errors.push('Enter a valid salary month in YYYY-MM format.');
   }
   if (option && validIsoDate(input.salaryMonth + '-01') && input.salaryMonth + '-01' < option.effectiveFrom) {
