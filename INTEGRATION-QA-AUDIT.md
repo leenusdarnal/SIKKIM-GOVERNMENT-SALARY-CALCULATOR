@@ -1,11 +1,12 @@
 # Integration QA audit — Sikkim Professional Tax and salary modules
 
-## Finding and correction
-The shared salary engine previously calculated automatic Professional Tax using gross-monthly-income slabs. This did not match the Sikkim-specific pay-level rule supplied for this calculator. The engine now uses an explicit pay-level band:
-- Below Level 15: ₹150 per month.
-- Level 15 and above: ₹200 per month.
+## Finding and treatment
 
-The engine does not infer the band from gross salary. The regular pay-matrix calculator sets the band from the selected pay level; the payslip and arrears worksheets require an explicit band selection whenever automatic Professional Tax is chosen. Manual override and not-applicable options remain available.
+The current Commercial Taxes Division schedule titled **Professional Rate-of-tax** is published under the Sikkim Tax on Professions, Trades, Callings and Employment Act, 2006. Its salary/wage-earner entry contains monthly rates of nil, ₹125, ₹150 and ₹200, but the boundary wording in the available extracted text is internally inconsistent. It does not establish the project's separate pay-level threshold.
+
+The ₹150 below Level 15 / ₹200 at Level 15 and above configuration was supplied for this project and has not been independently verified against a current employee-applicable Government notification. It is retained only as an optional **project reference estimate**, never as a default or an official statutory conclusion. The manual payslip amount is the recommended path until DDO / Accounts confirms the employee's actual liability and any exemption.
+
+The engine does not infer the band from gross salary. The regular pay-matrix calculator can suggest a band from the selected level; the payslip and arrears worksheets require explicit band selection whenever the reference estimate is chosen. Manual override and not-applicable options remain available.
 
 ## Cross-module changes
 - `src/lib/salary.ts`: shared `SalaryInput` includes a typed Professional Tax pay-level band; automatic calculation uses the band, not gross pay.
