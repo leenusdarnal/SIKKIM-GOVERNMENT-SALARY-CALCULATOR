@@ -12,6 +12,8 @@ export interface SalaryInput {
   transportAllowance: number;
   otherEarnings: number;
   pensionMode: PensionMode;
+  /** True only after checking individual CPS membership and the applicable contribution basis. */
+  cpsMembershipConfirmed?: boolean;
   manualPension: number;
   professionalTaxMode: ProfessionalTaxMode;
   professionalTaxLevelBand: ProfessionalTaxLevelBand;
@@ -77,9 +79,13 @@ export function calculateSalary(input: SalaryInput): SalaryResult {
     case 'unselected':
       break;
     case 'cps':
-      employeePension = roundRupee(((basicPay + da) * 10) / 100);
-      employerCpsContribution = employeePension;
-      pensionLabel = 'Sikkim CPS employee contribution (10% of Basic + DA)';
+      if (input.cpsMembershipConfirmed === true) {
+        employeePension = roundRupee(((basicPay + da) * 10) / 100);
+        employerCpsContribution = employeePension;
+        pensionLabel = 'Sikkim CPS employee contribution (10% of Basic + DA; verify current applicability)';
+      } else {
+        pensionLabel = 'CPS not calculated — confirm individual membership and contribution basis';
+      }
       break;
     case 'gpf':
       employeePension = roundRupee(safeAmount(input.manualPension));
@@ -132,6 +138,7 @@ export const DEFAULT_SALARY_INPUT: SalaryInput = {
   transportAllowance: 0,
   otherEarnings: 0,
   pensionMode: 'unselected',
+  cpsMembershipConfirmed: false,
   manualPension: 0,
   professionalTaxMode: 'unselected',
   professionalTaxLevelBand: 'unselected',
