@@ -3,6 +3,7 @@ import { expect, test } from '@playwright/test';
 test.describe('Sikkim salary calculator browser workflows', () => {
   test('the main calculator computes a Level 17 salary with the correct Sikkim PT band', async ({ page }) => {
     await page.goto('/');
+    await page.locator('[data-client-ready="true"]').first().waitFor();
 
     await page.locator('#level').selectOption('17');
     await expect(page.locator('#cell')).toBeEnabled();
@@ -24,6 +25,7 @@ test.describe('Sikkim salary calculator browser workflows', () => {
 
   test('the payslip form calculates, records the month and updates the annual summary', async ({ page }) => {
     await page.goto('/payslip-generator');
+    await page.locator('[data-client-ready="true"]').first().waitFor();
 
     await page.getByLabel('Basic pay (₹)', { exact: true }).fill('56000');
     await page.getByLabel('DA rate (%)', { exact: true }).fill('60');
@@ -43,6 +45,7 @@ test.describe('Sikkim salary calculator browser workflows', () => {
 
   test('the arrears workflow applies an effective-dated increment and produces a complete printable statement', async ({ page }) => {
     await page.goto('/arrears-planner');
+    await page.locator('[data-client-ready="true"]').first().waitFor();
 
     await page.getByLabel('From month', { exact: true }).fill('2026-01');
     await page.getByLabel('To month', { exact: true }).fill('2026-02');
@@ -87,6 +90,7 @@ test.describe('Sikkim salary calculator browser workflows', () => {
 
     for (const route of routes) {
       await page.goto(route);
+      await page.locator('[data-client-ready="true"]').first().waitFor();
       await expect(page.locator('h1').first()).toBeVisible();
       const dimensions = await page.evaluate(() => ({
         viewport: document.documentElement.clientWidth,
