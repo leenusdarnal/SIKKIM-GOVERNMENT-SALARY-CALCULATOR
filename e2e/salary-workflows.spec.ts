@@ -48,7 +48,7 @@ test.describe('Sikkim salary calculator browser workflows', () => {
     await page.getByLabel('To month', { exact: true }).fill('2026-02');
     await page.getByLabel('Basic pay (₹)', { exact: true }).fill('56000');
     await page.getByLabel('DA rate (%)', { exact: true }).fill('60');
-    await selectInsideLabel(page, 'Pension arrangement').selectOption('none');
+    await page.locator('select:has(option[value="cps"])').selectOption('none');
     await page.locator('select:has(option[value="auto"])').selectOption('none');
 
     await page.getByLabel('Effective month', { exact: true }).fill('2026-02');
