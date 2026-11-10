@@ -14,10 +14,11 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "build:github-pages": "GITHUB_PAGES=true npm run build"
+    "build:github-pages": "GITHUB_PAGES=true VITE_BASE_PATH=/SIKKIM-GOVERNMENT-SALARY-CALCULATOR npm run build"
   },
   "devDependencies": {
     "@sveltejs/adapter-static": "^4.0.1",
+    "@types/node": "^24.0.0",
     "@sveltejs/adapter-vercel": "^7.0.0",
     "@sveltejs/kit": "^3.0.0",
     "@sveltejs/vite-plugin-svelte": "^7.0.0",
