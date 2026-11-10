@@ -69,3 +69,7 @@ The /retirement-planner route provides an employee-specific worksheet for monthl
 
 ### Monthly salary slip generator
 The /payslip-generator route creates a monthly draft salary statement using the existing salary calculation engine. It includes employee/payroll metadata, earnings and deductions, employer CPS contribution as informational, print / Save as PDF, CSV export, an annual summary of explicitly entered month snapshots and comparison with the most recent earlier month. Employee data and history remain session-only. Annual totals include only recorded months. See [PAYSLIP-GENERATOR-AUDIT.md](./PAYSLIP-GENERATOR-AUDIT.md).
+
+
+### Integration QA note
+The shared Professional Tax calculation now follows the Sikkim pay-level bands supplied for this calculator (₹150 below Level 15; ₹200 at Level 15 and above), rather than gross-income slabs. The selected band is explicit in payslip and arrears workflows. See [INTEGRATION-QA-AUDIT.md](./INTEGRATION-QA-AUDIT.md) for module impact, safeguards and source-confirmation limitation.
