@@ -36,7 +36,7 @@ export function buildPayslipModel(month: string, employee: PayslipEmployee, sala
     if (![record.gross,record.deductions,record.net].every(v=>Number.isFinite(v)&&v>=0)) errors.push('History row '+(index+1)+' contains an invalid amount.');
   }
   const unique = new Set(history.map(r=>r.month));
-  if (unique.size !== history.length) errors.push('Annual history contains duplicate months.');
+  if (unique.size !== history.length) errors.push('Annual history contains duplicate months.');\n  if (salaryInput.professionalTaxMode === 'auto' && !['below-level-15','level-15-and-above'].includes(salaryInput.professionalTaxLevelBand)) errors.push('Select the employee pay-level band for Sikkim Professional Tax.');
   const salary = calculateSalary(salaryInput);
   const year = Number(month.slice(0,4));
   const yearRecords = history.filter(r=>r.month.startsWith(String(year)+'-') && r.month !== month).concat({
