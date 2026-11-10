@@ -92,5 +92,16 @@
  </div>
 </main>
 <style>
- @media print { @page {size:A4 portrait;margin:12mm;} :global(body){background:#fff!important;color:#111!important;} main{min-height:0!important;padding:0!important;background:#fff!important;color:#111!important;} main>div{max-width:none!important;} main>div>*:not(#print-slip){display:none!important;} #print-slip{display:block!important;border:0!important;padding:0!important;} button,a,select,input{display:none!important;} #print-slip table{break-inside:auto;} #print-slip tr{break-inside:avoid;} #print-slip th,#print-slip td{padding:4px 6px!important;} }
+ @media print {
+   @page { size: A4 portrait; margin: 12mm; }
+   :global(body) { background: #fff !important; color: #111 !important; }
+   main { min-height: 0 !important; padding: 0 !important; background: #fff !important; color: #111 !important; }
+   main > div { max-width: none !important; }
+   :global(main > div > *:not(#print-slip)) { display: none !important; }
+   :global(#print-slip) { display: block !important; border: 0 !important; padding: 0 !important; }
+   :global(button), :global(a), :global(select), :global(input) { display: none !important; }
+   :global(#print-slip table) { break-inside: auto; }
+   :global(#print-slip tr) { break-inside: avoid; }
+   :global(#print-slip th), :global(#print-slip td) { padding: 4px 6px !important; }
+ }
 </style>
