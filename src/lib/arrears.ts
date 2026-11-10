@@ -324,10 +324,10 @@ export function calculateArrears(input: ArrearsInput): ArrearsResult {
       continue;
     }
     if (record.actualTakeHome !== null &&
-        (!Number.isFinite(record.actualTakeHome) || record.actualTakeHome < 0)) {
+        (!Number.isFinite(record.actualTakeHome) || record.actualTakeHome < 0 || record.actualTakeHome > Number.MAX_SAFE_INTEGER)) {
       errors.push('Paid record ' + (index + 1) + ': actual credited salary must be non-negative.');
     }
-    if (!Number.isFinite(record.recovery) || record.recovery < 0) {
+    if (!Number.isFinite(record.recovery) || record.recovery < 0 || record.recovery > Number.MAX_SAFE_INTEGER) {
       errors.push('Paid record ' + (index + 1) + ': recovery must be non-negative.');
     }
     paidByMonth.set(record.month, record);
@@ -438,6 +438,25 @@ export function calculateArrears(input: ArrearsInput): ArrearsResult {
     negativeBalance: 0,
     netArrears: 0
   });
+
+  const totalAmounts = [
+    totals.grossEntitlement, totals.employeeDeductions, totals.employerCpsContribution,
+    totals.revisedTakeHome, totals.actualTakeHome, totals.recoveries,
+    totals.positiveArrears, Math.abs(totals.negativeBalance),
+    totals.netArrears === null ? 0 : Math.abs(totals.netArrears)
+  ];
+  if (totalAmounts.some((value) => !Number.isFinite(value) || value > Number.MAX_SAFE_INTEGER)) {
+    return {
+      valid: false, complete: false,
+      errors: ['The selected arrears period produces totals outside the supported safe whole-rupee range. Reduce or review the entered amounts and period.'],
+      rows: [],
+      totals: {
+        grossEntitlement: 0, employeeDeductions: 0, employerCpsContribution: 0,
+        revisedTakeHome: 0, actualTakeHome: 0, recoveries: 0,
+        positiveArrears: 0, negativeBalance: 0, netArrears: null
+      }
+    };
+  }
 
   return { valid: true, complete, errors: [], rows, totals };
 }
