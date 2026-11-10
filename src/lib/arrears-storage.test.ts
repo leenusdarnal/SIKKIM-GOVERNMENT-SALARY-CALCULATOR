@@ -25,6 +25,7 @@ function input(): ArrearsInput {
       basicPay: 56_000,
       daRate: 58,
       pensionMode: 'cps',
+      cpsMembershipConfirmed: true,
       professionalTaxMode: 'auto'
     },
     changes: [],
@@ -100,6 +101,19 @@ describe('arrears draft storage and import/export', () => {
     const restored = parseArrearsScenarioBackup(serializeArrearsScenario(scenario));
     expect(restored.baseSalary.professionalTaxLevelBand).toBe('below-level-15');
     expect(restored.changes[0].salaryUpdates?.professionalTaxLevelBand).toBe('level-15-and-above');
+  });
+
+  it('accepts a legacy draft without CPS confirmation but leaves it unconfirmed', () => {
+    const legacy = createArrearsScenario(input());
+    delete (legacy.baseSalary as Partial<typeof legacy.baseSalary>).cpsMembershipConfirmed;
+    expect(validateArrearsScenario(legacy)).toBe(true);
+    const restored = parseArrearsScenarioBackup(JSON.stringify(legacy));
+    expect(restored.baseSalary.cpsMembershipConfirmed).toBeUndefined();
+  });
+
+  it('round-trips confirmed CPS membership in saved drafts', () => {
+    const restored = parseArrearsScenarioBackup(serializeArrearsScenario(createArrearsScenario(input())));
+    expect(restored.baseSalary.cpsMembershipConfirmed).toBe(true);
   });
 
   it('rejects a backup with only one of historical schedule or selected components', () => {
