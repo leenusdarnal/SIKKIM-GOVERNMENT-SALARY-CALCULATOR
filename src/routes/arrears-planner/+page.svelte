@@ -45,6 +45,7 @@
     transportAllowance: '',
     otherEarnings: '',
     pensionMode: '',
+    cpsMembershipConfirmed: '',
     manualPension: '',
     professionalTaxMode: '',
     professionalTaxLevelBand: '',
@@ -279,6 +280,7 @@
     if (componentEvent.transportAllowance.trim() !== '') update.transportAllowance = Number(componentEvent.transportAllowance);
     if (componentEvent.otherEarnings.trim() !== '') update.otherEarnings = Number(componentEvent.otherEarnings);
     if (componentEvent.pensionMode !== '') update.pensionMode = componentEvent.pensionMode as SalaryInput['pensionMode'];
+    if (componentEvent.cpsMembershipConfirmed === 'yes') update.cpsMembershipConfirmed = true;
     if (componentEvent.manualPension.trim() !== '') update.manualPension = Number(componentEvent.manualPension);
     if (componentEvent.professionalTaxMode !== '') update.professionalTaxMode = componentEvent.professionalTaxMode as SalaryInput['professionalTaxMode'];
     if (componentEvent.professionalTaxLevelBand !== '') update.professionalTaxLevelBand = componentEvent.professionalTaxLevelBand as SalaryInput['professionalTaxLevelBand'];
@@ -323,6 +325,10 @@
       formError = 'Enter at least one allowance or deduction value for this effective month.';
       return;
     }
+    if (componentEvent.pensionMode === 'cps' && componentEvent.cpsMembershipConfirmed !== 'yes') {
+      formError = 'Confirm CPS membership and the applicable contribution basis for the effective month before adding this change.';
+      return;
+    }
 
     changes = [...changes, candidate];
     eventBasicPay = '';
@@ -330,7 +336,7 @@
     eventDescription = '';
     componentEvent = {
       hraEligible: '', hraRate: '', hraMinimum: '', sbcaRate: '',
-      transportAllowance: '', otherEarnings: '', pensionMode: '',
+      transportAllowance: '', otherEarnings: '', pensionMode: '', cpsMembershipConfirmed: '',
       manualPension: '', professionalTaxMode: '', professionalTaxLevelBand: '', manualProfessionalTax: '',
       gis: '', stampFee: '', otherDeductions: ''
     };
@@ -345,7 +351,8 @@
       sbcaRate: 'SBCA rate',
       transportAllowance: 'Transport',
       otherEarnings: 'Other earnings',
-      pensionMode: 'Pension',
+      pensionMode: 'Pension arrangement',
+      cpsMembershipConfirmed: 'CPS membership / basis confirmed',
       manualPension: 'GPF / manual pension',
       professionalTaxMode: 'Professional Tax mode',
       manualProfessionalTax: 'Professional Tax',
@@ -522,9 +529,15 @@
               <option value="cps">CPS / CPF</option>
               <option value="gpf">GPF</option>
               <option value="manual">Other manual pension</option>
-              <option value="none">No employee pension deduction</option>
+              <option value="none">OPS / no employee contribution (where confirmed)</option>
             </select>
           </label>
+          {#if baseSalary.pensionMode === 'cps'}
+            <label class="col-span-full flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-5 text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
+              <input type="checkbox" checked={baseSalary.cpsMembershipConfirmed === true} onchange={(event) => (baseSalary.cpsMembershipConfirmed = (event.currentTarget as HTMLInputElement).checked)} class="mt-1 size-4 shrink-0" />
+              <span>I verified this employee’s CPS / CPF membership and applicable contribution basis from the signed pension option / service record and DDO / Accounts confirmation. The 09.02.2024 DOP notification announced OPS restoration for employees appointed on or after 01.04.2006; individual option / implementation status must be checked. <a class="underline" href="https://dop.sikkim.gov.in/notificationdoc/23.pdf" target="_blank" rel="noreferrer">Notification No. 23/GEN/DOP</a>.</span>
+            </label>
+          {/if}
           <label class="text-sm font-bold">Professional Tax treatment
             <select bind:value={baseSalary.professionalTaxMode} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700">
               <option value="unselected">Select treatment</option>
@@ -558,7 +571,7 @@
             <input type="number" min="0" step="1" bind:value={baseSalary.otherDeductions} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700" />
           </label>
         </div>
-        <p class="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">CPS/CPF is recalculated as 10% of Basic Pay + DA under the existing salary engine. Historical changes to GPF/manual pension, HRA, SBCA, Professional Tax and other entered components can be scheduled in the effective-dated changes section below.</p>
+        <p class="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">CPS / CPF is calculated as 10% of Basic Pay + DA with an equal State matching share only when individual membership and the contribution basis are confirmed. Otherwise the calculator does not calculate CPS. Historical changes to GPF / manual pension, HRA, SBCA, Professional Tax and other entered components can be scheduled below.</p>
       </div>
     </section>
 
@@ -613,9 +626,15 @@
             </label>
             <label class="text-sm font-bold">Pension arrangement
               <select bind:value={componentEvent.pensionMode} class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
-                <option value="">Unchanged</option><option value="cps">CPS / CPF</option><option value="gpf">GPF</option><option value="manual">Manual pension</option><option value="none">No pension deduction</option>
+                <option value="">Unchanged</option><option value="cps">CPS / CPF</option><option value="gpf">GPF</option><option value="manual">Manual pension</option><option value="none">OPS / no employee contribution</option>
               </select>
             </label>
+            {#if componentEvent.pensionMode === 'cps'}
+              <label class="col-span-full flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm leading-5 text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
+                <input type="checkbox" checked={componentEvent.cpsMembershipConfirmed === 'yes'} onchange={(event) => (componentEvent.cpsMembershipConfirmed = (event.currentTarget as HTMLInputElement).checked ? 'yes' : '')} class="mt-1 size-4 shrink-0" />
+                <span>I verified CPS / CPF membership and the applicable contribution basis for this effective month against the employee’s service record and DDO / Accounts confirmation.</span>
+              </label>
+            {/if}
             <label class="text-sm font-bold">Manual pension / GPF (₹)
               <input type="number" min="0" step="1" value={componentEvent.manualPension} oninput={(event) => (componentEvent.manualPension = (event.currentTarget as HTMLInputElement).value)} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
             </label>
