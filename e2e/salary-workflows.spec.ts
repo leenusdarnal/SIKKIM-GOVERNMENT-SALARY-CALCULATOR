@@ -1,8 +1,5 @@
 import { expect, test } from '@playwright/test';
 
-const selectInsideLabel = (page: import('@playwright/test').Page, labelText: string) =>
-  page.locator('label').filter({ hasText: labelText }).locator('select').first();
-
 test.describe('Sikkim salary calculator browser workflows', () => {
   test('the main calculator computes a Level 17 salary with the correct Sikkim PT band', async ({ page }) => {
     await page.goto('/');
@@ -30,9 +27,9 @@ test.describe('Sikkim salary calculator browser workflows', () => {
 
     await page.getByLabel('Basic pay (₹)', { exact: true }).fill('56000');
     await page.getByLabel('DA rate (%)', { exact: true }).fill('60');
-    await selectInsideLabel(page, 'Pension arrangement').selectOption('none');
-    await selectInsideLabel(page, 'Professional Tax treatment').selectOption('auto');
-    await selectInsideLabel(page, 'Professional Tax pay-level band').selectOption('level-15-and-above');
+    await page.locator('select:has(option[value="cps"])').selectOption('none');
+    await page.locator('select:has(option[value="auto"])').selectOption('auto');
+    await page.locator('select:has(option[value="below-level-15"])').selectOption('level-15-and-above');
 
     const statement = page.locator('#print-slip');
     await expect(statement).toContainText('₹89,400');
@@ -52,15 +49,15 @@ test.describe('Sikkim salary calculator browser workflows', () => {
     await page.getByLabel('Basic pay (₹)', { exact: true }).fill('56000');
     await page.getByLabel('DA rate (%)', { exact: true }).fill('60');
     await selectInsideLabel(page, 'Pension arrangement').selectOption('none');
-    await selectInsideLabel(page, 'Professional Tax treatment').selectOption('none');
+    await page.locator('select:has(option[value="auto"])').selectOption('none');
 
     await page.getByLabel('Effective month', { exact: true }).fill('2026-02');
-    await selectInsideLabel(page, 'Change type').selectOption('annual-increment');
+    await page.locator('select:has(option[value="annual-increment"])').selectOption('annual-increment');
     await page.getByLabel('Order / payslip reference', { exact: true }).fill('Synthetic browser QA fixture — increment');
     await page.getByLabel('New basic pay (₹)', { exact: true }).fill('57000');
     await page.getByRole('button', { name: 'Add effective-dated change' }).click();
 
-    const monthlyTable = page.locator('table').filter({ hasText: 'Actual net paid (₹)' });
+    const monthlyTable = page.locator('table').filter({ hasText: 'Actual net paid' });
     await expect(monthlyTable).toContainText('2026-02');
     await expect(monthlyTable).toContainText('57,000');
 
