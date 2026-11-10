@@ -57,6 +57,16 @@ GitHub Actions runs all three checks on pushes and pull requests.
 ## Deploy to Vercel
 The repository is configured with @sveltejs/adapter-vercel and vercel.json. Connect the GitHub repository to the existing Vercel project. Use install command npm install, build command npm run build, and framework preset SvelteKit.
 
+## Deploy to GitHub Pages
+
+GitHub Actions builds a separate static version with SvelteKit's static adapter and deploys it automatically whenever changes are pushed to `main`. The Vercel adapter and existing Vercel deployment remain unchanged.
+
+- **GitHub Pages:** https://leenusdarnal.github.io/SIKKIM-GOVERNMENT-SALARY-CALCULATOR/
+- **Build locally:** `npm run build:github-pages`
+- **Workflow:** [Deploy to GitHub Pages](./.github/workflows/deploy-pages.yml)
+
+The GitHub Pages build uses the repository base path and a 404 fallback for client-side routes. The live URL becomes available after the first successful Pages deployment and after GitHub Pages is enabled for this repository (Settings → Pages → Build and deployment → GitHub Actions).
+
 ## Source and calculation notes
 See SOURCES.md. The 2018 Revised Pay Rules specify 1 January and 1 July as increment dates, but individual eligibility is not inferred from appointment date alone. The progression page is a service-record aid, not a pay-fixation authority. Direct-recruit fixation, promotion fixation, retrospective arrears and cohort-specific regularisation/ACPS calculations remain unautomated pending complete rule validation.
 
