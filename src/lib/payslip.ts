@@ -1,4 +1,4 @@
-import { calculateSalary, type SalaryInput, type SalaryResult } from './salary';
+import { calculateSalary, validateGpfSubscription, type SalaryInput, type SalaryResult } from './salary';
 
 export interface PayslipEmployee {
   name: string;
@@ -49,6 +49,8 @@ export function buildPayslipModel(month: string, employee: PayslipEmployee, sala
   if (!['cps','gpf','manual','none'].includes(salaryInput.pensionMode)) errors.push('Select the applicable pension / GPF treatment.');
   if (salaryInput.cpsMembershipConfirmed !== undefined && typeof salaryInput.cpsMembershipConfirmed !== 'boolean') errors.push('CPS membership confirmation must be a boolean selection.');
   if (salaryInput.pensionMode === 'cps' && salaryInput.cpsMembershipConfirmed !== true) errors.push('Confirm the employee CPS membership and applicable contribution basis from the service record / DDO before calculating the CPS deduction.');
+  if (salaryInput.gpfMembershipConfirmed !== undefined && typeof salaryInput.gpfMembershipConfirmed !== 'boolean') errors.push('GPF membership confirmation must be a boolean selection.');
+  if (salaryInput.pensionMode === 'gpf') errors.push(...validateGpfSubscription(salaryInput.gpfReferencePay, salaryInput.manualPension, salaryInput.gpfMembershipConfirmed));
   if (!['auto','manual','none'].includes(salaryInput.professionalTaxMode)) errors.push('Select a Professional Tax treatment.');
   if (salaryInput.professionalTaxMode === 'auto' && !['below-level-15','level-15-and-above'].includes(salaryInput.professionalTaxLevelBand)) errors.push('Select the employee pay-level band for Sikkim Professional Tax.');
   const salary = calculateSalary(salaryInput);
@@ -88,6 +90,7 @@ export function createPayslipCsv(model: PayslipModel): string {
     ['Month',model.month],['Employee',model.employee.name],['Employee ID',model.employee.employeeId],
     ['Designation',model.employee.designation],['Department',model.employee.department],['Office',model.employee.office],
     ['District',model.employee.district],['Pay level',model.employee.payLevel],['Cell / stage',model.employee.cell],
+    ['Pension arrangement',model.salaryInput.pensionMode],['GPF reference pay (INR)',model.salaryInput.pensionMode==='gpf'?(model.salaryInput.gpfReferencePay ?? 0):''],['GPF membership confirmed',model.salaryInput.pensionMode==='gpf'?'Yes':''], 
     ['Earnings component','Amount (INR)'],['Basic pay',model.salary.basicPay],['Dearness allowance',model.salary.da],
     ['House rent allowance',model.salary.hra],['SBCA',model.salary.sbca],['Transport allowance',model.salary.transportAllowance],
     ['Other earnings',model.salary.otherEarnings],['Gross salary',model.salary.gross],
