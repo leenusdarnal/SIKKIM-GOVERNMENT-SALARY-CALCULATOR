@@ -361,9 +361,11 @@
       otherDeductions: 'Other deductions'
     };
     return Object.entries(change.salaryUpdates ?? {}).map(([key, value]) => {
-      const display = typeof value === 'boolean'
-        ? value ? 'Eligible' : 'Not eligible'
-        : String(value) + (key.endsWith('Rate') ? '%' : '');
+      const display = key === 'cpsMembershipConfirmed' && value === true
+        ? 'Confirmed'
+        : typeof value === 'boolean'
+          ? value ? 'Eligible' : 'Not eligible'
+          : String(value) + (key.endsWith('Rate') ? '%' : '');
       return (labels[key] ?? key) + ': ' + display;
     }).join(' · ') || '—';
   }
@@ -524,7 +526,7 @@
         <h3 class="text-base font-extrabold">Opening deductions and pension arrangement</h3>
         <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <label class="text-sm font-bold">Pension arrangement
-            <select bind:value={baseSalary.pensionMode} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700">
+            <select value={baseSalary.pensionMode} onchange={(event) => { baseSalary.pensionMode = (event.currentTarget as HTMLSelectElement).value as SalaryInput['pensionMode']; baseSalary.cpsMembershipConfirmed = false; }} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700">
               <option value="unselected">Select arrangement</option>
               <option value="cps">CPS / CPF</option>
               <option value="gpf">GPF</option>
@@ -625,7 +627,7 @@
               <input type="number" min="0" step="1" value={componentEvent.otherEarnings} oninput={(event) => (componentEvent.otherEarnings = (event.currentTarget as HTMLInputElement).value)} placeholder="Unchanged" class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" />
             </label>
             <label class="text-sm font-bold">Pension arrangement
-              <select bind:value={componentEvent.pensionMode} class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
+              <select value={componentEvent.pensionMode} onchange={(event) => { componentEvent.pensionMode = (event.currentTarget as HTMLSelectElement).value; componentEvent.cpsMembershipConfirmed = ''; }} class="mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
                 <option value="">Unchanged</option><option value="cps">CPS / CPF</option><option value="gpf">GPF</option><option value="manual">Manual pension</option><option value="none">OPS / no employee contribution</option>
               </select>
             </label>
@@ -807,7 +809,7 @@
           <p><strong>Office:</strong> {statementMetadata.office || 'Not provided'}</p><p><strong>District:</strong> {statementMetadata.district || 'Not provided'}</p>
           <p><strong>Pay level:</strong> {statementMetadata.payLevel || 'Not provided'}</p><p><strong>Cell / stage:</strong> {statementMetadata.cell || 'Not provided'}</p>
         </div>
-        <div class="mt-5 overflow-x-auto"><table class="w-full min-w-[900px] border-collapse text-xs">
+        <div class="mt-5 overflow-x-auto"><table class="w-full min-w-[1100px] border-collapse text-xs">
           <thead><tr class="border-y border-slate-400 text-left"><th class="py-2">Month</th><th>Basic</th><th>DA</th><th>HRA</th><th>SBCA</th><th>Transport</th><th>Other</th><th>Gross</th><th>Employee deductions</th><th>Employer CPS share (separate)</th><th>Revised net</th><th>Actual paid</th><th>Recovery</th><th>Difference</th></tr></thead>
           <tbody>{#each printableStatement.rows as row}<tr class="border-b border-slate-200"><td class="py-2">{row.month}</td><td>{fmt(row.basicPay)}</td><td>{fmt(row.da)}</td><td>{fmt(row.hra)}</td><td>{fmt(row.sbca)}</td><td>{fmt(row.transportAllowance)}</td><td>{fmt(row.otherEarnings)}</td><td>{fmt(row.grossEntitlement)}</td><td>{fmt(row.employeeDeductions)}</td><td>{fmt(row.employerCpsContribution)}</td><td>{fmt(row.revisedTakeHome)}</td><td>{fmt(row.actualTakeHome)}</td><td>{fmt(row.recovery)}</td><td>{fmt(row.netArrears)}</td></tr>{/each}</tbody>
         </table></div>
