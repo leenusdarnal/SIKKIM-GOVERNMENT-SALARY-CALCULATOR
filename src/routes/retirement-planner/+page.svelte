@@ -68,5 +68,5 @@
  </div>
 </main>
 <style>
- @media print { @page {size:A4 portrait;margin:12mm;} :global(body){background:#fff!important;color:#111!important;} main{min-height:0!important;padding:0!important;background:#fff!important;color:#111!important;} main>div{max-width:none!important;} button,a{display:none!important;} section{break-inside:avoid;box-shadow:none!important;} input{border:0!important;padding:2px!important;} }
+ @media print { @page {size:A4 portrait;margin:12mm;} :global(body){background:#fff!important;color:#111!important;} main{min-height:0!important;padding:0!important;background:#fff!important;color:#111!important;} main>div{max-width:none!important;} main>div>*:not(.print-report){display:none!important;} .print-report{display:block!important;border:0!important;padding:0!important;} button,a,input{display:none!important;} .print-report>div{break-inside:avoid;} }
 </style>
