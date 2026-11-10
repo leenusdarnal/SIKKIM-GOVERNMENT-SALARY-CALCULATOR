@@ -331,7 +331,7 @@
     componentEvent = {
       hraEligible: '', hraRate: '', hraMinimum: '', sbcaRate: '',
       transportAllowance: '', otherEarnings: '', pensionMode: '',
-      manualPension: '', professionalTaxMode: '', manualProfessionalTax: '',
+      manualPension: '', professionalTaxMode: '', professionalTaxLevelBand: '', manualProfessionalTax: '',
       gis: '', stampFee: '', otherDeductions: ''
     };
     formError = '';
