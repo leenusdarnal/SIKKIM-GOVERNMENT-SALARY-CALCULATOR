@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_SALARY_INPUT } from './salary';
 import { getArrearsMonthKeys, type ArrearsInput } from './arrears';
+import type { HistoricalRateEntry } from './historical-rates';
 import {
   createArrearsEntryTemplateCsv,
   createArrearsScenario,
