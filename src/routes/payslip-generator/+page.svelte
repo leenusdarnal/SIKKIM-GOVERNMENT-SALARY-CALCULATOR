@@ -2,10 +2,10 @@
  import {DEFAULT_SALARY_INPUT,type SalaryInput} from '../../lib/salary';
  import {addOrReplacePayslipMonth,buildPayslipModel,createPayslipCsv,type PayslipEmployee,type PayslipMonthRecord} from '../../lib/payslip';
  let month=$state('2026-11');
- let employee=$state<PayslipEmployee>({name:'',employeeId:'',designation:'',department:'',office:'',district:'',payLevel:'',cell:''};
- let input:SalaryInput={...DEFAULT_SALARY_INPUT,daRate:0,hraRate:0,sbcaRate:0,professionalTaxMode:'unselected',pensionMode:'unselected'};
- let history:PayslipMonthRecord[]=[];
- let notice='';
+ let employee=$state<PayslipEmployee>({name:'',employeeId:'',designation:'',department:'',office:'',district:'',payLevel:'',cell:''});
+ let input=$state<SalaryInput>({...DEFAULT_SALARY_INPUT,daRate:0,hraRate:0,sbcaRate:0,professionalTaxMode:'unselected',pensionMode:'unselected'});
+ let history=$state<PayslipMonthRecord[]>([]);
+ let notice=$state('');
  const model=$derived(buildPayslipModel(month,employee,input,history));
  const fmt=(v:number)=>new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:0}).format(v);
  const update=(key:keyof SalaryInput,value:number|boolean|string)=>input={...input,[key]:value};
