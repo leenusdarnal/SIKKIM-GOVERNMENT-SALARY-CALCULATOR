@@ -1,4 +1,5 @@
 import { calculateSalary, type SalaryInput } from './salary';
+import { resolveHistoricalRates, validateHistoricalRateSchedule, type HistoricalRateComponent, type HistoricalRateEntry } from './historical-rates';
 
 export type ArrearChangeType =
   | 'da-revision'
@@ -36,6 +37,9 @@ export interface ArrearsInput {
   baseSalary: SalaryInput;
   changes: ArrearChange[];
   monthlyRecords: MonthlyPaidRecord[];
+  /** Optional verified historical schedule. Only the explicitly selected components are overridden. */
+  historicalRateSchedule?: HistoricalRateEntry[];
+  historicalRateComponents?: HistoricalRateComponent[];
 }
 
 export interface ArrearMonthRow {
@@ -250,6 +254,28 @@ export function calculateArrears(input: ArrearsInput): ArrearsResult {
     errors.push(...validateChange(change, index, months));
   });
 
+  if ((input.historicalRateSchedule === undefined) !== (input.historicalRateComponents === undefined)) {
+    errors.push('Provide both a historical rate schedule and its selected components.');
+  }
+  const selectedHistoricalComponents = input.historicalRateComponents ?? [];
+  if (new Set(selectedHistoricalComponents).size !== selectedHistoricalComponents.length) {
+    errors.push('Historical rate components must not contain duplicates.');
+  }
+  if (input.historicalRateSchedule !== undefined) {
+    errors.push(...validateHistoricalRateSchedule(input.historicalRateSchedule));
+  }
+  const historicalByMonth = new Map<string, ReturnType<typeof resolveHistoricalRates>>();
+  if (input.historicalRateSchedule !== undefined && input.historicalRateComponents !== undefined) {
+    for (const month of months) {
+      const resolution = resolveHistoricalRates(month, input.historicalRateSchedule, selectedHistoricalComponents);
+      if (resolution.errors.length) errors.push(...resolution.errors.map((message) => month + ': ' + message));
+      if (!resolution.complete) {
+        errors.push(month + ': missing verified historical rate(s): ' + resolution.missing.join(', ') + '.');
+      }
+      historicalByMonth.set(month, resolution);
+    }
+  }
+
   const paidByMonth = new Map<string, MonthlyPaidRecord>();
   for (const [index, record] of input.monthlyRecords.entries()) {
     if (!months.includes(record.month)) {
@@ -314,6 +340,15 @@ export function calculateArrears(input: ArrearsInput): ArrearsResult {
       }
       appliedChanges.push(change.description);
       nextChange += 1;
+    }
+
+    const historicalResolution = historicalByMonth.get(month);
+    if (historicalResolution) {
+      salaryState = { ...salaryState, ...historicalResolution.values };
+      for (const entry of historicalResolution.applied) {
+        const unit = entry.unit === 'percent' ? '%' : ' INR';
+        appliedChanges.push('Historical ' + entry.component + ': ' + entry.value + unit + ' (' + entry.sourceReference + ')');
+      }
     }
 
     const salary = calculateSalary(salaryState);
