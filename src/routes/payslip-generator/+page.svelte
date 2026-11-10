@@ -1,0 +1,70 @@
+<script lang="ts">
+ import {DEFAULT_SALARY_INPUT,type SalaryInput} from '../../lib/salary';
+ import {addOrReplacePayslipMonth,buildPayslipModel,createPayslipCsv,type PayslipEmployee,type PayslipMonthRecord} from '../../lib/payslip';
+ let month='2026-11';
+ let employee: PayslipEmployee={name:'',employeeId:'',designation:'',department:'',office:'',district:'',payLevel:'',cell:''};
+ let input:SalaryInput={...DEFAULT_SALARY_INPUT,daRate:0,hraRate:0,sbcaRate:0,professionalTaxMode:'unselected',pensionMode:'unselected'};
+ let history:PayslipMonthRecord[]=[];
+ let notice='';
+ const model=$derived(buildPayslipModel(month,employee,input,history));
+ const fmt=(v:number)=>new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:0}).format(v);
+ const update=(key:keyof SalaryInput,value:number|boolean|string)=>input={...input,[key]:value};
+ const addMonth=()=>{try{history=addOrReplacePayslipMonth(history,{month,gross:model.salary.gross,deductions:model.salary.totalDeductions,net:model.salary.takeHome});notice='Current month added to annual summary.';}catch(e){notice=e instanceof Error?e.message:'Could not add month.';}};
+ const exportCsv=()=>{try{const blob=new Blob([createPayslipCsv(model)],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='sikkim-salary-slip-'+month+'.csv';a.click();URL.revokeObjectURL(url);}catch(e){notice=e instanceof Error?e.message:'Could not export CSV.';}};
+ const fields=[['name','Employee name'],['employeeId','Employee ID'],['designation','Designation'],['department','Department'],['office','Office'],['district','District'],['payLevel','Pay level'],['cell','Cell / stage']] as const;
+ const amounts=[['basicPay','Basic pay (₹)'],['daRate','DA rate (%)'],['hraRate','HRA rate (%)'],['hraMinimum','HRA minimum (₹)'],['sbcaRate','SBCA rate (%)'],['transportAllowance','Transport allowance (₹)'],['otherEarnings','Other earnings (₹)'],['manualPension','Employee pension / GPF (₹)'],['manualProfessionalTax','Professional Tax override (₹)'],['gis','GIS (₹)'],['stampFee','Stamp / fixed fee (₹)'],['otherDeductions','Other deductions (₹)']] as const;
+</script>
+<svelte:head><title>Monthly Salary Slip | Sikkim Government Salary Calculator</title><meta name="description" content="Prepare an indicative monthly salary slip, annual summary and month comparison for Sikkim Government employees."/></svelte:head>
+<main class="min-h-screen bg-[#f4f6f3] px-4 py-8 text-slate-900 dark:bg-[#0b1411] dark:text-slate-100 sm:px-8">
+ <div class="mx-auto max-w-6xl space-y-6">
+  <a href="/" class="text-sm font-bold text-emerald-800 hover:underline dark:text-emerald-400">← Back to salary calculator</a>
+  <header><p class="text-xs font-extrabold uppercase tracking-[0.2em] text-emerald-800 dark:text-emerald-400">Sikkim Government employee utility</p><h1 class="mt-2 text-3xl font-black tracking-tight">Monthly salary slip generator</h1><p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-300">Prepare a month-wise salary statement using the existing Sikkim salary calculation engine. Enter employee-specific rates, eligibility and deductions as confirmed by the applicable orders and payroll records.</p></header>
+  <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
+   <h2 class="text-lg font-black">Employee and payroll details</h2>
+   <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <label class="text-sm font-semibold">Salary month<input type="month" bind:value={month} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700"/></label>
+    {#each fields as field}<label class="text-sm font-semibold">{field[1]}<input type="text" bind:value={employee[field[0]]} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700"/></label>{/each}
+   </div>
+  </section>
+  <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
+   <h2 class="text-lg font-black">Monthly salary inputs</h2>
+   <p class="mt-2 text-xs leading-5 text-slate-500">No DA, HRA, SBCA or deduction rate is assumed in this worksheet. Choose the applicable HRA and pension / Professional Tax treatment below.</p>
+   <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    {#each amounts as field}<label class="text-sm font-semibold">{field[1]}<input type="number" min="0" step="any" value={input[field[0]]} oninput={(e)=>update(field[0],Number(e.currentTarget.value))} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700"/></label>{/each}
+    <label class="text-sm font-semibold">HRA eligibility<select value={input.hraEligible?'yes':'no'} onchange={(e)=>update('hraEligible',e.currentTarget.value==='yes')} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700"><option value="no">Not eligible / not selected</option><option value="yes">Eligible as verified</option></select></label>
+    <label class="text-sm font-semibold">Pension arrangement<select value={input.pensionMode} onchange={(e)=>update('pensionMode',e.currentTarget.value)} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700"><option value="unselected">Not selected</option><option value="cps">CPS</option><option value="gpf">GPF (manual amount)</option><option value="manual">Other (manual amount)</option><option value="none">No employee contribution</option></select></label>
+    <label class="text-sm font-semibold">Professional Tax treatment<select value={input.professionalTaxMode} onchange={(e)=>update('professionalTaxMode',e.currentTarget.value)} class="mt-1 w-full rounded-xl border border-slate-300 bg-transparent p-3 dark:border-slate-700"><option value="unselected">Not selected</option><option value="auto">Use existing Sikkim PT bands</option><option value="manual">Manual override</option><option value="none">Not applicable</option></select></label>
+   </div>
+   <div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <div class="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800"><p class="text-xs text-slate-500">Gross salary</p><p class="mt-1 text-2xl font-black">{fmt(model.salary.gross)}</p></div>
+    <div class="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800"><p class="text-xs text-slate-500">Total deductions</p><p class="mt-1 text-2xl font-black">{fmt(model.salary.totalDeductions)}</p></div>
+    <div class="rounded-2xl bg-emerald-950 p-4 text-white"><p class="text-xs text-emerald-200">Net take-home</p><p class="mt-1 text-2xl font-black">{fmt(model.salary.takeHome)}</p></div>
+   </div>
+  </section>
+  <section id="print-slip" class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
+   <div class="flex flex-wrap items-center justify-between gap-3"><div><h2 class="text-lg font-black">Salary statement preview</h2><p class="text-xs text-slate-500">{month} · {employee.department||'Department not entered'}</p></div><span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900">Draft · For verification</span></div>
+   <div class="mt-4 grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-4">{#each fields as field}<p><span class="text-slate-500">{field[1]}: </span><strong>{employee[field[0]]||'—'}</strong></p>{/each}</div>
+   <div class="mt-5 grid gap-5 md:grid-cols-2">
+    <div><h3 class="mb-2 font-extrabold">Earnings</h3><table class="w-full text-sm"><tbody>{#each [['Basic pay',model.salary.basicPay],['DA',model.salary.da],['HRA',model.salary.hra],['SBCA',model.salary.sbca],['Transport allowance',model.salary.transportAllowance],['Other earnings',model.salary.otherEarnings]] as row}<tr class="border-b border-slate-100 dark:border-slate-800"><td class="py-2">{row[0]}</td><td class="py-2 text-right tabular-nums">{fmt(Number(row[1]))}</td></tr>{/each}</tbody></table></div>
+    <div><h3 class="mb-2 font-extrabold">Deductions</h3><table class="w-full text-sm"><tbody>{#each [['Employee pension / GPF',model.salary.employeePension],['Professional Tax',model.salary.professionalTax],['GIS',model.salary.gis],['Stamp / fixed fee',model.salary.stampFee],['Other deductions',model.salary.otherDeductions]] as row}<tr class="border-b border-slate-100 dark:border-slate-800"><td class="py-2">{row[0]}</td><td class="py-2 text-right tabular-nums">{fmt(Number(row[1]))}</td></tr>{/each}</tbody></table></div>
+   </div>
+   <div class="mt-4 flex flex-wrap justify-between gap-3 border-t border-slate-200 pt-4 text-sm dark:border-slate-700"><p>Gross: <strong>{fmt(model.salary.gross)}</strong></p><p>Total deductions: <strong>{fmt(model.salary.totalDeductions)}</strong></p><p class="text-lg font-black">Net pay: {fmt(model.salary.takeHome)}</p></div>
+   <p class="mt-3 text-xs text-slate-500">Employer CPS contribution (informational, not deducted from take-home): {fmt(model.salary.employerCpsContribution)}</p>
+   <div class="mt-6 grid gap-8 sm:grid-cols-2"><div class="border-t border-slate-400 pt-2 text-xs">Employee signature / date</div><div class="border-t border-slate-400 pt-2 text-xs">DDO / Accounts verification / seal</div></div>
+  </section>
+  <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
+   <div class="flex flex-wrap items-center justify-between gap-3"><div><h2 class="text-lg font-black">Annual summary and month comparison</h2><p class="mt-1 text-xs text-slate-500">Add monthly snapshots to this session's annual summary. Previously recorded months are not inferred from bank or payroll data.</p></div><button type="button" onclick={addMonth} class="rounded-xl bg-emerald-800 px-4 py-2 text-sm font-bold text-white">Add / update this month</button></div>
+   <div class="mt-4 grid gap-3 sm:grid-cols-3"><div class="rounded-xl bg-slate-50 p-4 dark:bg-slate-800"><p class="text-xs text-slate-500">{model.annual.year} gross</p><p class="text-xl font-black">{fmt(model.annual.gross)}</p></div><div class="rounded-xl bg-slate-50 p-4 dark:bg-slate-800"><p class="text-xs text-slate-500">Annual deductions</p><p class="text-xl font-black">{fmt(model.annual.deductions)}</p></div><div class="rounded-xl bg-slate-50 p-4 dark:bg-slate-800"><p class="text-xs text-slate-500">Annual net pay</p><p class="text-xl font-black">{fmt(model.annual.net)}</p></div></div>
+   <h3 class="mt-5 font-extrabold">Compared with previous recorded month</h3>
+   {#if model.previousMonth}<p class="mt-1 text-xs text-slate-500">Previous record: {model.previousMonth.month}</p><div class="mt-3 grid gap-3 sm:grid-cols-3">{#each [['Gross change',model.monthComparison.gross],['Deduction change',model.monthComparison.deductions],['Net pay change',model.monthComparison.net]] as row}<div class="rounded-xl border border-slate-200 p-3 dark:border-slate-700"><p class="text-xs text-slate-500">{row[0]}</p><p class="text-lg font-black">{Number(row[1])>=0?'+':''}{fmt(Number(row[1]))}</p></div>{/each}</div>{:else}<p class="mt-2 text-sm text-slate-500">Add a previous month record to enable month-to-month comparison.</p>{/if}
+   {#if history.length}<div class="mt-5 overflow-x-auto"><table class="w-full min-w-[560px] text-sm"><thead><tr class="border-b text-left dark:border-slate-700"><th class="py-2">Month</th><th class="py-2 text-right">Gross</th><th class="py-2 text-right">Deductions</th><th class="py-2 text-right">Net</th></tr></thead><tbody>{#each history as item}<tr class="border-b border-slate-100 dark:border-slate-800"><td class="py-2">{item.month}</td><td class="py-2 text-right">{fmt(item.gross)}</td><td class="py-2 text-right">{fmt(item.deductions)}</td><td class="py-2 text-right">{fmt(item.net)}</td></tr>{/each}</tbody></table></div>{/if}
+   {#if notice}<p class="mt-3 text-sm" role="status">{notice}</p>{/if}
+  </section>
+  {#if !model.valid}<section class="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950" role="alert"><strong>History needs attention</strong><ul class="mt-2 list-disc pl-5">{#each model.errors as error}<li>{error}</li>{/each}</ul></section>{/if}
+  <div class="flex flex-wrap gap-3 print:hidden"><button type="button" onclick={()=>window.print()} class="rounded-xl bg-emerald-800 px-4 py-3 text-sm font-bold text-white">Print / Save salary slip as PDF</button><button type="button" onclick={exportCsv} class="rounded-xl border border-slate-300 px-4 py-3 text-sm font-bold dark:border-slate-700">Export salary slip CSV</button></div>
+  <section class="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100"><h2 class="font-extrabold">Important verification note</h2><p class="mt-2">This is a draft calculation statement, not an official pay certificate. Confirm pay, allowance eligibility, effective rates, CPS / GPF arrangement, Professional Tax, GIS, recoveries and all other deductions against the current Government orders, service book and payroll records before issue. Annual totals include only the months entered in this session.</p></section>
+ </div>
+</main>
+<style>
+ @media print { @page {size:A4 portrait;margin:12mm;} :global(body){background:#fff!important;color:#111!important;} main{min-height:0!important;padding:0!important;background:#fff!important;color:#111!important;} main>div{max-width:none!important;} button,a,select{display:none!important;} section{break-inside:avoid;box-shadow:none!important;} input{border:0!important;padding:1px!important;} }
+</style>
