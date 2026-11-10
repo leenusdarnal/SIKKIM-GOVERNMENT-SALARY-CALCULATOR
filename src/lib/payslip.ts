@@ -47,6 +47,8 @@ export function buildPayslipModel(month: string, employee: PayslipEmployee, sala
   if (salaryInput.hraRate > 100 || salaryInput.sbcaRate > 100) errors.push('HRA and SBCA rates must not exceed 100%.');
   if (typeof salaryInput.hraEligible !== 'boolean') errors.push('Select whether the employee is eligible for HRA.');
   if (!['cps','gpf','manual','none'].includes(salaryInput.pensionMode)) errors.push('Select the applicable pension / GPF treatment.');
+  if (salaryInput.cpsMembershipConfirmed !== undefined && typeof salaryInput.cpsMembershipConfirmed !== 'boolean') errors.push('CPS membership confirmation must be a boolean selection.');
+  if (salaryInput.pensionMode === 'cps' && salaryInput.cpsMembershipConfirmed !== true) errors.push('Confirm the employee CPS membership and applicable contribution basis from the service record / DDO before calculating the CPS deduction.');
   if (!['auto','manual','none'].includes(salaryInput.professionalTaxMode)) errors.push('Select a Professional Tax treatment.');
   if (salaryInput.professionalTaxMode === 'auto' && !['below-level-15','level-15-and-above'].includes(salaryInput.professionalTaxLevelBand)) errors.push('Select the employee pay-level band for Sikkim Professional Tax.');
   const salary = calculateSalary(salaryInput);
