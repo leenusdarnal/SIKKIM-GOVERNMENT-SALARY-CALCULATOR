@@ -1,4 +1,4 @@
-# Integration QA audit — Sikkim Professional Tax and salary modules
+# Integration QA audit — Sikkim Professional Tax configuration and salary modules
 
 ## Finding and treatment
 
@@ -9,17 +9,17 @@ The ₹150 below Level 15 / ₹200 at Level 15 and above configuration was suppl
 The engine does not infer the band from gross salary. The regular pay-matrix calculator can suggest a band from the selected level; the payslip and arrears worksheets require explicit band selection whenever the reference estimate is chosen. Manual override and not-applicable options remain available.
 
 ## Cross-module changes
-- `src/lib/salary.ts`: shared `SalaryInput` includes a typed Professional Tax pay-level band; automatic calculation uses the band, not gross pay.
-- `src/lib/components/SalaryCalculator.svelte`: derives the band from the selected Sikkim pay-matrix level and updates explanatory copy.
-- `src/lib/payslip.ts` and `src/routes/payslip-generator/+page.svelte`: automatic Professional Tax requires a selected band; UI presents both Sikkim bands.
-- `src/lib/arrears.ts` and `src/routes/arrears-planner/+page.svelte`: opening salary basis and effective-dated changes support pay-level band selection; automatic mode is blocked when the band is missing.
+- `src/lib/salary.ts`: shared `SalaryInput` includes a typed Professional Tax pay-level band; the optional project reference estimate uses that band, not gross pay, and is not a statutory determination.
+- `src/lib/components/SalaryCalculator.svelte`: derives the project reference-estimate band from the selected pay-matrix level and labels its non-authoritative status.
+- `src/lib/payslip.ts` and `src/routes/payslip-generator/+page.svelte`: the optional reference estimate requires a selected band; the UI recommends the employee's actual payslip amount pending source confirmation.
+- `src/lib/arrears.ts` and `src/routes/arrears-planner/+page.svelte`: opening salary basis and effective-dated changes support pay-level band selection; reference-estimate mode is blocked when the band is missing and carries an explicit source caveat.
 - Salary, payslip and arrears tests cover band boundaries, missing-band safeguards and monthly application.
 
 ## Rule-source limitation
-The ₹150 / ₹200 amounts and Level 15 threshold are based on the user's previously supplied Sikkim rule. Before treating this as a legally authoritative payroll configuration, attach or confirm the current Sikkim Government notification / circular and check applicability and exemptions with DDO / Accounts. This audit does not claim an independent legal verification of the underlying notification.
+The current Commercial Taxes Division salary/wage schedule and the project's supplied pay-level rule do not presently reconcile: the available schedule text has inconsistent income-band boundaries and does not establish a Level 15 threshold. The ₹150 / ₹200 figures remain only an optional project reference estimate. Obtain the current signed notification or written DDO / Accounts clarification for the employee category before treating any amount as statutory.
 
 ## QA boundaries
-- No central-government gross-income slabs are used for automatic Sikkim PT.
+- No central-government gross-income slabs are used. The project pay-level reference estimate is not represented as a verified statutory schedule.
 - Manual PT and exempt/not-applicable paths remain explicit.
 - This change does not modify CPS, GPF, GIS or other deduction formulas.
 - No employee data is sent to a server by these local calculation modules.
@@ -178,7 +178,7 @@ This is a calculation safeguard, not an official GPF account verification or pay
 ### Scope added
 - Added `src/lib/integration-workflows.test.ts` with nine integration-level scenarios across the shared salary, payslip, arrears, historical-rate, storage, pay-progression and retirement calculation modules.
 - Verified that the payslip salary, annual year-to-date totals and CSV are consistent with the shared salary engine; months after the selected payslip month are excluded.
-- Verified the Sikkim Professional Tax pay-level bands (₹150 below Level 15 and ₹200 at Level 15 and above) through the shared calculation output.
+- Verified the optional project Professional Tax reference estimate (₹150 below Level 15 and ₹200 at Level 15 and above) through the shared calculation output; this is a calculation regression check, not verification of statutory applicability.
 - Verified effective-dated DA and basic-pay changes through monthly arrears rows and the final statement model, including withholding the final statement until all actual-paid months are entered.
 - Verified monthly paid-pay CSV import, historical DA resolution, arrears scenario local persistence, JSON backup/restore and identical recalculated rows/totals after restoration.
 - Verified that the CPS State matching share is reported separately and does not inflate employee deductions or reduce take-home pay.
@@ -212,7 +212,7 @@ This is a calculation safeguard, not an official GPF account verification or pay
 - The main salary calculator now explicitly synchronizes its selected pay level in its level-change handler.
 
 ### Populated browser scenarios
-- Main calculator: Level 17, Cell 1, DA 60%, no employee pension deduction, and Level-15-and-above Professional Tax. The browser test confirms gross ₹89,600 and take-home ₹89,400, and checks the PT band label in the salary breakdown.
+- Main calculator: Level 17, Cell 1, DA 60%, no employee pension deduction, and the Level-15-and-above project PT reference estimate. The browser test confirms gross ₹89,600 and take-home ₹89,400, and checks the estimate label in the salary breakdown.
 - Payslip generator: enters Basic Pay ₹56,000, DA 60%, no employee pension deduction and the Level-15-and-above PT band; confirms the ₹89,600 gross / ₹89,400 net statement, records the selected month and checks annual summary and print availability.
 - Arrears planner: checks a January–February 2026 example with Basic Pay ₹56,000, DA 60%, and a February effective-dated increment to ₹57,000; enters the corresponding actual credited amounts, verifies the complete statement and confirms the statement remains present in print media.
 - Mobile routes: checks the home calculator, payslip, arrears, pay progression, retirement, GPF and temporary-pay pages at a 390 × 844 viewport and asserts that the document does not overflow horizontally.
