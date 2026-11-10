@@ -26,6 +26,22 @@ describe('monthly payslip',()=>{
   expect(m.valid).toBe(false);
   expect(m.errors.join(' ')).toContain('pay-level band');
  });
+ it('excludes later months from the selected month annual-to-date totals',()=>{
+  const m=buildPayslipModel('2026-06',employee,input,[{month:'2026-05',gross:100,deductions:10,net:90},{month:'2026-07',gross:700,deductions:70,net:630}]);
+  expect(m.annual.monthsRecorded).toBe(2);
+  expect(m.annual.gross).toBe(50100);
+ });
+ it('blocks invalid salary inputs rather than silently converting them to zero',()=>{
+  expect(buildPayslipModel('2026-11',employee,{...input,basicPay:Number.NaN}).valid).toBe(false);
+  expect(buildPayslipModel('2026-11',employee,{...input,daRate:-1}).valid).toBe(false);
+  expect(buildPayslipModel('2026-11',employee,{...input,pensionMode:'unselected'}).valid).toBe(false);
+  expect(buildPayslipModel('2026-11',employee,{...input,professionalTaxMode:'unselected'}).valid).toBe(false);
+ });
+ it('neutralizes spreadsheet formula prefixes in exported employee text fields',()=>{
+  const m=buildPayslipModel('2026-11',{...employee,name:'=HYPERLINK("https://bad.example","click")'},input);
+  const csv=createPayslipCsv(m);
+  expect(csv).toContain("\"'=HYPERLINK(\"\"https://bad.example\"\",\"\"click\"\")\"");
+ });
  it('exports a CSV statement with earnings, deductions and annual totals',()=>{
   const m=buildPayslipModel('2026-11',employee,input,[{month:'2026-10',gross:49000,deductions:1000,net:48000}]);
   const csv=createPayslipCsv(m);expect(csv).toContain('Net take-home');expect(csv).toContain('Annual gross to date');expect(csv).toContain('Test Employee');
