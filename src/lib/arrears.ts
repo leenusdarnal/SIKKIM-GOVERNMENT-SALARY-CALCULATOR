@@ -138,6 +138,12 @@ function validateSalaryBasis(input: SalaryInput): string[] {
   if (!['cps', 'gpf', 'manual', 'none'].includes(input.pensionMode)) {
     errors.push('Select the applicable pension arrangement before calculating arrears.');
   }
+  if (input.cpsMembershipConfirmed !== undefined && typeof input.cpsMembershipConfirmed !== 'boolean') {
+    errors.push('CPS membership confirmation must be a boolean selection.');
+  }
+  if (input.pensionMode === 'cps' && input.cpsMembershipConfirmed !== true) {
+    errors.push('Confirm CPS membership and the applicable contribution basis in the opening salary record before calculating arrears.');
+  }
   if (!['auto', 'manual', 'none'].includes(input.professionalTaxMode)) {
     errors.push('Select a Professional Tax treatment before calculating arrears.');
   }
@@ -150,7 +156,7 @@ function validateSalaryBasis(input: SalaryInput): string[] {
 
 const ALLOWED_SALARY_UPDATE_KEYS = new Set([
   'hraEligible', 'hraRate', 'hraMinimum', 'sbcaRate',
-  'transportAllowance', 'otherEarnings', 'pensionMode', 'manualPension',
+  'transportAllowance', 'otherEarnings', 'pensionMode', 'cpsMembershipConfirmed', 'manualPension',
   'professionalTaxMode', 'professionalTaxLevelBand', 'manualProfessionalTax', 'gis', 'stampFee', 'otherDeductions'
 ]);
 
@@ -177,6 +183,10 @@ function validateSalaryUpdate(update: ArrearSalaryUpdate, index: number): string
       if (!['cps', 'gpf', 'manual', 'none'].includes(String(value))) {
         errors.push('Change ' + (index + 1) + ': invalid pension arrangement.');
       }
+      continue;
+    }
+    if (key === 'cpsMembershipConfirmed') {
+      if (value !== true) errors.push('Change ' + (index + 1) + ': CPS membership and contribution basis can only be marked confirmed after verification.');
       continue;
     }
     if (key === 'professionalTaxLevelBand') {
@@ -230,6 +240,9 @@ function validateChange(change: ArrearChange, index: number, months: string[]): 
   if (change.type === 'manual-adjustment' &&
       change.basicPay === undefined && change.daRate === undefined) {
     errors.push('Change ' + (index + 1) + ': enter a new basic pay and/or DA rate.');
+  }
+  if (change.salaryUpdates?.pensionMode === 'cps' && change.salaryUpdates.cpsMembershipConfirmed !== true) {
+    errors.push('Change ' + (index + 1) + ': confirm CPS membership and contribution basis in the effective-dated change before applying CPS.');
   }
   if (change.type === 'allowance-deduction') {
     if (change.salaryUpdates === undefined) {
