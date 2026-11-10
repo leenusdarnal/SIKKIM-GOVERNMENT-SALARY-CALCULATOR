@@ -17,6 +17,7 @@
   let salaryMonth = $state('2026-11');
   let calculationError = $state('');
   let hasCalculated = $state(false);
+  let clientReady = $state(false);
   let dark = $state(false);
   let matrixOpen = $state(false);
   let showSources = $state(false);
@@ -48,6 +49,7 @@
       // Theme persistence is optional; a restricted browser still gets the light theme.
       dark = false;
     }
+    clientReady = true;
   });
 
   function changeLevel(event: Event) {
