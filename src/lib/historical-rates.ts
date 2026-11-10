@@ -72,7 +72,8 @@ export function validateHistoricalRateSchedule(entries: HistoricalRateEntry[]): 
 }
 
 function componentMaximum(component: HistoricalRateComponent): number {
-  if (component === 'transportAllowance') return Number.MAX_SAFE_INTEGER;\n  return component === 'daRate' ? 200 : 100;
+  if (component === 'transportAllowance') return Number.MAX_SAFE_INTEGER;
+  return component === 'daRate' ? 200 : 100;
 }
 
 /** Resolves only requested components. Gaps and unverified entries are never guessed or interpolated. */
