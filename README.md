@@ -57,3 +57,7 @@ See SOURCES.md. The 2018 Revised Pay Rules specify 1 January and 1 July as incre
 
 ## License
 No license file is currently provided. Obtain permission from the repository owner before reuse or redistribution.
+
+
+### Printable salary / arrears statement
+The arrears planner includes a print-ready A4 landscape statement for DDO / Accounts review. It is enabled only after valid calculation and complete monthly actual-pay entry. Optional employee metadata is session-only and excluded from draft persistence and JSON backups. Use the browser Print dialog and choose Save as PDF. See [SALARY-ARREARS-STATEMENT-AUDIT.md](./SALARY-ARREARS-STATEMENT-AUDIT.md). This is a draft calculation aid, not an official pay certificate or sanction.
