@@ -14,7 +14,8 @@ const baseSalary: SalaryInput = {
   basicPay: 56_000,
   daRate: 58,
   pensionMode: 'cps',
-  professionalTaxMode: 'auto',\n  professionalTaxLevelBand: 'level-15-and-above'
+  professionalTaxMode: 'auto',
+  professionalTaxLevelBand: 'level-15-and-above'
 };
 
 function makeInput(overrides: Partial<ArrearsInput> = {}): ArrearsInput {
