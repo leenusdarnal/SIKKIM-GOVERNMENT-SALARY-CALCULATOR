@@ -133,6 +133,9 @@ function validateSalaryBasis(input: SalaryInput): string[] {
     }
   }
 
+  if (input.cpsMembershipConfirmed !== undefined && typeof input.cpsMembershipConfirmed !== 'boolean') {
+    errors.push('CPS membership confirmation must be a boolean value.');
+  }
   if (!(input.basicPay > 0)) errors.push('Enter a basic pay greater than zero.');
   if (input.daRate > 200) errors.push('DA rate must be between 0% and 200%.');
   if (input.hraRate > 100 || input.sbcaRate > 100) {
