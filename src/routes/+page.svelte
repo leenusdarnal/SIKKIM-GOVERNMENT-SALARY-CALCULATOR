@@ -14,6 +14,6 @@
   <meta name="twitter:description" content="Estimate monthly pay, allowances and deductions for Sikkim Government employees." />
 </svelte:head>
 <div class="border-b border-emerald-100 bg-emerald-50 px-4 py-3 text-center text-sm font-semibold text-emerald-900 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">
-  Tools: <a class="underline underline-offset-4" href="/pay-progression">Pay progression & service history</a> · <a class="underline underline-offset-4" href="/gpf-planner">GPF contribution planner</a> · <a class="underline underline-offset-4" href="/arrears-planner">Salary arrears planner</a> · <a class="underline underline-offset-4" href="/retirement-planner">Retirement benefits estimator</a>
+  Tools: <a class="underline underline-offset-4" href="/pay-progression">Pay progression & service history</a> · <a class="underline underline-offset-4" href="/gpf-planner">GPF contribution planner</a> · <a class="underline underline-offset-4" href="/arrears-planner">Salary arrears planner</a> · <a class="underline underline-offset-4" href="/retirement-planner">Retirement benefits estimator</a> · <a class="underline underline-offset-4" href="/payslip-generator">Monthly salary slip</a>
 </div>
 <SalaryCalculator />
