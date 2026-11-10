@@ -252,6 +252,16 @@ export function calculateArrears(input: ArrearsInput): ArrearsResult {
   errors.push(...validateSalaryBasis(input.baseSalary));
   input.changes.forEach((change, index) => {
     errors.push(...validateChange(change, index, months));
+    const scheduled = input.historicalRateComponents ?? [];
+    if (change.daRate !== undefined && scheduled.includes('daRate')) {
+      errors.push('Change ' + (index + 1) + ': DA is controlled by the historical rate schedule; remove the duplicate manual DA rate.');
+    }
+    for (const component of scheduled) {
+      if (component !== 'daRate' && change.salaryUpdates &&
+          Object.prototype.hasOwnProperty.call(change.salaryUpdates, component)) {
+        errors.push('Change ' + (index + 1) + ': ' + component + ' is controlled by the historical rate schedule; remove the duplicate manual value.');
+      }
+    }
   });
 
   if ((input.historicalRateSchedule === undefined) !== (input.historicalRateComponents === undefined)) {
