@@ -34,6 +34,18 @@ describe('monthly payslip',()=>{
   expect(confirmed.salary.totalDeductions).toBe(confirmed.salary.employeePension);
   expect(confirmed.salary.takeHome).toBe(confirmed.salary.gross-confirmed.salary.employeePension);
  });
+ it('blocks GPF payslips without account confirmation, reference pay or a valid subscription',()=>{
+  const unconfirmed=buildPayslipModel('2026-11',employee,{...input,pensionMode:'gpf',manualPension:2000,gpfReferencePay:30000,gpfMembershipConfirmed:false});
+  expect(unconfirmed.valid).toBe(false);expect(unconfirmed.errors.join(' ')).toContain('GPF account');
+  const noReference=buildPayslipModel('2026-11',employee,{...input,pensionMode:'gpf',manualPension:2000,gpfMembershipConfirmed:true});
+  expect(noReference.valid).toBe(false);expect(noReference.errors.join(' ')).toContain('reference pay');
+  const belowMinimum=buildPayslipModel('2026-11',employee,{...input,pensionMode:'gpf',manualPension:1799,gpfReferencePay:30000,gpfMembershipConfirmed:true});
+  expect(belowMinimum.valid).toBe(false);expect(belowMinimum.errors.join(' ')).toContain('6%–100%');
+  const validInput={...input,pensionMode:'gpf' as const,manualPension:2000,gpfReferencePay:30000,gpfMembershipConfirmed:true};
+  const valid=buildPayslipModel('2026-11',employee,validInput);
+  expect(valid.valid).toBe(true);expect(valid.salary.employeePension).toBe(2000);expect(valid.salary.employerCpsContribution).toBe(0);
+  expect(valid.salary.totalDeductions).toBe(2000);expect(valid.salary.takeHome).toBe(valid.salary.gross-2000);
+ });
  it('requires a Sikkim pay-level band for automatic Professional Tax',()=>{
   const m=buildPayslipModel('2026-11',employee,{...input,professionalTaxMode:'auto',professionalTaxLevelBand:'unselected'});
   expect(m.valid).toBe(false);
