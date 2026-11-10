@@ -50,6 +50,6 @@
         <li>The annual figure assumes twelve equal monthly subscriptions; actual deductions may differ because of joining, retirement, leave or permitted subscription changes.</li>
       </ul>
     </section>
-    <p class="text-xs text-slate-500">Primary source: General Provident Fund (Sikkim Services) Rules, 1984, Notification No. 8/Fin dated 16 October 1984, effective 1 January 1985. Verify the current amended rules and subscription order before acting.</p>
+    <p class="text-xs text-slate-500">Primary source: <a class="underline" href="http://www.sikkimfred.gov.in/user/Rules_1984.aspx" target="_blank" rel="noreferrer">General Provident Fund (Sikkim Services) Rules, 1984</a>, Notification No. 8/Fin dated 16 October 1984, effective 1 January 1985. The rules prescribe a 6% minimum and 100% maximum subscription against applicable reference emoluments. Verify the current amended rules, membership and preceding 31 March reference-pay basis with Accounts / DDO before acting.</p>
   </div>
 </main>
