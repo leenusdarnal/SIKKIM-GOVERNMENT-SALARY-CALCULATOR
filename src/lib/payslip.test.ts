@@ -62,6 +62,13 @@ describe('monthly payslip',()=>{
   expect(buildPayslipModel('2026-11',employee,{...input,pensionMode:'unselected'}).valid).toBe(false);
   expect(buildPayslipModel('2026-11',employee,{...input,professionalTaxMode:'unselected'}).valid).toBe(false);
  });
+ it('withholds salary results for amounts outside the safe calculation range',()=>{
+  const m=buildPayslipModel('2026-11',employee,{...input,basicPay:Number.MAX_VALUE});
+  expect(m.valid).toBe(false);
+  expect(m.errors.join(' ')).toContain('supported calculation range');
+  expect(()=>createPayslipCsv(m)).toThrow(/validation issues/);
+ });
+
  it('neutralizes spreadsheet formula prefixes in exported employee text fields',()=>{
   const m=buildPayslipModel('2026-11',{...employee,name:'=HYPERLINK("https://bad.example","click")'},input);
   const csv=createPayslipCsv(m);
