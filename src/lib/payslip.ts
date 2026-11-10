@@ -1,4 +1,4 @@
-import { calculateSalary, validateGpfSubscription, type SalaryInput, type SalaryResult } from './salary';
+import { calculateSalary, validateSalaryInput, type SalaryInput, type SalaryResult } from './salary';
 
 export interface PayslipEmployee {
   name: string;
@@ -33,26 +33,11 @@ export function buildPayslipModel(month: string, employee: PayslipEmployee, sala
   if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) errors.push('Select a valid salary month.');
   for (const [index, record] of history.entries()) {
     if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(record.month)) errors.push('History row '+(index+1)+' has an invalid month.');
-    if (![record.gross,record.deductions,record.net].every(v=>Number.isFinite(v)&&v>=0)) errors.push('History row '+(index+1)+' contains an invalid amount.');
+    if (![record.gross,record.deductions,record.net].every(v=>Number.isFinite(v)&&v>=0&&v<=Number.MAX_SAFE_INTEGER)) errors.push('History row '+(index+1)+' contains an invalid amount.');
   }
   const unique = new Set(history.map(r=>r.month));
   if (unique.size !== history.length) errors.push('Annual history contains duplicate months.');
-  const numericFields: (keyof SalaryInput)[] = ['basicPay','daRate','hraRate','hraMinimum','sbcaRate','transportAllowance','otherEarnings','manualPension','manualProfessionalTax','gis','stampFee','otherDeductions'];
-  for (const field of numericFields) {
-    const value = salaryInput[field];
-    if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) errors.push('Salary input ' + field + ' must be a valid non-negative amount.');
-  }
-  if (!(salaryInput.basicPay > 0)) errors.push('Enter a basic pay greater than zero.');
-  if (salaryInput.daRate > 200) errors.push('DA rate must not exceed 200%.');
-  if (salaryInput.hraRate > 100 || salaryInput.sbcaRate > 100) errors.push('HRA and SBCA rates must not exceed 100%.');
-  if (typeof salaryInput.hraEligible !== 'boolean') errors.push('Select whether the employee is eligible for HRA.');
-  if (!['cps','gpf','manual','none'].includes(salaryInput.pensionMode)) errors.push('Select the applicable pension / GPF treatment.');
-  if (salaryInput.cpsMembershipConfirmed !== undefined && typeof salaryInput.cpsMembershipConfirmed !== 'boolean') errors.push('CPS membership confirmation must be a boolean selection.');
-  if (salaryInput.pensionMode === 'cps' && salaryInput.cpsMembershipConfirmed !== true) errors.push('Confirm the employee CPS membership and applicable contribution basis from the service record / DDO before calculating the CPS deduction.');
-  if (salaryInput.gpfMembershipConfirmed !== undefined && typeof salaryInput.gpfMembershipConfirmed !== 'boolean') errors.push('GPF membership confirmation must be a boolean selection.');
-  if (salaryInput.pensionMode === 'gpf') errors.push(...validateGpfSubscription(salaryInput.gpfReferencePay, salaryInput.manualPension, salaryInput.gpfMembershipConfirmed));
-  if (!['auto','manual','none'].includes(salaryInput.professionalTaxMode)) errors.push('Select a Professional Tax treatment.');
-  if (salaryInput.professionalTaxMode === 'auto' && !['below-level-15','level-15-and-above'].includes(salaryInput.professionalTaxLevelBand)) errors.push('Select the employee pay-level band for Sikkim Professional Tax.');
+  errors.push(...validateSalaryInput(salaryInput));
   const salary = calculateSalary(salaryInput);
   const year = Number(month.slice(0,4));
   const yearRecords = history.filter(r=>r.month.startsWith(String(year)+'-') && r.month < month).concat({
@@ -78,7 +63,7 @@ export function buildPayslipModel(month: string, employee: PayslipEmployee, sala
   };
 }
 export function addOrReplacePayslipMonth(history: PayslipMonthRecord[], record: PayslipMonthRecord): PayslipMonthRecord[] {
-  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(record.month) || ![record.gross,record.deductions,record.net].every(v=>Number.isFinite(v)&&v>=0)) {
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(record.month) || ![record.gross,record.deductions,record.net].every(v=>Number.isFinite(v)&&v>=0&&v<=Number.MAX_SAFE_INTEGER)) {
     throw new Error('Enter a valid month and non-negative salary amounts.');
   }
   return [...history.filter(r=>r.month!==record.month),{...record}].sort((a,b)=>a.month.localeCompare(b.month));
