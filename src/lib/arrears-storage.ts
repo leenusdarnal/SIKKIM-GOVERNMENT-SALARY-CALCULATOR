@@ -5,6 +5,7 @@ import {
   type MonthlyPaidRecord
 } from './arrears';
 import type { SalaryInput } from './salary';
+import type { HistoricalRateComponent, HistoricalRateEntry } from './historical-rates';
 
 export const ARREARS_SCENARIO_VERSION = 1;
 export const ARREARS_SCENARIO_STORAGE_KEY = 'sikkim-salary-arrears-scenario-v1';
@@ -87,6 +88,21 @@ function isMonthlyRecord(value: unknown, months: string[]): value is MonthlyPaid
     typeof value.recovery === 'number' && Number.isFinite(value.recovery) && value.recovery >= 0;
 }
 
+function isHistoricalRateEntry(value: unknown): value is HistoricalRateEntry {
+  if (!isObject(value)) return false;
+  const components = ['daRate', 'hraRate', 'sbcaRate', 'transportAllowance'];
+  const component = String(value.component);
+  const validMonth = (v: unknown) => typeof v === 'string' && /^\\d{4}-(0[1-9]|1[0-2])$/.test(v);
+  const expectedUnit = component === 'transportAllowance' ? 'inr' : 'percent';
+  const maximum = component === 'daRate' ? 200 : component === 'transportAllowance' ? Number.MAX_SAFE_INTEGER : 100;
+  return components.includes(component) && validMonth(value.effectiveFrom) &&
+    (value.effectiveTo === undefined || (validMonth(value.effectiveTo) && String(value.effectiveTo) >= String(value.effectiveFrom))) &&
+    typeof value.value === 'number' && Number.isFinite(value.value) && value.value >= 0 &&
+    value.value <= maximum && value.unit === expectedUnit &&
+    typeof value.sourceReference === 'string' && typeof value.verified === 'boolean' &&
+    (value.applicability === undefined || typeof value.applicability === 'string');
+}
+
 export function createArrearsScenario(input: ArrearsInput, savedAt = new Date().toISOString()): ArrearsScenario {
   return {
     version: ARREARS_SCENARIO_VERSION,
@@ -98,7 +114,13 @@ export function createArrearsScenario(input: ArrearsInput, savedAt = new Date().
       ...change,
       ...(change.salaryUpdates ? { salaryUpdates: { ...change.salaryUpdates } } : {})
     })),
-    monthlyRecords: input.monthlyRecords.map((record) => ({ ...record }))
+    monthlyRecords: input.monthlyRecords.map((record) => ({ ...record })),
+    ...(input.historicalRateSchedule === undefined ? {} : {
+      historicalRateSchedule: input.historicalRateSchedule.map((entry) => ({ ...entry }))
+    }),
+    ...(input.historicalRateComponents === undefined ? {} : {
+      historicalRateComponents: [...input.historicalRateComponents]
+    })
   };
 }
 
@@ -113,7 +135,17 @@ export function validateArrearsScenario(value: unknown): value is ArrearsScenari
   if (!value.changes.every((change) => isChange(change, months))) return false;
   if (!value.monthlyRecords.every((record) => isMonthlyRecord(record, months))) return false;
   const paidMonths = (value.monthlyRecords as MonthlyPaidRecord[]).map((record) => record.month);
-  return new Set(paidMonths).size === paidMonths.length;
+  if (new Set(paidMonths).size !== paidMonths.length) return false;
+  if (value.historicalRateSchedule !== undefined) {
+    if (!Array.isArray(value.historicalRateSchedule) || !value.historicalRateSchedule.every(isHistoricalRateEntry)) return false;
+  }
+  if (value.historicalRateComponents !== undefined) {
+    const allowed: HistoricalRateComponent[] = ['daRate', 'hraRate', 'sbcaRate', 'transportAllowance'];
+    if (!Array.isArray(value.historicalRateComponents) ||
+        !value.historicalRateComponents.every((item) => allowed.includes(item as HistoricalRateComponent)) ||
+        new Set(value.historicalRateComponents).size !== value.historicalRateComponents.length) return false;
+  }
+  return true;
 }
 
 function encodedSize(text: string): number {
