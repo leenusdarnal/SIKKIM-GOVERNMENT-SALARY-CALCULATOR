@@ -42,6 +42,7 @@
   </section>
   <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
    <h2 class="text-lg font-black">Estimated results</h2>
+   {#if !result.valid}<p class="mt-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100" role="status">Results are withheld because one or more benefit sections are incomplete or invalid. Complete the required inputs and review the validation messages above.</p>{/if}
    <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
     <div class="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800"><p class="text-xs text-slate-500">Estimated monthly pension</p><p class="mt-1 text-2xl font-black">{fmt(result.monthlyPension)}</p></div>
     <div class="rounded-2xl bg-slate-50 p-4 dark:bg-slate-800"><p class="text-xs text-slate-500">Monthly pension after commutation</p><p class="mt-1 text-2xl font-black">{fmt(result.residualMonthlyPension)}</p></div>
@@ -51,7 +52,7 @@
     <div class="rounded-2xl border border-slate-200 p-4 dark:border-slate-700"><p class="text-xs text-slate-500">Other one-time benefits</p><p class="mt-1 text-xl font-black">{fmt(result.otherRetirementBenefits)}</p></div>
    </div>
    <div class="mt-4 rounded-2xl bg-emerald-950 p-5 text-white"><p class="text-xs font-bold uppercase tracking-wider text-emerald-200">Total estimated one-time benefits</p><p class="mt-1 text-3xl font-black">{fmt(result.totalOneTimeBenefits)}</p><p class="mt-2 text-xs text-emerald-100">Excludes recurring monthly pension and any unentered benefits, deductions, tax or recoveries.</p></div>
-   <div class="mt-5 flex flex-wrap gap-3"><button type="button" class="rounded-xl bg-emerald-800 px-4 py-3 text-sm font-bold text-white hover:bg-emerald-900" onclick={()=>window.print()}>Print / Save as PDF</button></div>
+   <div class="mt-5 flex flex-wrap gap-3"><button type="button" class="rounded-xl bg-emerald-800 px-4 py-3 text-sm font-bold text-white hover:bg-emerald-900" disabled={!result.valid} onclick={()=>window.print()} class:opacity-40={!result.valid} class:cursor-not-allowed={!result.valid}>Print / Save as PDF</button></div>
   </section>
   <section class="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-950 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
    <h2 class="font-extrabold">Important safeguards</h2>
