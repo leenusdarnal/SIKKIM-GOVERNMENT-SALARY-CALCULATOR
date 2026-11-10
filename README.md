@@ -76,4 +76,4 @@ The /payslip-generator route creates a monthly draft salary statement using the 
 
 
 ### Integration QA note
-The shared Professional Tax calculation now follows the Sikkim pay-level bands supplied for this calculator (₹150 below Level 15; ₹200 at Level 15 and above), rather than gross-income slabs. The selected band is explicit in payslip and arrears workflows. See [INTEGRATION-QA-AUDIT.md](./INTEGRATION-QA-AUDIT.md) for module impact, safeguards and source-confirmation limitation.
+Professional Tax supports a manual amount (recommended) and an optional ₹150 / ₹200 pay-level reference estimate supplied for this project. The estimate is not an independently verified statutory rule: the current official salary/wage schedule uses income-based ranges whose boundary wording needs clarification. Verify the employee-specific deduction with the current notification and DDO / Accounts before using the estimate. See [INTEGRATION-QA-AUDIT.md](./INTEGRATION-QA-AUDIT.md) and [SOURCES.md](./SOURCES.md).
