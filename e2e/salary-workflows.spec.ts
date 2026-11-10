@@ -64,6 +64,11 @@ test.describe('Sikkim salary calculator browser workflows', () => {
     await expect(monthlyTable).toContainText('2026-02');
     await expect(monthlyTable).toContainText('57,000');
 
+    await page.getByRole('button', { name: 'Edit', exact: true }).click();
+    await page.getByLabel('New basic pay (₹)', { exact: true }).fill('57500');
+    await page.getByRole('button', { name: 'Save change', exact: true }).click();
+    await expect(monthlyTable).toContainText('57,500');
+
     await page.getByLabel('Actual net salary credited for 2026-01').fill('89600');
     await page.getByLabel('Actual net salary credited for 2026-02').fill('91200');
 
