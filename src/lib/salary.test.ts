@@ -117,7 +117,7 @@ describe('salary calculation', () => {
 
   it('calculates Level 1 Cell 1', () => {
     const result = calculateSalary({
-      ...base, basicPay: 15_200
+      ...base, basicPay: 15_200, professionalTaxLevelBand: 'below-level-15'
     });
     expect(result.gross).toBe(27_360);
     expect(result.employeePension).toBe(2_432);
