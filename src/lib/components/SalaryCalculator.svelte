@@ -50,7 +50,9 @@
     }
   });
 
-  function changeLevel() {
+  function changeLevel(event: Event) {
+    const value = (event.currentTarget as HTMLSelectElement).value;
+    selectedLevel = value === '' ? '' : Number(value);
     selectedCell = '';
     hasCalculated = false;
   }
