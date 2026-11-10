@@ -68,6 +68,7 @@ describe('Sikkim Professional Tax pay-level bands', () => {
 describe('salary calculation', () => {
   it('does not assume a pension scheme or allowance eligibility by default', () => {
     expect(DEFAULT_SALARY_INPUT.pensionMode).toBe('unselected');
+    expect(DEFAULT_SALARY_INPUT.cpsMembershipConfirmed).toBe(false);
     expect(DEFAULT_SALARY_INPUT.hraEligible).toBe(false);
     expect(DEFAULT_SALARY_INPUT.sbcaRate).toBe(0);
     expect(DEFAULT_SALARY_INPUT.professionalTaxMode).toBe('unselected');
@@ -78,7 +79,7 @@ describe('salary calculation', () => {
     basicPay: 56_000, daRate: 60, hraEligible: true,
     hraRate: 12, hraMinimum: 0, sbcaRate: 8,
     transportAllowance: 0, otherEarnings: 0,
-    pensionMode: 'cps' as const, manualPension: 0,
+    pensionMode: 'cps' as const, cpsMembershipConfirmed: true, manualPension: 0,
     professionalTaxMode: 'auto' as const, professionalTaxLevelBand: 'level-15-and-above' as const, manualProfessionalTax: 0,
     gis: 0, stampFee: 0, otherDeductions: 0
   };
@@ -93,6 +94,14 @@ describe('salary calculation', () => {
     const result = calculateSalary({ ...base, professionalTaxLevelBand: 'unselected' });
     expect(result.professionalTax).toBe(0);
     expect(result.professionalTaxBand).toContain('not selected');
+  });
+
+  it('does not calculate CPS when membership and contribution basis are not confirmed', () => {
+    const result = calculateSalary({ ...base, cpsMembershipConfirmed: false });
+    expect(result.employeePension).toBe(0);
+    expect(result.employerCpsContribution).toBe(0);
+    expect(result.pensionLabel).toContain('confirm individual membership');
+    expect(result.totalDeductions).toBe(result.professionalTax + result.gis + result.stampFee + result.otherDeductions);
   });
 
   it('does not deduct CPS when the scheme has not been selected', () => {
