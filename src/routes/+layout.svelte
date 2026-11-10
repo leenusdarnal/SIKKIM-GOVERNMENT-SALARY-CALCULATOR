@@ -1,9 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { base } from '$app/paths';
   import '../app.css';
 
   let { children } = $props();
+  const base = import.meta.env.VITE_BASE_PATH ?? '';
 
   onMount(() => {
     if (!base) return;
