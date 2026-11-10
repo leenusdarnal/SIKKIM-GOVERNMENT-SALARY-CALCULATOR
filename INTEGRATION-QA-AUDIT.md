@@ -29,3 +29,9 @@ The ₹150 / ₹200 amounts and Level 15 threshold are based on the user's previ
 - Payslip validation now rejects non-finite, negative, or out-of-range salary inputs and requires explicit pension/GPF and Professional Tax treatment rather than silently presenting a zero deduction as a completed calculation.
 - CSV text cells now neutralize spreadsheet formula prefixes (=, +, - and @) before export to reduce formula-injection risk when the file is opened in spreadsheet software.
 - Regression tests cover annual cut-off, malformed salary inputs, unselected deduction treatments and formula-prefixed employee names.
+
+## Arrears persistence QA correction
+- Draft backup validation previously omitted the Sikkim Professional Tax pay-level band from its salary-update allowlist. A dated move between the below-Level-15 and Level-15-and-above bands could therefore be rejected during backup validation even though the arrears calculation accepted it.
+- The storage validator now validates and preserves `professionalTaxLevelBand` in both the opening salary basis and effective-dated salary changes.
+- A backup containing only a historical-rate schedule or only a selected-component list is now rejected as structurally inconsistent. Both must be present together, matching the calculation engine's contract.
+- Regression tests cover pay-level-band round-trip and mismatched historical schedule/component data.
