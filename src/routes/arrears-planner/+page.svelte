@@ -884,10 +884,10 @@
 @media print {
   @page { size: A4 landscape; margin: 12mm; }
   :global(body) { background: #fff !important; color: #000 !important; }
-  .no-print { display: none !important; }
+  .no-print { display: none !important; }\n  main > div > *:not(.print-statement) { display: none !important; }
   main { min-height: 0 !important; padding: 0 !important; background: #fff !important; color: #000 !important; }
   main > div { max-width: none !important; }
-  .print-statement { border: 0 !important; box-shadow: none !important; padding: 0 !important; break-inside: avoid; }
+  .print-statement { display: block !important; border: 0 !important; box-shadow: none !important; padding: 0 !important; break-inside: auto !important; }\n  .print-statement tr { break-inside: avoid; }\n  .print-statement thead { display: table-header-group; }\n  .print-statement th, .print-statement td { vertical-align: top; }
   .print-statement table { min-width: 0 !important; width: 100% !important; font-size: 7pt !important; }
   .print-statement th, .print-statement td { padding: 2px 3px !important; }
   .print-statement p, .print-statement li { color: #000 !important; }
