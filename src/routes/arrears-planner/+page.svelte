@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import {
     calculateArrears,
     createArrearsCsv,
@@ -8,6 +9,15 @@
     type ArrearSalaryUpdate
   } from '../../lib/arrears';
   import { DEFAULT_SALARY_INPUT, type SalaryInput } from '../../lib/salary';
+  import {
+    createArrearsEntryTemplateCsv,
+    createArrearsScenario,
+    loadArrearsScenario,
+    parseArrearsEntryCsv,
+    parseArrearsScenarioBackup,
+    saveArrearsScenario,
+    serializeArrearsScenario
+  } from '../../lib/arrears-storage';
 
   let startMonth = $state('2026-01');
   let endMonth = $state('2026-11');
@@ -36,6 +46,10 @@
   let actualPaid = $state<Record<string, string>>({});
   let recoveryAmounts = $state<Record<string, string>>({});
   let formError = $state('');
+  let storageReady = $state(false);
+  let saveStatus = $state('');
+  let backupInput = $state<HTMLInputElement | null>(null);
+  let csvInput = $state<HTMLInputElement | null>(null);
 
   const months = $derived(getArrearsMonthKeys(startMonth, endMonth));
   const monthlyRecords = $derived(months.map((month) => ({
@@ -56,7 +70,43 @@
     changes,
     monthlyRecords
   }));
+  const arrearsInput = $derived({
+    startMonth,
+    endMonth,
+    baseSalary: { ...baseSalary },
+    changes: changes.map((change) => ({ ...change })),
+    monthlyRecords
+  });
   const missingPaidMonths = $derived(result.rows.filter((row) => row.actualTakeHome === null).length);
+
+  onMount(() => {
+    try {
+      const saved = loadArrearsScenario(window.localStorage);
+      if (saved) {
+        startMonth = saved.startMonth;
+        endMonth = saved.endMonth;
+        baseSalary = { ...saved.baseSalary };
+        changes = saved.changes.map((change) => ({ ...change }));
+        actualPaid = Object.fromEntries(saved.monthlyRecords.map((record) => [record.month, record.actualTakeHome === null ? '' : String(record.actualTakeHome)]));
+        recoveryAmounts = Object.fromEntries(saved.monthlyRecords.map((record) => [record.month, String(record.recovery)]));
+        saveStatus = 'Restored your previous browser draft.';
+      }
+    } catch {
+      saveStatus = 'Previous draft could not be restored. You can import a JSON backup.';
+    }
+    storageReady = true;
+  });
+
+  $effect(() => {
+    const snapshot = arrearsInput;
+    if (!storageReady || !result.valid) return;
+    try {
+      saveArrearsScenario(snapshot, window.localStorage);
+      saveStatus = 'Saved in this browser';
+    } catch {
+      saveStatus = 'Browser storage is unavailable or full. Export a JSON backup.';
+    }
+  });
   const fmt = (value: number | null | undefined) =>
     value === null || value === undefined || !Number.isFinite(value)
       ? '—'
@@ -188,6 +238,74 @@
     }
   }
 
+  function downloadText(filename: string, text: string, mime: string) {
+    const blob = new Blob([text], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+  }
+
+  function exportJsonBackup() {
+    try {
+      const json = serializeArrearsScenario(createArrearsScenario(arrearsInput));
+      downloadText('sikkim-arrears-' + startMonth + '-to-' + endMonth + '.json', json, 'application/json');
+      formError = '';
+    } catch (cause) {
+      formError = cause instanceof Error ? cause.message : 'Unable to create the JSON backup.';
+    }
+  }
+
+  async function importJsonBackup(event: Event) {
+    const target = event.currentTarget as HTMLInputElement;
+    const file = target.files?.[0];
+    if (!file) return;
+    try {
+      const restored = parseArrearsScenarioBackup(await file.text());
+      startMonth = restored.startMonth;
+      endMonth = restored.endMonth;
+      baseSalary = { ...restored.baseSalary };
+      changes = restored.changes.map((change) => ({ ...change }));
+      actualPaid = Object.fromEntries(restored.monthlyRecords.map((record) => [record.month, record.actualTakeHome === null ? '' : String(record.actualTakeHome)]));
+      recoveryAmounts = Object.fromEntries(restored.monthlyRecords.map((record) => [record.month, String(record.recovery)]));
+      formError = '';
+      saveStatus = 'JSON backup restored successfully.';
+    } catch (cause) {
+      formError = cause instanceof Error ? cause.message : 'Unable to restore the JSON backup.';
+    } finally {
+      target.value = '';
+    }
+  }
+
+  function exportEntryTemplate() {
+    try {
+      downloadText('arrears-monthly-entry-template.csv', createArrearsEntryTemplateCsv(months), 'text/csv;charset=utf-8');
+    } catch (cause) {
+      formError = cause instanceof Error ? cause.message : 'Unable to create the CSV template.';
+    }
+  }
+
+  async function importMonthlyCsv(event: Event) {
+    const target = event.currentTarget as HTMLInputElement;
+    const file = target.files?.[0];
+    if (!file) return;
+    try {
+      const records = parseArrearsEntryCsv(await file.text(), months);
+      actualPaid = Object.fromEntries(records.map((record) => [record.month, record.actualTakeHome === null ? '' : String(record.actualTakeHome)]));
+      recoveryAmounts = Object.fromEntries(records.map((record) => [record.month, String(record.recovery)]));
+      formError = '';
+      saveStatus = 'Monthly credited-pay CSV imported.';
+    } catch (cause) {
+      formError = cause instanceof Error ? cause.message : 'Unable to import the monthly CSV.';
+    } finally {
+      target.value = '';
+    }
+  }
+
   function printStatement() {
     window.print();
   }
@@ -202,7 +320,11 @@
   <div class="mx-auto max-w-7xl space-y-6">
     <div class="no-print flex flex-wrap items-center justify-between gap-3">
       <a href="/" class="text-sm font-bold text-emerald-800 hover:underline dark:text-emerald-400">← Back to salary calculator</a>
-      <div class="flex flex-wrap gap-2 text-sm">
+      <div class="flex flex-wrap items-center gap-2 text-sm">
+        <span class="text-xs text-slate-500 dark:text-slate-400">{saveStatus}</span>
+        <button type="button" onclick={exportJsonBackup} class="rounded-lg border border-slate-300 px-3 py-2 font-semibold dark:border-slate-700">Backup JSON</button>
+        <button type="button" onclick={() => backupInput?.click()} class="rounded-lg border border-slate-300 px-3 py-2 font-semibold dark:border-slate-700">Restore JSON</button>
+        <input bind:this={backupInput} type="file" accept="application/json,.json" class="hidden" onchange={importJsonBackup} />
         <a href="/pay-progression" class="rounded-lg border border-slate-300 px-3 py-2 font-semibold dark:border-slate-700">Pay progression</a>
         <a href="/gpf-planner" class="rounded-lg border border-slate-300 px-3 py-2 font-semibold dark:border-slate-700">GPF planner</a>
       </div>
@@ -438,6 +560,9 @@
           <p class="mt-1 max-w-3xl text-sm leading-6 text-slate-500 dark:text-slate-400">The revised take-home is calculated for each month. Fill in the net amount actually credited and any additional recovery to be deducted from this arrears settlement.</p>
         </div>
         <div class="no-print flex flex-wrap gap-2">
+          <button type="button" onclick={exportEntryTemplate} disabled={!months.length} class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold dark:border-slate-700">CSV entry template</button>
+          <button type="button" onclick={() => csvInput?.click()} disabled={!months.length} class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold dark:border-slate-700">Import monthly CSV</button>
+          <input bind:this={csvInput} type="file" accept=".csv,text/csv" class="hidden" onchange={importMonthlyCsv} />
           <button type="button" onclick={printStatement} class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-bold dark:border-slate-700">Print statement</button>
           <button type="button" onclick={exportCsv} disabled={!result.valid || !result.complete} class="rounded-lg bg-emerald-800 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-40">Download CSV</button>
         </div>
