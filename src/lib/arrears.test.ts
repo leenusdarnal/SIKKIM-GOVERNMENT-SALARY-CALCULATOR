@@ -214,6 +214,8 @@ describe('Sikkim salary arrears planner', () => {
         description: 'Revised deductions as per payslip',
         salaryUpdates: {
           pensionMode: 'gpf',
+          gpfMembershipConfirmed: true,
+          gpfReferencePay: 30_000,
           manualPension: 2_500,
           professionalTaxMode: 'manual',
           manualProfessionalTax: 175,
