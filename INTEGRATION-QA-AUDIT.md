@@ -170,3 +170,32 @@ This is a calculation safeguard, not an official GPF account verification or pay
 - All three PRs are still open and GitHub reports each as mergeable. Their bases form the intended dependency chain: #17 → #15 → #14. Do not merge out of order.
 - Vercel preview deployment creation for the newest PR #17 code is currently rate-limited for 24 hours. The older preview was inspected, but it does not contain the follow-up mobile-navigation and arrears withheld-print fixes. Re-verify those two fixes on a fresh preview after the limit clears before treating visual QA as fully closed.
 - No PR was merged and no production deployment was triggered.
+
+
+## Cross-module workflow regression suite — 10 November 2026
+
+### Scope added
+- Added `src/lib/integration-workflows.test.ts` with nine integration-level scenarios across the shared salary, payslip, arrears, historical-rate, storage, pay-progression and retirement calculation modules.
+- Verified that the payslip salary, annual year-to-date totals and CSV are consistent with the shared salary engine; months after the selected payslip month are excluded.
+- Verified the Sikkim Professional Tax pay-level bands (₹150 below Level 15 and ₹200 at Level 15 and above) through the shared calculation output.
+- Verified effective-dated DA and basic-pay changes through monthly arrears rows and the final statement model, including withholding the final statement until all actual-paid months are entered.
+- Verified monthly paid-pay CSV import, historical DA resolution, arrears scenario local persistence, JSON backup/restore and identical recalculated rows/totals after restoration.
+- Verified that the CPS State matching share is reported separately and does not inflate employee deductions or reduce take-home pay.
+- Verified that a confirmed GPF subscription is carried consistently into payslip and arrears results, with no employer matching contribution.
+- Verified that a pay-matrix placement result can be carried into an effective-dated arrears change.
+- Verified the retirement estimator using explicitly supplied test fixture values. These are calculation wiring tests, not a claim that the configured rates, service units, divisors, or ceilings are universally applicable Government rules.
+
+### Latest CI verification
+- Commit: `d7d46fdf6da616e04f9e3fc940943b977b9d9908`.
+- GitHub Actions run [42812382249](https://github.com/leenusdarnal/SIKKIM-GOVERNMENT-SALARY-CALCULATOR/actions/runs/42812382249): **success**.
+- Vitest: **13 test files / 151 tests passed**.
+- Svelte / TypeScript: **0 errors / 0 warnings**.
+- Vercel adapter production build: **passed**.
+- The successful run is against the PR #17 feature branch head, not a production deployment.
+
+### Remaining verification boundary
+- These new tests exercise the calculation and persistence modules together; they do not simulate real user interaction in a browser.
+- A fresh preview for the latest code could not be verified in this pass. The earlier QA record notes Vercel preview creation was rate-limited; the earlier browser inspection is not evidence for the latest commit.
+- Populated browser-form journeys, real-device viewport checks, populated statement print preview, and PDF output inspection remain outstanding.
+- Test employee details, paid salary amounts and illustrative order references are synthetic fixtures. No employee records or live payroll data were entered.
+- No PR was merged and no production deployment was triggered.
