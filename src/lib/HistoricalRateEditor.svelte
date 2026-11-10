@@ -1,6 +1,6 @@
 <script lang="ts">
 import type { HistoricalRateComponent, HistoricalRateEntry } from './historical-rates';
-let { entries = $bindable([]), selected = $bindable([]) } = $props<{ entries: HistoricalRateEntry[]; selected: HistoricalRateComponent[] }>();
+let { entries = $bindable([]), selected = $bindable([]) }: { entries: HistoricalRateEntry[]; selected: HistoricalRateComponent[] } = $props();
 let component = $state<HistoricalRateComponent>('daRate'), effectiveFrom = $state(''), effectiveTo = $state(''), value = $state(''), sourceReference = $state(''), applicability = $state(''), verified = $state(false), editingIndex = $state<number | null>(null), error = $state('');
 const components: { value: HistoricalRateComponent; label: string; unit: 'percent' | 'inr' }[] = [
 { value:'daRate',label:'Dearness Allowance (DA)',unit:'percent' },{ value:'hraRate',label:'House Rent Allowance (HRA)',unit:'percent' },{ value:'sbcaRate',label:'SBCA',unit:'percent' },{ value:'transportAllowance',label:'Transport allowance',unit:'inr' }];
