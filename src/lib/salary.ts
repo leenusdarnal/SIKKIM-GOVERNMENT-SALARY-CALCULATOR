@@ -14,6 +14,10 @@ export interface SalaryInput {
   pensionMode: PensionMode;
   /** True only after checking individual CPS membership and the applicable contribution basis. */
   cpsMembershipConfirmed?: boolean;
+  /** True only after confirming the employee's GPF account and subscription authority. */
+  gpfMembershipConfirmed?: boolean;
+  /** Rule-defined GPF reference pay for the relevant subscription year, confirmed by Accounts/DDO. */
+  gpfReferencePay?: number;
   manualPension: number;
   professionalTaxMode: ProfessionalTaxMode;
   professionalTaxLevelBand: ProfessionalTaxLevelBand;
@@ -47,6 +51,29 @@ export interface SalaryResult {
 
 export const roundRupee = (amount: number): number =>
   Math.floor((Number.isFinite(amount) ? amount : 0) + 0.5);
+
+export function validateGpfSubscription(
+  referencePay: number | undefined,
+  monthlyAmount: number,
+  membershipConfirmed: boolean | undefined
+): string[] {
+  const errors: string[] = [];
+  if (membershipConfirmed !== true) errors.push('Confirm the employee GPF account / membership and subscription authority with the service record and DDO / Accounts.');
+  if (typeof referencePay !== 'number' || !Number.isFinite(referencePay) || referencePay <= 0) {
+    errors.push('Enter the GPF reference pay applicable to the subscription year, as confirmed by Accounts / DDO.');
+    return errors;
+  }
+  if (!Number.isFinite(monthlyAmount) || monthlyAmount < 0) {
+    errors.push('Enter a valid non-negative monthly GPF subscription.');
+    return errors;
+  }
+  const minimum = roundRupee(referencePay * 0.06);
+  const maximum = roundRupee(referencePay);
+  if (monthlyAmount < minimum || monthlyAmount > maximum) {
+    errors.push('Monthly GPF subscription must be within the rule-based range of ' + minimum + ' to ' + maximum + ' INR (6%–100% of the entered reference pay).');
+  }
+  return errors;
+}
 
 const safeAmount = (amount: number): number =>
   Number.isFinite(amount) && amount > 0 ? amount : 0;
@@ -87,10 +114,16 @@ export function calculateSalary(input: SalaryInput): SalaryResult {
         pensionLabel = 'CPS not calculated — confirm individual membership and contribution basis';
       }
       break;
-    case 'gpf':
-      employeePension = roundRupee(safeAmount(input.manualPension));
-      pensionLabel = 'GPF contribution (manual amount)';
+    case 'gpf': {
+      const gpfErrors = validateGpfSubscription(input.gpfReferencePay, input.manualPension, input.gpfMembershipConfirmed);
+      if (!gpfErrors.length) {
+        employeePension = roundRupee(safeAmount(input.manualPension));
+        pensionLabel = 'GPF subscription (confirmed account; manual monthly amount)';
+      } else {
+        pensionLabel = 'GPF not calculated — ' + gpfErrors[0];
+      }
       break;
+    }
     case 'manual':
       employeePension = roundRupee(safeAmount(input.manualPension));
       pensionLabel = 'Other pension contribution (manual amount)';
@@ -139,6 +172,8 @@ export const DEFAULT_SALARY_INPUT: SalaryInput = {
   otherEarnings: 0,
   pensionMode: 'unselected',
   cpsMembershipConfirmed: false,
+  gpfMembershipConfirmed: false,
+  gpfReferencePay: 0,
   manualPension: 0,
   professionalTaxMode: 'unselected',
   professionalTaxLevelBand: 'unselected',
