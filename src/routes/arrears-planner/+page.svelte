@@ -15,6 +15,7 @@
   import HistoricalRateEditor from '../../lib/HistoricalRateEditor.svelte';
   import type { HistoricalRateComponent, HistoricalRateEntry } from '../../lib/historical-rates';
   import {
+    clearArrearsScenario,
     createArrearsEntryTemplateCsv,
     createArrearsScenario,
     loadArrearsScenario,
@@ -62,6 +63,7 @@
   let formError = $state('');
   let storageReady = $state(false);
   let storageBlocked = $state(false);
+  let storageCleared = $state(false);
   let storageStatus = $state('Loading saved draft…');
   // Session-only metadata: deliberately excluded from autosaved drafts and backups.
   let statementMetadata = $state<ArrearsStatementMetadata>({ employeeName: '', employeeId: '', designation: '', department: '', office: '', district: '', payLevel: '', cell: '' });
@@ -100,6 +102,7 @@
       String(record.recovery)
     ]));
     storageBlocked = false;
+    storageCleared = false;
   }
 
   onMount(() => {
@@ -124,6 +127,10 @@
 
   $effect(() => {
     if (!storageReady || storageBlocked) return;
+    if (storageCleared) {
+      storageStatus = 'Saved draft cleared. Your current entries remain in this tab; auto-save is paused until you select “Save draft now”.';
+      return;
+    }
     try {
       saveArrearsScenario(currentInput(), window.localStorage);
       storageStatus = 'Automatically saved in this browser.';
@@ -136,9 +143,27 @@
     try {
       saveArrearsScenario(currentInput(), window.localStorage);
       storageBlocked = false;
+      storageCleared = false;
       storageStatus = 'Draft saved in this browser.';
     } catch (cause) {
       storageStatus = cause instanceof Error ? cause.message : 'Unable to save this draft.';
+    }
+  }
+
+  function clearSavedDraft() {
+    const confirmed = window.confirm(
+      'Delete the saved arrears draft from this browser? Your current figures and results will remain open in this tab. Automatic saving will pause until you select “Save draft now”. Download a JSON backup first if you want a separate copy.'
+    );
+    if (!confirmed) return;
+
+    try {
+      clearArrearsScenario(window.localStorage);
+      storageBlocked = false;
+      storageCleared = true;
+      storageStatus = 'Saved draft removed. Current entries remain in this tab; auto-save is paused until you save again.';
+      formError = '';
+    } catch {
+      storageStatus = 'The browser could not remove the saved arrears draft. Export a JSON backup and retry after checking browser storage permissions.';
     }
   }
 
@@ -512,6 +537,7 @@
       <div class="mt-4 flex flex-wrap gap-2">
         <button type="button" onclick={saveDraft} class="rounded-lg bg-emerald-800 px-4 py-2.5 text-xs font-extrabold text-white hover:bg-emerald-700">Save draft now</button>
         <button type="button" onclick={downloadJsonBackup} class="rounded-lg border border-slate-300 px-4 py-2.5 text-xs font-bold dark:border-slate-700">Download JSON backup</button>
+        <button type="button" onclick={clearSavedDraft} disabled={!storageReady} class="rounded-lg border border-red-300 px-4 py-2.5 text-xs font-bold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-950/40">Clear saved draft</button>
         <button type="button" onclick={downloadCsvTemplate} disabled={!months.length} class="rounded-lg border border-slate-300 px-4 py-2.5 text-xs font-bold disabled:opacity-40 dark:border-slate-700">Download monthly CSV template</button>
         <label class="cursor-pointer rounded-lg border border-slate-300 px-4 py-2.5 text-xs font-bold dark:border-slate-700">
           Import JSON backup
