@@ -201,6 +201,11 @@ export function loadArrearsScenario(storage: StorageLike): ArrearsScenario | nul
   }
 }
 
+/** Remove only the persisted arrears planner draft; leave every other localStorage key untouched. */
+export function clearArrearsScenario(storage: StorageLike): void {
+  storage.removeItem(ARREARS_SCENARIO_STORAGE_KEY);
+}
+
 export function restoreArrearsScenario(json: string, storage: StorageLike): ArrearsScenario {
   const scenario = parseArrearsScenarioBackup(json);
   storage.setItem(ARREARS_SCENARIO_STORAGE_KEY, serializeArrearsScenario(scenario));
