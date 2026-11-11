@@ -43,7 +43,7 @@ A Sikkim-specific salary estimation application built with SvelteKit 3, Svelte 5
 ## Run locally
 Requires Node.js 24+ and npm.
 
-    npm install
+    npm ci
     npm run dev
 
 ## Quality checks
@@ -55,7 +55,7 @@ Requires Node.js 24+ and npm.
 GitHub Actions runs all three checks on pushes and pull requests.
 
 ## Deploy to Vercel
-The repository is configured with @sveltejs/adapter-vercel and vercel.json. Connect the GitHub repository to the existing Vercel project. Use install command npm install, build command npm run build, and framework preset SvelteKit.
+The repository is configured with @sveltejs/adapter-vercel and vercel.json. Connect the GitHub repository to the existing Vercel project. Use install command npm ci, build command npm run build, and framework preset SvelteKit.
 
 ## Deploy to GitHub Pages
 
