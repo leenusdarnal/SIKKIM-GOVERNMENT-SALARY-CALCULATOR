@@ -3,6 +3,7 @@ import { DEFAULT_SALARY_INPUT } from './salary';
 import { getArrearsMonthKeys, type ArrearsInput } from './arrears';
 import type { HistoricalRateEntry } from './historical-rates';
 import {
+  clearArrearsScenario,
   createArrearsEntryTemplateCsv,
   createArrearsScenario,
   loadArrearsScenario,
@@ -82,6 +83,19 @@ describe('arrears draft storage and import/export', () => {
     const restored = restoreArrearsScenario(serializeArrearsScenario(createArrearsScenario(input())), store);
     expect(restored.monthlyRecords).toHaveLength(3);
     expect(loadArrearsScenario(store)?.monthlyRecords).toHaveLength(3);
+  });
+
+  it('clears only the arrears draft key and leaves other browser data untouched', () => {
+    const store = new MemoryStorage();
+    store.setItem('unrelated-app-data', 'keep-this');
+    saveArrearsScenario(input(), store);
+
+    expect(loadArrearsScenario(store)).not.toBeNull();
+    clearArrearsScenario(store);
+
+    expect(store.getItem(ARREARS_SCENARIO_STORAGE_KEY)).toBeNull();
+    expect(store.getItem('unrelated-app-data')).toBe('keep-this');
+    expect(loadArrearsScenario(store)).toBeNull();
   });
 
   it('round-trips Sikkim Professional Tax pay-level changes in saved drafts', () => {

@@ -94,6 +94,38 @@ test.describe('Sikkim salary calculator browser workflows', () => {
     await expect(page.getByText('Salary / Arrears Calculation Statement', { exact: true })).toBeVisible();
   });
 
+  test('the arrears planner clears only its saved draft while keeping the current calculation open', async ({ page }) => {
+    await page.goto('/arrears-planner');
+    await page.locator('[data-client-ready="true"]').first().waitFor();
+
+    const key = 'sikkim-salary-arrears-scenario-v1';
+    const readSavedDraft = () => page.evaluate((storageKey) => {
+      const value = window.localStorage.getItem(storageKey);
+      return value ? JSON.parse(value) : null;
+    }, key);
+
+    await expect.poll(async () => readSavedDraft()).not.toBeNull();
+    await page.getByLabel('Basic pay (₹)', { exact: true }).fill('56000');
+    await expect.poll(async () => (await readSavedDraft())?.baseSalary?.basicPay).toBe(56000);
+
+    page.once('dialog', (dialog) => dialog.dismiss());
+    await page.getByRole('button', { name: 'Clear saved draft' }).click();
+    await expect.poll(async () => readSavedDraft()).not.toBeNull();
+
+    page.once('dialog', (dialog) => dialog.accept());
+    await page.getByRole('button', { name: 'Clear saved draft' }).click();
+    await expect.poll(async () => page.evaluate((storageKey) => window.localStorage.getItem(storageKey), key)).toBeNull();
+
+    await expect(page.getByLabel('Basic pay (₹)', { exact: true })).toHaveValue('56000');
+    await page.getByLabel('DA rate (%)', { exact: true }).fill('60');
+    await expect(page.getByText(/auto-save is paused until you select “Save draft now”/i)).toBeVisible();
+    await expect.poll(async () => page.evaluate((storageKey) => window.localStorage.getItem(storageKey), key)).toBeNull();
+
+    await page.getByRole('button', { name: 'Save draft now' }).click();
+    await expect.poll(async () => readSavedDraft()).not.toBeNull();
+    await expect.poll(async () => (await readSavedDraft())?.baseSalary?.daRate).toBe(60);
+  });
+
   test('the key employee tools load at a mobile viewport without document-level horizontal overflow', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
 
